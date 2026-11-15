@@ -247,6 +247,7 @@ function PreviousResults({ itemId, type: contentType }: { itemId: Id<"savedItems
           key={r._id}
           testID={`outcome-${r._id}`}
           type={contentType}
+          status="ready"
           title={r.result.title}
           meta={`Result · ${timeAgo(r.createdAt)}`}
           onPress={() => router.push({ pathname: "/result/[id]", params: { id: r.executionId } })}
