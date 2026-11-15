@@ -92,7 +92,7 @@ export default function ImportScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <ScrollView contentContainerStyle={styles.content} testID="import-screen">
+      <ScrollView contentContainerStyle={styles.content} testID="import-screen" keyboardShouldPersistTaps={Platform.OS === "android" ? "handled" : undefined}>
         <ScreenHeader title="Import saves" back />
         <Text style={styles.lead}>Connect your accounts once. Zapy pulls in what you bookmark and turns each post into something you can do.</Text>
 
@@ -208,7 +208,7 @@ function SourceRow({
           onPress={onConnect}
           style={[styles.action, styles.connect, !source.configured && { opacity: 0.4 }]}
         >
-          <Text style={styles.actionText}>Connect</Text>
+          <Text style={[styles.actionText, styles.onAccent]}>Connect</Text>
         </Tap>
       )}
     </View>
@@ -228,6 +228,7 @@ const styles = StyleSheet.create({
   action: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.border },
   connect: { backgroundColor: colors.accent, borderColor: colors.accent },
   actionText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  onAccent: { color: colors.surface },
   chip: { paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
   chipText: { color: colors.textMuted, fontSize: 12, fontWeight: "700" },
   disconnect: { color: colors.textFaint, fontSize: 12, marginTop: space.xs },
