@@ -2,9 +2,13 @@ import { makeFunctionReference } from "convex/server";
 import type { Id } from "../../convex/_generated/dataModel";
 import type { ActionResultDocument, ActionSuggestion, ActionType, ExecutionStatus, OwnerArgs } from "../shared/contracts";
 
-export type SuggestionRow = ActionSuggestion & { _id: Id<"actionSuggestions">; itemId: Id<"savedItems"> };
-export type ExecutionRow = { _id: Id<"actionExecutions">; itemId: Id<"savedItems">; actionType: ActionType; status: ExecutionStatus; error?: string; createdAt: number; completedAt?: number };
-export type ResultRow = { _id: Id<"actionResults">; itemId: Id<"savedItems">; executionId: Id<"actionExecutions">; actionType: ActionType; result: ActionResultDocument; createdAt: number; itemTitle?: string };
+export type SuggestionRow = ActionSuggestion & {
+  _id: Id<"actionSuggestions">;
+  itemId: Id<"savedItems">;
+  latestExecution: { _id: Id<"actionExecutions">; status: ExecutionStatus; error: string | null; resultId: Id<"actionResults"> | null; createdAt: number } | null;
+};
+export type ExecutionRow = { _id: Id<"actionExecutions">; itemId: Id<"savedItems">; actionType: ActionType; status: ExecutionStatus; error?: string; createdAt: number; completedAt?: number; resultId: Id<"actionResults"> | null };
+export type ResultRow = { _id: Id<"actionResults">; itemId: Id<"savedItems">; executionId: Id<"actionExecutions">; actionType: ActionType; result: ActionResultDocument; createdAt: number; itemTitle?: string; status?: ExecutionStatus };
 
 export const actionsApi = {
   listSuggestions: makeFunctionReference<"query", OwnerArgs & { itemId: Id<"savedItems"> }, SuggestionRow[]>("actions:listSuggestions"),

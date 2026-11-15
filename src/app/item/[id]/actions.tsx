@@ -80,6 +80,7 @@ function ActionCard({ suggestion, color }: { suggestion: SuggestionRow; color: s
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const latest = suggestion.latestExecution;
   const needsInputs = suggestion.requiredInputs.length > 0;
   const missing = suggestion.requiredInputs.some((i) => i.required && !inputs[i.key]?.trim());
 
@@ -121,10 +122,23 @@ function ActionCard({ suggestion, color }: { suggestion: SuggestionRow; color: s
         </View>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {latest && (latest.status === "queued" || latest.status === "running") ? (
+        <Tap testID={`action-progress-${suggestion.rank}`} onPress={() => router.push({ pathname: "/result/[id]", params: { id: latest._id } })} style={styles.soon}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[styles.soonText, { color: colors.accent }]}>Working on it…</Text>
+        </Tap>
+      ) : null}
+      {latest?.resultId ? (
+        <Tap testID={`action-view-result-${suggestion.rank}`} onPress={() => router.push({ pathname: "/result/[id]", params: { id: latest._id } })} style={styles.soon}>
+          <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+          <Text style={[styles.soonText, { color: colors.success }]}>View result</Text>
+        </Tap>
+      ) : null}
+      {latest?.status === "failed" && latest.error ? <Text style={styles.error}>Last run failed: {latest.error}</Text> : null}
       {suggestion.canExecute ? (
         <GradientButton
           testID={`action-button-${suggestion.rank}`}
-          label={open ? "Run" : suggestion.requiresApproval ? "Prepare (you approve before anything is sent)" : "Do it"}
+          label={open ? "Run" : latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Do it"}
           icon="flash"
           onPress={run}
           loading={busy}
@@ -132,8 +146,8 @@ function ActionCard({ suggestion, color }: { suggestion: SuggestionRow; color: s
         />
       ) : (
         <Tap testID={`action-button-${suggestion.rank}`} disabled style={styles.soon}>
-          <Ionicons name="time-outline" size={16} color={colors.textFaint} />
-          <Text style={styles.soonText}>Coming soon</Text>
+          <Ionicons name="information-circle-outline" size={16} color={colors.textFaint} />
+          <Text style={styles.soonText}>Not available for this save</Text>
         </Tap>
       )}
     </View>
