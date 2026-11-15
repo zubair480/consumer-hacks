@@ -341,13 +341,18 @@ export const getResult = query({
   args: { ownerId: vOwnerId, resultId: v.optional(v.id("actionResults")), executionId: v.optional(v.id("actionExecutions")) },
   handler: async (ctx, { ownerId, resultId, executionId }) => {
     const user = await requireUser(ctx, ownerId);
-    if (resultId) return await requireOwned(ctx, user, resultId);
-    if (!executionId) throw new ConvexError("Pass resultId or executionId");
-    await requireOwned(ctx, user, executionId);
-    return await ctx.db
-      .query("actionResults")
-      .withIndex("by_executionId", (q) => q.eq("executionId", executionId))
-      .first();
+    let row: Doc<"actionResults"> | null;
+    if (resultId) row = await requireOwned(ctx, user, resultId);
+    else if (executionId) {
+      await requireOwned(ctx, user, executionId);
+      row = await ctx.db
+        .query("actionResults")
+        .withIndex("by_executionId", (q) => q.eq("executionId", executionId))
+        .first();
+    } else throw new ConvexError("Pass resultId or executionId");
+    if (!row) return null;
+    const { userId: _userId, ...rest } = row;
+    return rest;
   },
 });
 
@@ -356,11 +361,12 @@ export const listResultsForItem = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
     await requireOwnedItem(ctx, ownerId, itemId);
-    return await ctx.db
+    const rows = await ctx.db
       .query("actionResults")
       .withIndex("by_itemId", (q) => q.eq("itemId", itemId))
       .order("desc")
       .take(50);
+    return rows.map(({ userId: _userId, ...rest }) => rest);
   },
 });
 
@@ -378,8 +384,9 @@ export const recentOutcomes = query({
     return await Promise.all(
       rows.map(async (row) => {
         const [item, execution] = await Promise.all([ctx.db.get("savedItems", row.itemId), ctx.db.get("actionExecutions", row.executionId)]);
+        const { userId: _userId, ...rest } = row;
         return {
-          ...row,
+          ...rest,
           status: execution?.status ?? "succeeded",
           itemTitle: item?.title ?? item?.sourceUrl ?? "Saved item",
           itemPrimaryType: item?.primaryType ?? null,
