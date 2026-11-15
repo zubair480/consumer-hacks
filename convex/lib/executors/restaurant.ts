@@ -42,25 +42,53 @@ async function findAddress(input: ExecutorInput, blocks: SourceBlock[]): Promise
   };
 }
 
+const KNOW_BEFORE = [
+  { test: /hour|open/i, warning: "Hours not stated in the source - check before you go." },
+  { test: /price|cost|\$/i, warning: "Prices not stated in the source." },
+  { test: /address|location|where/i, warning: "Address not stated in the source - map links search by name." },
+];
+
 const planVisit: Executor = async (input) => {
   const { blocks, warnings } = await placeBlocks(input);
   const when = input.inputs.date?.trim();
   const party = input.inputs.party_size?.trim();
+  const from = input.inputs.starting_from?.trim();
   const place = await findAddress(input, blocks).catch(() => null);
+  const name = place?.name || input.analysis?.title || input.item.title || "";
+  const visitRows = [
+    ...(when ? [{ label: "When", value: when }] : []),
+    ...(party ? [{ label: "Party size", value: party }] : []),
+    ...(from ? [{ label: "Starting from", value: from }] : []),
+  ];
   const result = await buildDocument({
     input,
     blocks,
     warnings,
     strictRows: true,
-    append: place ? [mapLinks(`${place.name} ${place.fact.value}`.trim())] : [],
-    instruction: `Plan a visit to this restaurant/place${when ? ` on/at "${when}"` : ""}${party ? ` for ${party} people` : ""}.
+    prepend: visitRows.length ? [{ kind: "key_value", heading: "Your visit", rows: visitRows }] : [],
+    append: place ? [mapLinks(`${place.name} ${place.fact.value}`.trim())] : name ? [mapLinks(name)] : [],
+    instruction: `Plan a visit to this restaurant/place${when ? ` on/at "${when}"` : ""}${party ? ` for ${party} people` : ""}${from ? ` starting from ${from}` : ""}.
 1. "key_value" headed "Know before you go": address, neighborhood, hours, price range, reservation policy, phone, ONLY when stated, each with evidence.
 2. "list" headed "What to order": dishes the source mentions or recommends (no evidence needed in a list, but only dishes named in the source).
 3. "checklist" headed "Plan": practical steps (check hours, book a table if reservations are mentioned, plan transit), guidance only.
 4. "text" headed "Best time to go" only if the source gives hints (busy times, specials); otherwise omit.
 Missing hours/address/prices go in warnings ("Hours not stated in the source - check before you go").`,
   });
-  return { result, status: "succeeded" };
+  const facts = result.sections.flatMap((s) => (s.kind === "key_value" && s.heading !== "Your visit" ? s.rows.map((r) => r.label) : []));
+  if (place) facts.push("Address");
+  const missing = KNOW_BEFORE.filter((k) => !facts.some((label) => k.test.test(label)) && !result.warnings.some((w) => k.test.test(w))).map((k) => k.warning);
+  if (!result.sections.some((s) => s.kind === "checklist")) {
+    result.sections.push({
+      kind: "checklist",
+      heading: "Plan",
+      items: [
+        { label: "Confirm opening hours", checked: false },
+        { label: party ? `Book a table for ${party}` : "Decide who's coming and book if needed", checked: false },
+        { label: "Plan how to get there", checked: false },
+      ],
+    });
+  }
+  return { result: composeDocument("plan_visit", result.title, result.summary, result.sections, result.sources, [...result.warnings, ...missing]), status: "succeeded" };
 };
 
 function mapLinks(query: string): ResultSection {
@@ -119,8 +147,19 @@ const prepareInvitation: Executor = async (input) => {
 2. "key_value" headed "Details" with name/address/hours only when stated, with evidence.`,
   });
   const message = result.sections.find((s) => s.kind === "text");
-  if (message && message.kind === "text") result.shareText = message.body;
-  return { result, status: "awaiting_approval" };
+  if (!message || message.kind !== "text") throw new Error("The invitation message could not be drafted. Please try again.");
+  return {
+    result: composeDocument(
+      "prepare_invitation",
+      result.title,
+      "Your invitation is ready to share. Nothing has been sent.",
+      result.sections,
+      result.sources,
+      result.warnings,
+      message.body,
+    ),
+    status: "awaiting_approval",
+  };
 };
 
 export const restaurantExecutors = {
