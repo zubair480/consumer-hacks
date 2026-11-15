@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAction } from "convex/react";
 import * as Clipboard from "expo-clipboard";
+import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Image, Keyboard, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -176,6 +177,15 @@ export default function PhotoStudio() {
             <CaptionCard key={d._id} draft={d} />
           ),
         )}
+        {mediaId && drafts?.length && !writing ? (
+          <GradientButton
+            testID="photo-open-editor"
+            label="Edit and share drafts"
+            icon="create-outline"
+            variant="secondary"
+            onPress={() => router.push({ pathname: "/studio/editor", params: { mediaId, platform: drafts[0].platform } })}
+          />
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
