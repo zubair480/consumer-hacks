@@ -203,7 +203,14 @@ export const save = internalMutation({
       contentTypes: analysis.contentTypes,
       primaryType: analysis.primaryType,
     });
-    await ctx.db.patch("savedItems", itemId, { sourceAccessible: analysis.sourceAccessible, missingInfo: analysis.missingInfo });
+    await ctx.db.patch("savedItems", itemId, {
+      sourceAccessible: analysis.sourceAccessible,
+      missingInfo: analysis.missingInfo,
+      deadline: analysis.deadline,
+      location: analysis.location,
+      price: analysis.price,
+      organization: analysis.organization,
+    });
     await ctx.db.insert("activityEvents", {
       userId: item.userId,
       type: extractionStatus === "ready" ? "analysis_completed" : "analysis_needs_input",
