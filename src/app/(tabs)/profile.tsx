@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { preferencesApi } from "../../components/api";
+import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
@@ -48,9 +48,9 @@ export default function Profile() {
 }
 
 function Body() {
-  const profile = useOwnedQuery(preferencesApi.get, {});
-  const stats = useOwnedQuery(preferencesApi.stats, {});
-  const upsert = useOwnedMutation(preferencesApi.upsert);
+  const profile = useOwnedQuery(api.preferences.get, {});
+  const stats = useOwnedQuery(api.preferences.stats, {});
+  const upsert = useOwnedMutation(api.preferences.upsert);
   const [draft, setDraft] = useState<Partial<Record<Key, string>>>({});
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);

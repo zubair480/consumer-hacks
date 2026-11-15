@@ -3,7 +3,8 @@ import { router } from "expo-router";
 import type { ComponentProps } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { activityApi, type ActivityRow } from "../../components/api";
+import { api } from "../../../convex/_generated/api";
+import type { ActivityRow } from "../../components/api";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
 import { GradientButton } from "../../components/GradientButton";
@@ -48,7 +49,7 @@ function open(e: ActivityRow) {
 }
 
 function Feed() {
-  const events = useOwnedQuery(activityApi.list, { limit: 100 });
+  const events = useOwnedQuery(api.activity.list, { limit: 100 });
   if (events === undefined) return <View style={styles.list}><Skeleton rows={5} height={64} /></View>;
   return (
     <FlatList

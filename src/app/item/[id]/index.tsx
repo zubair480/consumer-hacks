@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ActionCard } from "../../../components/ActionCard";
-import { actionsApi, preferencesApi } from "../../../components/api";
+import { actionsApi } from "../../../components/api";
 import { Boundary } from "../../../components/Boundary";
 import { FactRow } from "../../../components/FactRow";
 import { Field } from "../../../components/Field";
@@ -155,7 +155,7 @@ function Actions({ item }: { item: SavedItemView }) {
   const itemId = item._id as Id<"savedItems">;
   const suggestions = useOwnedQuery(actionsApi.listSuggestions, { itemId });
   const results = useOwnedQuery(actionsApi.listResultsForItem, { itemId });
-  const profile = useOwnedQuery(preferencesApi.get, {});
+  const profile = useOwnedQuery(api.preferences.get, {});
   const color = metaFor(item.primaryType).color;
   return (
     <>

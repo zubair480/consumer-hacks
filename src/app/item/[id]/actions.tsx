@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ActionCard } from "../../../components/ActionCard";
-import { actionsApi, preferencesApi } from "../../../components/api";
+import { actionsApi } from "../../../components/api";
 import { Boundary } from "../../../components/Boundary";
 import { itemTitle } from "../../../components/ItemCard";
 import { OutcomeRow } from "../../../components/OutcomeRow";
@@ -53,7 +53,7 @@ function ActionList({ item }: { item: SavedItemView }) {
   const itemId = item._id as Id<"savedItems">;
   const suggestions = useOwnedQuery(actionsApi.listSuggestions, { itemId });
   const results = useOwnedQuery(actionsApi.listResultsForItem, { itemId });
-  const profile = useOwnedQuery(preferencesApi.get, {});
+  const profile = useOwnedQuery(api.preferences.get, {});
   if (suggestions === undefined) return <Skeleton rows={3} height={120} />;
   return (
     <>

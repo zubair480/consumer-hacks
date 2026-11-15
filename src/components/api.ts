@@ -1,6 +1,6 @@
 import { makeFunctionReference } from "convex/server";
 import type { Id } from "../../convex/_generated/dataModel";
-import type { ActionResultDocument, ActionSuggestion, ActionType, ActivityEventType, ContentType, ExecutionStatus, OwnerArgs, UserProfile } from "../shared/contracts";
+import type { ActionResultDocument, ActionSuggestion, ActionType, ActivityEventType, ContentType, ExecutionStatus, OwnerArgs } from "../shared/contracts";
 
 export type LatestExecution = { _id: Id<"actionExecutions">; status: ExecutionStatus; error: string | null; resultId: Id<"actionResults"> | null; createdAt: number };
 export type SuggestionRow = ActionSuggestion & { _id: Id<"actionSuggestions">; itemId: Id<"savedItems">; latestExecution: LatestExecution | null };
@@ -27,7 +27,6 @@ export type ActivityRow = {
   resultId: Id<"actionResults"> | null;
   createdAt: number;
 };
-type Nullable<T> = { [K in keyof T]?: T[K] | null };
 
 const q = makeFunctionReference;
 
@@ -40,12 +39,4 @@ export const actionsApi = {
   recentOutcomes: q<"query", OwnerArgs & { limit?: number }, ResultRow[]>("actions:recentOutcomes"),
 };
 
-export const activityApi = {
-  list: q<"query", OwnerArgs & { limit?: number }, ActivityRow[]>("activity:list"),
-};
 
-export const preferencesApi = {
-  get: q<"query", OwnerArgs, UserProfile & { updatedAt?: number }>("preferences:get"),
-  upsert: q<"mutation", OwnerArgs & Nullable<UserProfile>, UserProfile>("preferences:upsert"),
-  stats: q<"query", OwnerArgs, { saves: number; outcomes: number; capped: boolean }>("preferences:stats"),
-};
