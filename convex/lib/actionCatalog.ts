@@ -22,6 +22,7 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     requiredInputs: [
       { key: "date", label: "When are you going?", kind: "date", required: false },
       { key: "party_size", label: "How many people?", kind: "number", required: false },
+      { key: "starting_from", label: "Starting from", kind: "location", required: false, prefillFrom: "profile.city" },
     ],
   },
   find_location: none,
