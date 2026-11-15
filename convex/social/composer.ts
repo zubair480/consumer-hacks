@@ -5,6 +5,7 @@ import { internalAction, internalMutation, internalQuery } from "../_generated/s
 import { callLLMJson } from "../lib/llm";
 import type { BriefFact, MediaReference } from "../../src/shared/socialContracts";
 import { ADAPTERS } from "./adapters";
+import { capHashtagList, sanitizeDraftText } from "./sanitize";
 import type { ContentBrief } from "./adapters/types";
 import { vBriefFact, vMediaReference, vPlatformOutput, vSocialContentType } from "./validators";
 
@@ -53,6 +54,10 @@ export const SHARED_RULES = [
   "- For a photo or video: the user saved it, which does not mean they took it, made it or were there. Never claim authorship, capture or presence unless brief.userContext explicitly says so.",
   "- No fake endorsements, testimonials or 'everyone loves it'. Opinions must be framed as curiosity or intent ('want to try', 'looks useful').",
   "- If a fact is uncertain or missing, leave it out instead of guessing.",
+  "FORMAT RULES (these override any platform instruction below):",
+  "- No emoji.",
+  "- Hashtags: none for LinkedIn, X and Threads. At most 3 relevant ones for Instagram and TikTok.",
+  "- Write in the first person only about what the user actually did, which is that they saved it.",
   "Match brief.tone and brief.audience when given. Write for THIS platform only; the output must read clearly differently from other platforms.",
 ].join("\n");
 
@@ -200,8 +205,9 @@ export const run = internalAction({
         maxOutputTokens: 1500,
         timeoutMs: 45000,
       });
-      const output = adapter.normalize(raw);
-      const draftText = adapter.render(output).trim();
+      const normalized = adapter.normalize(raw);
+      const output = { ...normalized, hashtags: capHashtagList(normalized.hashtags, loaded.platform) };
+      const draftText = sanitizeDraftText(adapter.render(output), loaded.platform);
       if (!draftText) throw new Error("The model returned an empty draft");
       await ctx.runMutation(internal.social.composer.applyResult, {
         draftId,
