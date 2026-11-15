@@ -9,14 +9,17 @@ import { Skeleton } from "../../components/States";
 import { DraftStatusPill } from "../../components/studio/DraftStatusPill";
 import { PlatformPreview } from "../../components/studio/PlatformPreview";
 import { platformMeta } from "../../components/studio/platforms";
-import { colors, space, type } from "../../components/tokens";
+import { colors, space } from "../../components/tokens";
+import { studioText } from "../../components/studio/studioStyles";
+import { DisplayTitle, InkPill } from "../../components/ui";
+import { palette } from "../../theme";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 
 export default function StudioPreview() {
   const { draftId, text } = useLocalSearchParams<{ draftId: string; text?: string }>();
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.pad}><ScreenHeader title="Preview" back /></View>
+      <View style={styles.pad}><ScreenHeader title="" back /></View>
       <Boundary title="Couldn’t load the preview">
         <Body draftId={draftId as Id<"socialDrafts">} override={text} />
       </Boundary>
@@ -29,12 +32,16 @@ function Body({ draftId, override }: { draftId: Id<"socialDrafts">; override?: s
   if (draft === undefined) return <View style={styles.pad}><Skeleton rows={2} height={200} /></View>;
   return (
     <ScrollView contentContainerStyle={styles.content} testID="studio-preview-screen">
+      <View style={styles.header}>
+        <InkPill label="Preview" />
+        <DisplayTitle highlight="look" highlightColor={palette.cyan} size={34}>{"How it will look"}</DisplayTitle>
+      </View>
       <View style={styles.row}>
-        <Text style={type.heading}>{platformMeta(draft.platform).label}</Text>
+        <Text style={studioText.headline}>{platformMeta(draft.platform).label}</Text>
         <DraftStatusPill status={draft.status} />
       </View>
       <PlatformPreview platform={draft.platform} text={override ?? draft.draftText} />
-      <Text style={type.caption}>An approximation of how it will look. {override ? "Showing your unsaved edit." : `Version ${draft.revision}.`}</Text>
+      <Text style={studioText.footnote}>An approximation of how it will look. {override ? "Showing your unsaved edit." : `Version ${draft.revision}.`}</Text>
     </ScrollView>
   );
 }
@@ -42,6 +49,7 @@ function Body({ draftId, override }: { draftId: Id<"socialDrafts">; override?: s
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   pad: { paddingHorizontal: space.lg },
-  content: { padding: space.lg, gap: space.lg, paddingBottom: 80 },
+  content: { paddingHorizontal: space.xl, gap: space.lg, paddingBottom: 120 },
+  header: { gap: space.md, marginBottom: space.md },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
 });
