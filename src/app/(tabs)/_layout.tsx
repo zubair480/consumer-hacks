@@ -31,6 +31,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={tab("Home", "home", "tab-home")} />
       <Tabs.Screen name="library" options={tab("Library", "albums", "tab-library")} />
+      <Tabs.Screen name="create" options={tab("Create", "sparkles", "tab-create")} />
       <Tabs.Screen name="activity" options={tab("Activity", "pulse", "tab-activity")} />
       <Tabs.Screen name="profile" options={tab("Profile", "person-circle", "tab-profile")} />
     </Tabs>
