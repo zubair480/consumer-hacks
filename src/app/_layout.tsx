@@ -1,16 +1,31 @@
+import { ArchivoBlack_400Regular } from "@expo-google-fonts/archivo-black";
+import { PlusJakartaSans_500Medium, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold } from "@expo-google-fonts/plus-jakarta-sans";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { DarkTheme, Stack, ThemeProvider } from "expo-router";
+import { useFonts } from "expo-font";
+import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { colors } from "../components/tokens";
 import { OwnerProvider } from "../identity/OwnerProvider";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
 });
 
-const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.bg, card: colors.bg, primary: colors.accent, text: colors.text, border: colors.border } };
+const theme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.bg, card: colors.bg, primary: colors.accent, text: colors.text, border: colors.border } };
 
 export default function RootLayout() {
+  const [loaded, error] = useFonts({ ArchivoBlack_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold });
+  const ready = loaded || !!error;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  if (!ready) return null;
   return (
     <ConvexProvider client={convex}>
       <ThemeProvider value={theme}>
