@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
-import { actionsApi } from "../../components/api";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
 import { GradientButton } from "../../components/GradientButton";
@@ -79,7 +78,7 @@ function Feed() {
 }
 
 function ReadyAndOutcomes({ items }: { items: NonNullable<ReturnType<typeof useOwnedQuery<typeof api.items.list>>> }) {
-  const outcomes = useOwnedQuery(actionsApi.recentOutcomes, { limit: 50 });
+  const outcomes = useOwnedQuery(api.actions.recentOutcomes, { limit: 50 });
   if (outcomes === undefined) return null;
   const acted = new Set(outcomes.map((o) => o.itemId as string));
   const ready = items.filter((i) => i.extractionStatus === "ready" && !acted.has(i._id)).slice(0, 5);
