@@ -13,6 +13,8 @@ import type * as activity from "../activity.js";
 import type * as agents_calendar from "../agents/calendar.js";
 import type * as agents_composio from "../agents/composio.js";
 import type * as agents_schema from "../agents/schema.js";
+import type * as agentMode from "../agentMode.js";
+import type * as agentRuns from "../agentRuns.js";
 import type * as analysis from "../analysis.js";
 import type * as collections from "../collections.js";
 import type * as http from "../http.js";
@@ -38,6 +40,7 @@ import type * as lib_executors_scholarship from "../lib/executors/scholarship.js
 import type * as lib_executors_sources from "../lib/executors/sources.js";
 import type * as lib_executors_types from "../lib/executors/types.js";
 import type * as lib_llm from "../lib/llm.js";
+import type * as lib_runRepo from "../lib/runRepo.js";
 import type * as lib_sources from "../lib/sources.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as media from "../media.js";
@@ -74,6 +77,8 @@ declare const fullApi: ApiFromModules<{
   "agents/calendar": typeof agents_calendar;
   "agents/composio": typeof agents_composio;
   "agents/schema": typeof agents_schema;
+  agentMode: typeof agentMode;
+  agentRuns: typeof agentRuns;
   analysis: typeof analysis;
   collections: typeof collections;
   http: typeof http;
@@ -99,6 +104,7 @@ declare const fullApi: ApiFromModules<{
   "lib/executors/sources": typeof lib_executors_sources;
   "lib/executors/types": typeof lib_executors_types;
   "lib/llm": typeof lib_llm;
+  "lib/runRepo": typeof lib_runRepo;
   "lib/sources": typeof lib_sources;
   "lib/validators": typeof lib_validators;
   media: typeof media;

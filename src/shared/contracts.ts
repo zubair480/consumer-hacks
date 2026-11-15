@@ -234,6 +234,8 @@ export const ACTION_TYPES = [
   "summarize",
   "extract_key_points",
   "add_to_collection",
+  // Agent mode (dispatched outside ACTION_ROUTING, see AGENT_ACTIONS)
+  "run_repo",
 ] as const;
 export type ActionType = (typeof ACTION_TYPES)[number];
 
@@ -260,6 +262,15 @@ export const ACTION_LABELS: Record<ActionType, { title: string; description: str
   summarize: { title: "Summarize", description: "The key ideas in a few lines." },
   extract_key_points: { title: "Extract key points", description: "Facts and takeaways with sources." },
   add_to_collection: { title: "Add to collection", description: "File this save into a collection." },
+  run_repo: { title: "Run it for me", description: "Clone the repo in a sandbox, install it, and run its tests or example." },
+};
+
+/**
+ * Agent-mode actions: a 4th suggestion shown after the routed three, started
+ * through their own mutation rather than actions.execute.
+ */
+export const AGENT_ACTIONS: Partial<Record<ActionType, { contentTypes: readonly ContentType[] }>> = {
+  run_repo: { contentTypes: ["github_repository"] },
 };
 
 /**
