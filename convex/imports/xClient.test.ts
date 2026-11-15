@@ -159,5 +159,21 @@ describe("bookmarks", () => {
     expect(err).toBeInstanceOf(XApiError);
     expect((err as XApiError).message).toMatch(/rate limit.*5 min/);
   });
+
+  it("surfaces X's own title and detail for a 403 and for a 200 that only carries errors", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFetch(
+      json({ title: "Client Forbidden", detail: "This endpoint requires a higher access tier.", type: "https://api.twitter.com/2/problems/client-forbidden", reason: "client-not-enrolled" }, 403),
+      json({ errors: [{ title: "Authorization Error", detail: "Sorry, you are not authorized to see bookmarks.", type: "https://api.twitter.com/2/problems/not-authorized-for-resource" }] }),
+    );
+    await expect(fetchBookmarksPage("at", "42")).rejects.toThrow(/403.*Client Forbidden: This endpoint requires a higher access tier/);
+    await expect(fetchBookmarksPage("at", "42")).rejects.toThrow("Authorization Error: Sorry, you are not authorized to see bookmarks.");
+    expect(console.error).toHaveBeenCalledWith("X bookmarks failed", 403, expect.stringContaining("client-forbidden"));
+  });
+
+  it("returns no posts only when X really returns zero bookmarks", async () => {
+    mockFetch(json({ meta: { result_count: 0 } }));
+    expect(await fetchBookmarksPage("at", "42")).toEqual({ posts: [], nextToken: undefined });
+  });
 });
 

@@ -13,7 +13,24 @@ function page(message: string, status: number) {
   return new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
-/** X OAuth 2.0 redirect URI. Finishes the token exchange, then deep-links back into the app. */
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+/**
+ * Sends the browser back to the app. Android Custom Tabs often refuse a server 302 to a custom
+ * scheme (exp://, zapy://), leaving a blank page, so this is a 200 page that navigates by script
+ * and also shows a tappable "Return to Zapy" button (plus an Android intent:// fallback).
+ */
+function returnToApp(returnUrl: string, message: string) {
+  const scheme = returnUrl.slice(0, returnUrl.indexOf(":"));
+  const intentUrl = `intent:${returnUrl.slice(scheme.length + 1)}#Intent;scheme=${scheme};end`;
+  const href = escapeHtml(returnUrl);
+  const body = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zapy</title><body style="font-family:-apple-system,Roboto,sans-serif;background:#0B0B10;color:#F5F5FA;padding:32px;text-align:center"><h2>Zapy</h2><p>${escapeHtml(message)}</p><a id="return" href="${href}" style="display:block;margin:32px auto 16px;max-width:360px;padding:20px;border-radius:999px;background:#F5F5FA;color:#0B0B10;font-size:20px;font-weight:700;text-decoration:none">Return to Zapy</a><a href="${escapeHtml(intentUrl)}" style="color:#9A9AB0;font-size:14px">Still here? Tap to open the app</a><script>window.location.replace(${JSON.stringify(returnUrl).replace(/</g, "\\u003c")});</script></body>`;
+  return new Response(body, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+}
+
+/** X OAuth 2.0 redirect URI. Finishes the token exchange, then sends the browser back into the app. */
 http.route({
   path: X_CALLBACK_PATH,
   method: "GET",
@@ -30,7 +47,7 @@ http.route({
     const back = new URL(outcome.returnUrl);
     back.searchParams.set("x", outcome.ok ? "connected" : "error");
     if (outcome.message) back.searchParams.set("message", outcome.message);
-    return new Response(null, { status: 302, headers: { Location: back.toString() } });
+    return returnToApp(back.toString(), outcome.ok ? "X is connected." : (outcome.message ?? "Couldn't connect X."));
   }),
 });
 
@@ -51,7 +68,7 @@ http.route({
     const back = new URL(outcome.returnUrl);
     back.searchParams.set("youtube", outcome.ok ? "connected" : "error");
     if (outcome.message) back.searchParams.set("message", outcome.message);
-    return new Response(null, { status: 302, headers: { Location: back.toString() } });
+    return returnToApp(back.toString(), outcome.ok ? "YouTube is connected." : (outcome.message ?? "Couldn't connect YouTube."));
   }),
 });
 

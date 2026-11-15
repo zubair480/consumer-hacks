@@ -164,8 +164,12 @@ describe("imports.connections", () => {
       ),
     );
     const res = await t.fetch(`/oauth/x/callback?state=${state}&code=abc`, { redirect: "manual" });
-    expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe("zapy://import?x=connected");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('href="zapy://import?x=connected"');
+    expect(html).toContain("Return to Zapy");
+    expect(html).toContain('window.location.replace("zapy://import?x=connected")');
+    expect(html).toContain("intent://import?x=connected#Intent;scheme=zapy;end");
     const sources = await t.query(api.imports.connections.sources, { ownerId: OWNER_A });
     expect(sources[0]).toMatchObject({ connected: true, username: "ali" });
 
@@ -197,6 +201,20 @@ describe("imports.connections", () => {
 
     const scheduled = await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect());
     expect(scheduled.map((s) => s.name).sort()).toEqual(["imports/posts:attachImageThenIngest", "imports/posts:attachImageThenIngest", "ingest:run"]);
+  });
+
+  it("shows X's real error instead of 'no saved posts' when bookmarks are refused", async () => {
+    vi.stubEnv("X_CLIENT_ID", "cid");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const t = await setup();
+    await connectX(t);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ title: "Forbidden", detail: "Missing bookmark access." }), { status: 403 })));
+    await expect(t.action(api.imports.connections.syncX, { ownerId: OWNER_A })).rejects.toThrow("Forbidden: Missing bookmark access.");
+    const conn = await t.run((ctx) => ctx.db.query("importConnections").unique());
+    expect(conn?.lastError).toContain("Missing bookmark access.");
+
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ meta: { result_count: 0 } }))));
+    expect(await t.action(api.imports.connections.syncX, { ownerId: OWNER_A })).toEqual({ created: 0, duplicates: 0, invalid: 0 });
   });
 
   it("refuses to sync for another owner", async () => {
