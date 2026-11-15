@@ -14,7 +14,8 @@ import { colors, radius, space } from "../../components/tokens";
 import { timeAgo } from "../../components/typeMeta";
 import { DisplayTitle, Text as UIText } from "../../components/ui";
 import { useOwnedPaginatedQuery } from "../../identity/OwnerProvider";
-import { colors as themeColors, palette } from "../../theme";
+import { colors as themeColors, fonts, palette } from "../../theme";
+import { useTabBarScroll } from "../../components/ui/InkTabBar";
 import type { ActivityEventType } from "../../shared/contracts";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
@@ -54,12 +55,14 @@ function open(e: ActivityRow) {
 
 function Feed() {
   const { results: events, status, loadMore } = useOwnedPaginatedQuery(api.activity.listPage, {}, { initialNumItems: 20 });
+  const scroll = useTabBarScroll();
   if (status === "LoadingFirstPage") return <View style={styles.list}><Skeleton rows={5} height={64} /></View>;
   return (
     <FlatList
       testID="activity-list"
       data={events}
       keyExtractor={(e) => e._id}
+      {...scroll}
       contentContainerStyle={styles.list}
       onEndReached={() => (status === "CanLoadMore" ? loadMore(20) : undefined)}
       onEndReachedThreshold={0.5}
@@ -97,5 +100,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, paddingRight: space.lg, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border },
   node: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   body: { flex: 1, gap: 2 },
-  title: { fontSize: 16, lineHeight: 21, fontWeight: "700" },
+  title: { fontSize: 16, lineHeight: 21, fontFamily: fonts.bold },
 });
