@@ -27,7 +27,6 @@ function prefill(input: RequiredInput, profile: UserProfile | undefined, item: S
 
 export function ActionCard({ suggestion, color, profile, item }: { suggestion: SuggestionRow; color: string; profile?: UserProfile; item?: SavedItemView }) {
   const execute = useOwnedMutation(api.actions.execute);
-  const [open, setOpen] = useState(false);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +43,6 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
     try {
       const filled = Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim()));
       const executionId = await execute({ suggestionId: suggestion._id, inputs: fields.length ? filled : undefined });
-      setOpen(false);
       openResult(executionId);
     } catch (e) {
       setError(errorMessage(e));
@@ -54,7 +52,6 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
   };
 
   const start = () => {
-    if (fields.length > 0 && !open) return setOpen(true);
     if (!suggestion.requiresApproval) return run();
     Alert.alert(
       suggestion.title,
@@ -72,7 +69,7 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
           <Text style={type.caption}>{suggestion.description}</Text>
         </View>
       </View>
-      {open ? (
+      {fields.length > 0 ? (
         <View style={{ gap: space.sm }}>
           {fields.map((f) => (
             <View key={f.key} style={{ gap: 4 }}>
@@ -106,12 +103,12 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
         running ? null : (
           <GradientButton
             testID={`action-button-${suggestion.rank}`}
-            label={open ? "Run" : latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run"}
+            label={latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run"}
             icon="flash"
-            variant={latest?.resultId && !open ? "secondary" : "primary"}
-            onPress={open ? (suggestion.requiresApproval ? () => { setOpen(false); start(); } : run) : start}
+            variant={latest?.resultId ? "secondary" : "primary"}
+            onPress={start}
             loading={busy}
-            disabled={open && missing}
+            disabled={missing}
           />
         )
       ) : (
