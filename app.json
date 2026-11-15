@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "consumer-hacks",
+    "name": "Zapy",
     "slug": "consumer-hacks",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zubair480.consumerhacks"
@@ -28,6 +28,6 @@
       "expo-web-browser",
       "expo-sharing"
     ],
-    "scheme": "consumerhacks"
+    "scheme": "zapy"
   }
 }

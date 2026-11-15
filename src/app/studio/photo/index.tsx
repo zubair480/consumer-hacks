@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { Field } from "../../../components/Field";
-import { GradientButton } from "../../../components/GradientButton";
+import { Button } from "../../../components/ui";
 import { errorMessage, pickImages, type PickedImage } from "../../../components/media";
 import { Tap } from "../../../components/Pressable";
 import { ScreenHeader } from "../../../components/ScreenHeader";
@@ -164,14 +164,14 @@ export default function PhotoStudio() {
           </View>
         ) : null}
 
-        <GradientButton
+        <Button
           testID="photo-generate-button"
-          label={step ? STEPS[step] : writing ? STEPS.write : drafts ? "Create new drafts" : "Create drafts"}
-          icon="sparkles"
+          title={step ? STEPS[step] : writing ? STEPS.write : drafts ? "Create new drafts" : "Create drafts"}
+          icon="arrow-forward"
           loading={busy}
           disabled={!photo || !platforms.length}
           onPress={run}
-        />
+         fullWidth />
 
         {analysis ? <AnalysisCard analysis={analysis} context={context.trim()} /> : null}
         {drafts?.map((d) =>
@@ -186,16 +186,16 @@ export default function PhotoStudio() {
           ),
         )}
         {mediaId && drafts?.length && !writing ? (
-          <GradientButton
+          <Button
             testID="photo-open-editor"
-            label="Edit and share drafts"
+            title="Edit and share drafts"
             icon="create-outline"
             variant="secondary"
             onPress={() => router.push({ pathname: "/studio/editor", params: { mediaId, platform: drafts[0].platform } })}
-          />
+           fullWidth />
         ) : null}
         {instagramDraft && jpeg && !writing ? (
-          <GradientButton testID="photo-publish-instagram" label="Publish to Instagram" icon="logo-instagram" onPress={() => setPublishOpen(true)} />
+          <Button testID="photo-publish-instagram" title="Publish to Instagram" icon="logo-instagram" onPress={() => setPublishOpen(true)} fullWidth />
         ) : null}
       </ScrollView>
       {instagramDraft && jpeg ? (
@@ -229,7 +229,7 @@ function PickTile({ testID, icon, label, onPress }: { testID: string; icon: Icon
   return (
     <Tap testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.tile}>
       <View style={styles.tileIcon}>
-        <Ionicons name={icon} size={24} color={colors.accent} />
+        <Ionicons name={icon} size={24} color={colors.text} />
       </View>
       <Text style={styles.tileLabel}>{label}</Text>
     </Tap>
@@ -246,7 +246,7 @@ function AnalysisCard({ analysis, context }: { analysis: MediaAnalysis; context:
   return (
     <View style={styles.card} testID="photo-analysis-card">
       <View style={styles.cardHead}>
-        <Ionicons name="eye" size={16} color={colors.info} />
+        <Ionicons name="eye" size={16} color={colors.text} />
         <Text style={type.label}>What’s in the photo · facts</Text>
       </View>
       {facts.map((f) => (
@@ -267,7 +267,7 @@ function AnalysisCard({ analysis, context }: { analysis: MediaAnalysis; context:
 function PendingCard({ platform }: { platform: SocialPlatform }) {
   return (
     <View style={[styles.card, styles.pending]} testID={`photo-draft-${platform}-pending`}>
-      <ActivityIndicator color={colors.accent} />
+      <ActivityIndicator color={colors.text} />
       <Text style={type.body}>Writing the {SOCIAL_PLATFORM_LABELS[platform]} draft…</Text>
     </View>
   );
@@ -279,7 +279,7 @@ function FailedCard({ draft }: { draft: SocialDraftView }) {
     <View style={styles.card} testID={`photo-draft-${draft.platform}-failed`}>
       <Text style={type.heading}>{SOCIAL_PLATFORM_LABELS[draft.platform]}</Text>
       <Text style={[type.body, { color: colors.danger }]}>{draft.generationError ?? "This draft couldn't be written."}</Text>
-      <GradientButton testID={`photo-retry-${draft.platform}`} label="Try again" icon="refresh" variant="secondary" onPress={() => regenerate({ draftId: draft._id as Id<"socialDrafts"> })} />
+      <Button testID={`photo-retry-${draft.platform}`} title="Try again" icon="refresh" variant="secondary" onPress={() => regenerate({ draftId: draft._id as Id<"socialDrafts"> })}  fullWidth />
     </View>
   );
 }
@@ -307,7 +307,7 @@ function CardHeader({ platform, copyText }: { platform: SocialPlatform; copyText
   const meta = PLATFORMS.find((p) => p.key === platform);
   return (
     <View style={styles.cardHead}>
-      <Ionicons name={meta?.icon ?? "create"} size={18} color={colors.accentAlt} />
+      <Ionicons name={meta?.icon ?? "create"} size={18} color={colors.text} />
       <Text style={[type.heading, { flex: 1 }]}>{meta?.label ?? platform}</Text>
       <Text style={styles.status}>Draft</Text>
       <CopyButton testID={`photo-copy-${platform}`} text={copyText} />
@@ -396,14 +396,14 @@ const styles = StyleSheet.create({
   tileLabel: { ...type.heading, fontSize: 15 },
   previewWrap: { borderRadius: radius.lg, overflow: "hidden", borderWidth: 1, borderColor: colors.border },
   preview: { width: "100%", backgroundColor: colors.surface },
-  change: { position: "absolute", right: space.md, bottom: space.md, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(11,11,16,0.8)", paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill },
+  change: { position: "absolute", right: space.md, bottom: space.md, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill },
   changeLabel: { color: colors.text, fontWeight: "700", fontSize: 13 },
   contextField: { minHeight: 90 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  chipOn: { borderColor: colors.accent, backgroundColor: "rgba(139,92,246,0.22)" },
+  chipOn: { borderColor: colors.text, backgroundColor: colors.surfaceRaised },
   chipLabel: { color: colors.textMuted, fontWeight: "700", fontSize: 14 },
-  error: { flexDirection: "row", gap: space.sm, alignItems: "flex-start", padding: space.md, borderRadius: radius.md, backgroundColor: "rgba(248,113,113,0.1)" },
+  error: { flexDirection: "row", gap: space.sm, alignItems: "flex-start", padding: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceRaised },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.md },
   cardHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
   status: { ...type.caption, fontWeight: "700", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, overflow: "hidden" },
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   tags: { flexDirection: "row", flexWrap: "wrap", gap: space.xs },
   tag: { ...type.caption, color: colors.text, backgroundColor: colors.surfaceRaised, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: "hidden" },
   shot: { flexDirection: "row", gap: space.md, alignItems: "flex-start" },
-  shotNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.surfaceRaised, color: colors.accent, textAlign: "center", lineHeight: 24, fontWeight: "800", fontSize: 13, overflow: "hidden" },
+  shotNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.surfaceRaised, color: colors.text, textAlign: "center", lineHeight: 24, fontWeight: "800", fontSize: 13, overflow: "hidden" },
   hook: { fontSize: 18, fontWeight: "700" },
   pending: { flexDirection: "row", alignItems: "center" },
   facts: { gap: space.xs, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space.md },

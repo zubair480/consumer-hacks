@@ -1,8 +1,8 @@
-# AfterScroll
+# Zapy
 
 **Turn what you save into what you do.**
 
-AfterScroll is an iOS-first app for the things you save and never come back to: a scholarship post, a GitHub repo, a restaurant link, a design screenshot. You save it, AfterScroll reads the source and works out what it is, then offers three actions that fit that kind of content and runs them into a real, saved result. Phase 2 (Social Studio, in progress) turns a save or a new photo into platform-specific post drafts that you copy or share yourself.
+Zapy is an iOS-first app for the things you save and never come back to: a scholarship post, a GitHub repo, a restaurant link, a design screenshot. You save it, Zapy reads the source and works out what it is, then offers three actions that fit that kind of content and runs them into a real, saved result. Phase 2 (Social Studio) turns a save or a new photo into platform-specific post drafts that you copy, share, or post directly to LinkedIn and X when their keys are set.
 
 Built with Expo SDK 58, Expo Router, Convex and OpenAI (server-side only). The live demo runs on a real iPhone through Expo Go.
 
@@ -18,14 +18,19 @@ More detail: [docs/architecture.md](docs/architecture.md), [docs/limitations.md]
 - **Results** render as checklists (toggles persist), steps, lists, key-value rows and text, with warnings, sources, Copy and Share. They are reopenable from item detail, Home and Activity.
 - **Screens:** Home (Save, Ready for you, Recently saved, Completed outcomes), Library (search, type filters, retry), Item detail (facts with evidence, "Needs more info" banner with Add screenshot / Paste text), Contextual Actions (inputs prefilled from Profile, confirmation for approval-gated actions), Action Results, Activity, and Profile (details used by eligibility and visit planning, stats, About & limitations).
 
-### Phase 2: Social Studio (in progress)
+### Phase 2: Social Studio (on main)
 
-Being built in parallel today. On main so far: the six Phase 2 tables, `src/shared/socialContracts.ts` and the `api.social.drafts.*` API surface (generate, listForSource, listRecent, get, update, regenerate, restoreRevision, recommendPlatforms); the composer, publishing and screens are still landing.
+Reached from the **Create** tab or **Create post** on any saved item.
 
-- **Composer + platform adapters:** distinct LinkedIn, X, Instagram, TikTok and Threads drafts from one brief built from a saved item or a new photo, stored as versioned drafts. Facts (with source) are kept separate from creative text, and wording stays truthful ("Found this restaurant and want to try it", never "I had the best dinner here").
-- **Publishing states + share:** copy and the native share sheet only. Drafts move through Draft, Ready to share and Awaiting user action; "Published" requires provider confirmation, which never happens without a platform connection.
-- **Studio screens:** source and media pickers, platform selector, per-platform editor with independent edit and regenerate, preview and publishing status.
-- **Photo flow:** a new photo → Instagram caption and TikTok storyboard.
+- **Composer + platform adapters:** distinct LinkedIn, X, Instagram, TikTok and Threads drafts from one brief built from a saved item or a new photo, stored as versioned drafts. Facts (with source) are kept separate from creative text and shown as "Facts used", and wording stays truthful ("Found this restaurant and want to try it", never "I had the best dinner here"; a bookmarked repo is never one you built).
+- **Editor:** one tab per platform with Save edit, Rewrite, Copy, Preview and Share. A user edit is saved as a new version, and rewriting one platform never touches another platform or earlier edits.
+- **Photo flow:** Create → New photo → pick or take a photo, add optional context → Create drafts. The photo is analyzed, then you get an Instagram caption and a TikTok storyboard (hook, shots, voiceover, on-screen text, caption).
+- **Publishing:**
+  - **LinkedIn and X post directly when their keys are set on the Convex deployment.** LinkedIn needs `LINKEDIN_ACCESS_TOKEN` (and optionally `LINKEDIN_PERSON_URN`); X needs `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN` and `X_ACCESS_TOKEN_SECRET`. On the dev deployment LinkedIn is configured and a real test post succeeded (`urn:li:share:7527842989080018944`); X stays in share-sheet mode until its four keys are set.
+  - Share on a connected platform opens a sheet with **Confirm and publish**. A draft is marked Published only when the provider returns a post id, and the sheet then offers "View on LinkedIn".
+  - **Instagram, TikTok and Threads always use the share sheet** (Open in / Share to, then "I posted it"). "I posted it" is recorded as user-reported, never as Published.
+  - Statuses: Draft, Ready to share, Awaiting user action, Publishing, Published, Failed.
+  - **Profile → Connected accounts** shows Connected or Share-sheet mode per platform, and **Send test post** on a connected LinkedIn or X account posts "Testing Zapy <time>" and shows the returned post id.
 
 ## Architecture
 
@@ -60,11 +65,10 @@ Backend changes are pushed with `npx convex dev --once` (needs `CONVEX_DEPLOY_KE
 ## Limitations
 
 - No login: saves belong to one device's ownerId, so deleting the app or switching phones loses access.
-- No direct publishing: nothing is posted or sent for you; drafts and results go out through copy or the share sheet, and nothing is marked Published.
+- Direct posting covers LinkedIn and X only, from one deployment-wide account set by server env keys (LinkedIn is configured on dev; X stays in share-sheet mode until its four keys are set). Instagram, TikTok and Threads go through copy or the share sheet. Nothing is marked Published without a provider post id.
 - Without `GITHUB_TOKEN`, the GitHub API rate-limits; the app falls back to the raw README and loses stars, license and last-push data.
 - Instagram, TikTok and other login-walled links can't be read; the item goes to Needs info and asks for a screenshot or pasted text.
 - Facts missing from the source (a deadline, a price, an address) are reported as missing, not guessed. AI output can still be wrong; check it before you act on it.
-- Social Studio (Phase 2) is in progress.
 
 Full list: [docs/limitations.md](docs/limitations.md).
 
@@ -81,8 +85,8 @@ Edit only the files your thread owns. Shared types change only through `src/shar
 | F — backend | `convex/activity.ts`, `convex/collections.ts`, `convex/preferences.ts` |
 | H+I — composer + adapters (Phase 2) | all Phase 2 schema (`convex/social/schema.ts`: socialDrafts, socialDraftRevisions, mediaAssets, platformConnections, publishingJobs, publishingResults), `convex/social/validators.ts`, `src/shared/socialContracts.ts`, `convex/social/**` |
 | Photo flow (Phase 2) | `mediaAssets` upload/analyze functions (e.g. `convex/mediaAssets.ts`); writes `mediaAssets` rows |
-| J — publishing + share (Phase 2) | `convex/publishing.ts`, `convex/lib/publishers/**`, `src/lib/share.ts` |
-| K — Social Studio screens (Phase 2) | `src/app/studio/**` or `src/app/(studio)/**`, `src/components/studio/**` |
+| J — publishing + share (Phase 2) | `convex/publishing/**`, `src/lib/share.ts`, `src/components/publishing/**` |
+| K — Social Studio screens (Phase 2) | `src/app/studio/**`, `src/components/studio/**` |
 | Docs | `README.md`, `docs/**` |
 
 Schema changes by other threads: new optional fields or new indexes only, coordinated through the Captain. New dependencies: `npx expo install`, Expo Go-compatible only, and tell the Captain since `package.json` is shared.
@@ -96,3 +100,17 @@ Schema changes by other threads: new optional fields or new indexes only, coordi
 - **UI (A):** `SavedItemView` is what `items.list/get/search` return. Build screens from `src/components/ui` and `src/theme` (dark-first). Put a `testID` on every button and input a test touches.
 - **Activity (F):** `internal.activity.log` records events; `api.activity.list` and `listForItem` read them.
 - **Social Studio (Phase 2):** types in `src/shared/socialContracts.ts`, API in `convex/social/drafts.ts` (`api.social.drafts.*`, all take `ownerId`). Drafts have two separate statuses: `generationStatus` (generating | ready | failed, the composer's progress) and `status` (draft | ready_to_share | awaiting_user_action | publishing | published | failed, owned by J's publishing code). `update` and `regenerate` write a new revision on that draft only, so other platforms and earlier edits are kept.
+
+## Verified on Revyl
+
+End-to-end runs on a Revyl cloud iPhone 16 with Release simulator builds of `main` against the dev Convex deployment, all on 2026-11-15. Scripts and fixtures are in `tests/revyl/`; per-step screenshots are in the Captain drive under `renders/CONS-9/`.
+
+| Flows | Build of `main` | Result | Source |
+| --- | --- | --- | --- |
+| Phase 1 gate, tests 01–15: launch, Home, save URL / text / screenshot, Library after restart, GitHub classification and actions, repo explanation, scholarship actions and checklist, design image analysis, outcomes after restart, invalid URL recovery, navigation | `f9f1db1` (tag `phase-1`) | 15/15 pass | [#27](https://github.com/zubair480/consumer-hacks/pull/27) |
+| Core regression: GitHub link save → Ready → Understand project → reopen result; persistence of items and outcomes across a relaunch | `6d80bec` | pass | CONS-9 |
+| One-tap "Save as text instead" for an invalid link; Prepare application runs on the first tap | `7f327f9` | pass | CONS-9 |
+| Live demo: save a LinkedIn short link → Ready as a scholarship → Track verified deadline result | `7f327f9`, repeated on `ad2202d` | pass | CONS-9 |
+| Social Studio without publishing: LinkedIn + X drafts from a save, edit X then rewrite LinkedIn (X edit kept), preview, drafts persist after relaunch, copy, Instagram + TikTok drafts from a library photo | `ad2202d` | 6/6 pass | CONS-9 |
+
+Not covered by these runs: the restyle and X bookmarks import merged after `ad2202d`, real posting to LinkedIn or X, and Expo Go on a physical iPhone.

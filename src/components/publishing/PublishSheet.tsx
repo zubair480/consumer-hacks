@@ -176,7 +176,7 @@ export function PublishSheet({
           </Text>
         ) : (
           <Text variant="caption" tone="muted" testID="publish-sheet-notice">
-            {label} isn’t connected, so AfterScroll can’t post for you. Open it, post it yourself, then tap “I posted
+            {label} isn’t connected, so Zapy can’t post for you. Open it, post it yourself, then tap “I posted
             it”.
           </Text>
         )}

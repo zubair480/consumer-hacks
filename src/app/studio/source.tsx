@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
-import { GradientButton } from "../../components/GradientButton";
+import { Button } from "../../components/ui";
 import { itemTitle } from "../../components/ItemCard";
 import { ScreenHeader } from "../../components/ScreenHeader";
 import { Skeleton } from "../../components/States";
@@ -43,7 +43,7 @@ function List() {
       ) : undefined}
       ListEmptyComponent={ready.length === 0 ? (
         <EmptyState icon="bookmark-outline" title="No saves ready yet" body="Save a link, text or screenshot first. Once it’s understood you can turn it into posts.">
-          <GradientButton testID="studio-source-capture" label="Save something" icon="add" onPress={() => router.push("/capture")} style={{ alignSelf: "stretch", marginTop: space.sm }} />
+          <Button testID="studio-source-capture" title="Save something" icon="add" onPress={() => router.push("/capture")} style={{ marginTop: space.sm }}  fullWidth />
         </EmptyState>
       ) : (
         <EmptyState icon="search" title="No matches" body="Try a different word." />

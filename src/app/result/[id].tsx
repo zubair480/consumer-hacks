@@ -3,18 +3,20 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
-import { GradientButton } from "../../components/GradientButton";
+import { errorMessage } from "../../components/media";
 import { Tap } from "../../components/Pressable";
 import { ResultView } from "../../components/ResultView";
 import { ScreenHeader } from "../../components/ScreenHeader";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space, type } from "../../components/tokens";
+import { Button, pastelFor } from "../../components/ui";
+import { colors as theme } from "../../theme";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 import { ACTION_LABELS } from "../../shared/contracts";
 
@@ -33,6 +35,7 @@ export default function ActionResult() {
 function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
   const execution = useOwnedQuery(api.actions.getExecution, { executionId });
   const result = useOwnedQuery(api.actions.getResult, { executionId });
+  const item = useOwnedQuery(api.items.get, execution ? { itemId: execution.itemId } : "skip");
   const [copied, setCopied] = useState(false);
 
   if (execution === undefined) return <View style={styles.content}><Skeleton rows={4} /></View>;
@@ -40,7 +43,7 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
     return (
       <View style={styles.content}>
         <EmptyState icon="help-circle-outline" title="Result not found" body="It may have been deleted with its save.">
-          <GradientButton testID="result-go-home-button" label="Go home" variant="secondary" onPress={() => router.replace("/")} style={{ alignSelf: "stretch" }} />
+          <Button testID="result-go-home-button" title="Go home" variant="secondary" fullWidth onPress={() => router.replace("/")} />
         </EmptyState>
       </View>
     );
@@ -52,22 +55,28 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
   const at = result?.createdAt ?? execution.completedAt ?? execution.createdAt;
 
   const copy = async () => {
-    await Clipboard.setStringAsync(text);
+    try {
+      await Clipboard.setStringAsync(text);
+    } catch (e) {
+      Alert.alert("Couldn’t copy", errorMessage(e));
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setCopied(true);
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} testID="result-screen">
+    <>
+    <ScrollView contentContainerStyle={[styles.content, doc ? { paddingBottom: 120 } : null]} testID="result-screen">
       <View style={styles.gap}>
         <Text style={type.label}>{label}</Text>
-        <Text style={type.display}>{doc?.title ?? label}</Text>
+        <Text style={type.display} numberOfLines={4}>{doc?.title ?? label}</Text>
         <Text style={type.caption} testID="result-timestamp">{new Date(at).toLocaleString()}</Text>
       </View>
 
       {execution.status === "queued" || execution.status === "running" ? (
         <View style={styles.state} testID="result-running">
-          <ActivityIndicator color={colors.accent} />
+          <ActivityIndicator color={colors.text} />
           <View style={{ flex: 1 }}>
             <Text style={type.heading}>{execution.status === "queued" ? "Getting started…" : "Working on it…"}</Text>
             <Text style={type.caption}>Reading the source and building your result. This usually takes a few seconds; you can leave this screen.</Text>
@@ -76,7 +85,7 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
       ) : null}
 
       {execution.status === "failed" || execution.status === "cancelled" ? (
-        <View style={[styles.state, { borderColor: colors.danger + "55" }]} testID="result-failed">
+        <View style={[styles.state, { backgroundColor: theme.dangerSoft, borderWidth: 0 }]} testID="result-failed">
           <Ionicons name="alert-circle" size={22} color={colors.danger} />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={[type.heading, { color: colors.danger }]}>{execution.status === "failed" ? "This action failed" : "Cancelled"}</Text>
@@ -89,26 +98,29 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
       ) : null}
 
       {execution.status === "awaiting_approval" ? (
-        <View style={[styles.state, { borderColor: colors.warning + "55" }]} testID="result-awaiting-approval">
-          <Ionicons name="hand-left" size={20} color={colors.warning} />
+        <View style={[styles.state, { backgroundColor: theme.warningSoft, borderWidth: 0 }]} testID="result-awaiting-approval">
+          <Ionicons name="hand-left" size={20} color={colors.text} />
           <Text style={[type.caption, { flex: 1 }]}>Draft ready. Nothing has been sent. Copy or share it yourself when you’re happy with it.</Text>
         </View>
       ) : null}
 
       {doc ? (
         <>
-          <View style={styles.buttons}>
-            <GradientButton testID="copy-result-button" label={copied ? "Copied" : "Copy"} icon={copied ? "checkmark" : "copy-outline"} variant="secondary" onPress={copy} style={{ flex: 1 }} />
-            <GradientButton testID="share-result-button" label="Share" icon="share-outline" onPress={() => Share.share({ message: text, title: doc.title })} style={{ flex: 1 }} />
-          </View>
-          <ResultView doc={doc} resultId={result?._id} />
+          <ResultView doc={doc} resultId={result?._id} accent={pastelFor(item?.primaryType)} />
           <Tap testID="result-open-item-button" onPress={() => router.push({ pathname: "/item/[id]", params: { id: execution.itemId } })} style={styles.itemLink}>
-            <Ionicons name="bookmark-outline" size={16} color={colors.accent} />
+            <Ionicons name="bookmark-outline" size={16} color={colors.text} />
             <Text style={styles.link}>Open the saved item</Text>
           </Tap>
         </>
       ) : null}
     </ScrollView>
+    {doc ? (
+      <View style={styles.bar}>
+        <Button testID="copy-result-button" title={copied ? "Copied" : "Copy"} icon={copied ? "checkmark" : "copy-outline"} variant="secondary" onPress={copy} style={{ flex: 1 }} />
+        <Button testID="share-result-button" title="Share" icon="share-outline" onPress={() => Share.share({ message: text, title: doc.title }).catch((e) => Alert.alert("Couldn’t share", errorMessage(e)))} style={{ flex: 1 }} />
+      </View>
+    ) : null}
+    </>
   );
 }
 
@@ -117,8 +129,8 @@ const styles = StyleSheet.create({
   top: { paddingHorizontal: space.xl },
   content: { padding: space.xl, gap: space.xl, paddingBottom: 60 },
   gap: { gap: space.sm },
-  state: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  buttons: { flexDirection: "row", gap: space.md },
-  link: { color: colors.accent, fontWeight: "700" },
+  state: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  bar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: space.md, paddingHorizontal: space.xl, paddingTop: space.md, paddingBottom: space.xxl, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  link: { color: colors.text, fontWeight: "700", textDecorationLine: "underline" },
   itemLink: { flexDirection: "row", gap: 6, alignItems: "center", alignSelf: "center", padding: space.md },
 });

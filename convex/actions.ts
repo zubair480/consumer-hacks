@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { ACTION_LABELS } from "../src/shared/contracts";
+import { imageToDataUrl } from "./lib/sources";
 import { buildSuggestions, isRoutedAction } from "./lib/actionCatalog";
 import { getUser, requireOwned, requireOwnedItem, requireUser } from "./lib/auth";
 import { logEvent } from "./activity";
@@ -163,7 +164,8 @@ export const run = internalAction({
     const input: ExecutorInput | null = await ctx.runMutation(internal.actions.startRun, { executionId, now: Date.now() });
     if (!input) return null;
     try {
-      const output = await EXECUTORS[input.actionType](input);
+      const imageUrl = input.imageUrl ? await imageToDataUrl(input.imageUrl) : null;
+      const output = await EXECUTORS[input.actionType]({ ...input, imageUrl });
       await ctx.runMutation(internal.actions.completeRun, {
         executionId,
         result: output.result,

@@ -28,7 +28,7 @@ const TYPE_GUIDE: Record<ContentType, string> = {
   general_content: "anything else: news, opinion, a social post, a note",
 };
 
-const SYSTEM = `You are AfterScroll's content understanding engine. A user saved something from the internet; classify it and extract the facts they will need to act on it.
+const SYSTEM = `You are Zapy's content understanding engine. A user saved something from the internet; classify it and extract the facts they will need to act on it.
 
 Content types (multi-label; include every type that clearly applies, most relevant first):
 ${CONTENT_TYPES.map((t) => `- ${t}: ${TYPE_GUIDE[t]}`).join("\n")}
@@ -137,7 +137,7 @@ export async function analyzeContent(input: {
         user: `Analyze this save.\n\n${sources}`,
         images: input.images,
         schemaHint: SCHEMA_HINT,
-        timeoutMs: 18000,
+        timeoutMs: 45000,
       });
       const hasTypes = isType(candidate.primaryType) || (Array.isArray(candidate.contentTypes) && candidate.contentTypes.some(isType));
       if (!hasTypes || !str(candidate.summary)) throw new Error("the model's answer was missing a content type or summary");

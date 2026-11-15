@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { View } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 import { ACCOUNT_LABELS } from "../../lib/share";
-import { colors, spacing } from "../../theme";
-import { Card, Divider, Skeleton, Text } from "../ui";
+import { colors, palette, radius, spacing } from "../../theme";
+import { Button, Card, Divider, Skeleton, Text } from "../ui";
+import { localTimeNow, TestPostSheet, type TestPostPlatform } from "./TestPostSheet";
 
 // OWNER: Thread J (CONS-11). Profile → Connected accounts. Booleans from the server only.
 
 export function ConnectedAccounts() {
   const accounts = useOwnedQuery(api.publishing.jobs.connectedAccounts, {});
+  const [testPost, setTestPost] = useState<{ platform: TestPostPlatform; localTime: string } | null>(null);
   return (
     <Card testID="connected-accounts">
       <Text variant="label" tone="muted">
@@ -32,16 +35,35 @@ export function ConnectedAccounts() {
               }}
             >
               <Text variant="bodyStrong">{ACCOUNT_LABELS[a.platform]}</Text>
-              <Text variant="caption" color={a.connected ? colors.success : colors.textMuted}>
-                {a.connected ? "Connected" : "Share-sheet mode"}
-              </Text>
+              <View
+                style={{
+                  paddingHorizontal: spacing.md,
+                  paddingVertical: spacing.xs,
+                  borderRadius: radius.pill,
+                  backgroundColor: a.connected ? palette.mint : colors.surfaceRaised,
+                }}
+              >
+                <Text variant="label">{a.connected ? "Connected" : "Share-sheet mode"}</Text>
+              </View>
             </View>
+            {a.connected && (a.platform === "x" || a.platform === "linkedin") ? (
+              <Button
+                title="Send test post"
+                size="sm"
+                variant="secondary"
+                icon="paper-plane-outline"
+                testID={`test-post-${a.platform}`}
+                style={{ alignSelf: "flex-start", marginBottom: spacing.md }}
+                onPress={() => setTestPost({ platform: a.platform as TestPostPlatform, localTime: localTimeNow() })}
+              />
+            ) : null}
           </View>
         ))
       )}
       <Text variant="caption" tone="muted" style={{ marginTop: spacing.sm }}>
-        Share-sheet mode: you post it yourself from the app. AfterScroll never stores passwords.
+        Share-sheet mode: you post it yourself from the app. Zapy never stores passwords.
       </Text>
+      {testPost ? <TestPostSheet {...testPost} onClose={() => setTestPost(null)} /> : null}
     </Card>
   );
 }

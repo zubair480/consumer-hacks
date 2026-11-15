@@ -4,6 +4,33 @@
 
 const MAX_PAGE_CHARS = 16000;
 const MAX_README_CHARS = 24000;
+const PAGE_TIMEOUT_MS = 10000;
+const RETRY_DELAY_MS = 800;
+
+/**
+ * fetch with an abort timeout that also covers reading the body, retrying once
+ * after a short pause on 429 or 5xx. Throws an AbortError when the timeout hits.
+ */
+export async function fetchWithRetry(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res: Response;
+    try {
+      res = await fetch(url, { ...init, signal: controller.signal });
+    } catch (e) {
+      clearTimeout(timer);
+      throw e;
+    }
+    if (attempt > 0 || (res.status !== 429 && res.status < 500)) return res;
+    clearTimeout(timer);
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+  }
+}
+
+export function isTimeout(e: unknown): boolean {
+  return e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError");
+}
 
 export type GithubRepo = {
   fullName: string;
@@ -29,8 +56,12 @@ export function parseGithubRepo(url: string): { owner: string; repo: string } | 
 
 async function fetchRawReadme(owner: string, repo: string): Promise<string | null> {
   for (const name of ["README.md", "readme.md", "README.markdown", "README.rst", "README"]) {
-    const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${name}`);
-    if (res.ok) return (await res.text()).slice(0, MAX_README_CHARS);
+    try {
+      const res = await fetchWithRetry(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${name}`, {}, PAGE_TIMEOUT_MS);
+      if (res.ok) return (await res.text()).slice(0, MAX_README_CHARS);
+    } catch {
+      return null;
+    }
   }
   return null;
 }
@@ -39,11 +70,11 @@ async function fetchRawReadme(owner: string, repo: string): Promise<string | nul
 async function fetchGithubRepoFromPage(owner: string, repo: string): Promise<GithubRepo | null> {
   const url = `https://github.com/${owner}/${repo}`;
   const [page, readme] = await Promise.all([
-    fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; AfterScroll/1.0)" } }).catch(() => null),
-    fetchRawReadme(owner, repo).catch(() => null),
+    fetchWithRetry(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; Zapy/1.0)" } }, PAGE_TIMEOUT_MS).catch(() => null),
+    fetchRawReadme(owner, repo),
   ]);
   if (!page?.ok && !readme) return null;
-  const html = page?.ok ? await page.text() : "";
+  const html = page?.ok ? await page.text().catch(() => "") : "";
   const og = html.match(/<meta property="og:description" content="([^"]*)"/i)?.[1];
   const description = og ? og.replace(/ - [\w.-]+\/[\w.-]+$/, "").replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"') : null;
   return {
@@ -64,10 +95,11 @@ async function fetchGithubRepoFromPage(owner: string, repo: string): Promise<Git
 export async function fetchGithubRepo(url: string): Promise<GithubRepo | null> {
   const parsed = parseGithubRepo(url);
   if (!parsed) return null;
-  const headers: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "AfterScroll" };
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "Zapy" };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   const api = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}`;
-  const metaRes = await fetch(api, { headers });
+  const metaRes = await fetchWithRetry(api, { headers }, PAGE_TIMEOUT_MS).catch(() => null);
+  if (!metaRes) return await fetchGithubRepoFromPage(parsed.owner, parsed.repo);
   if (!metaRes.ok) return metaRes.status === 404 ? null : await fetchGithubRepoFromPage(parsed.owner, parsed.repo);
   const meta = (await metaRes.json()) as {
     full_name: string;
@@ -80,8 +112,13 @@ export async function fetchGithubRepo(url: string): Promise<GithubRepo | null> {
     topics?: string[];
     pushed_at: string | null;
   };
-  const readmeRes = await fetch(`${api}/readme`, { headers: { ...headers, Accept: "application/vnd.github.raw+json" } });
-  const readme = readmeRes.ok ? (await readmeRes.text()).slice(0, MAX_README_CHARS) : await fetchRawReadme(parsed.owner, parsed.repo);
+  const readmeRes = await fetchWithRetry(
+    `${api}/readme`,
+    { headers: { ...headers, Accept: "application/vnd.github.raw+json" } },
+    PAGE_TIMEOUT_MS,
+  ).catch(() => null);
+  const apiReadme = readmeRes?.ok ? await readmeRes.text().catch(() => null) : null;
+  const readme = apiReadme ? apiReadme.slice(0, MAX_README_CHARS) : await fetchRawReadme(parsed.owner, parsed.repo);
   return {
     fullName: meta.full_name,
     url: meta.html_url,
@@ -121,10 +158,11 @@ function htmlToText(html: string): string {
 /** Readable text of a web page, or null when it cannot be fetched. */
 export async function fetchPageText(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; AfterScroll/1.0)", Accept: "text/html,text/plain" },
-      redirect: "follow",
-    });
+    const res = await fetchWithRetry(
+      url,
+      { headers: { "User-Agent": "Mozilla/5.0 (compatible; Zapy/1.0)", Accept: "text/html,text/plain" }, redirect: "follow" },
+      PAGE_TIMEOUT_MS,
+    );
     if (!res.ok) return null;
     const type = res.headers.get("content-type") ?? "";
     if (!type.includes("html") && !type.includes("text")) return null;

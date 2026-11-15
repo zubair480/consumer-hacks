@@ -1,6 +1,6 @@
 # Limitations
 
-What AfterScroll does not do today, and why. Phase 2 items are marked **in progress**.
+What Zapy does not do today, and why.
 
 ## Identity and data
 
@@ -18,17 +18,20 @@ What AfterScroll does not do today, and why. Phase 2 items are marked **in progr
 
 ## Actions and results
 
-- **Nothing is done on your behalf.** Results are plans, checklists, guides and drafts. The app doesn't submit applications, book tables or send invitations, and never marks an external action complete. "Prepare invitation" asks for confirmation and still only produces text you share yourself.
+- **Actions don't act for you.** Results are plans, checklists, guides and drafts. The app doesn't submit applications, book tables or send invitations, and never marks an external action complete. "Prepare invitation" asks for confirmation and still only produces text you share yourself.
 - **Eligibility uses your Profile.** Scholarship eligibility marks a criterion unknown when your Profile lacks the field; fill in Profile for a fuller check.
 - **Deadline tracking** only uses a deadline found in the source; there are no push notifications or calendar writes.
 - **Executor depth varies.** Scholarship and GitHub executors are the most complete; graphic, restaurant, recipe and code-snippet executors work; other types (job, event, travel, product, research, tutorial, general) use generic actions.
 
-## Social Studio (in progress)
+## Social Studio and publishing
 
-- **No direct publishing.** There are no platform publishing APIs. Drafts leave the app only through Copy or the native share sheet. Opening the share sheet moves a draft to Awaiting user action; nothing is ever marked Published without provider confirmation, which never happens here. "I posted it" is recorded as user-reported. **(in progress)**
-- **No platform accounts.** No OAuth connections, passwords or tokens; every platform shows as not connected. **(in progress)**
-- **Truthful drafts only.** Drafts describe what you saved, not experiences you haven't had: "Found this restaurant and want to try it", never "I had the best dinner here"; a bookmarked repo is never presented as something you built. **(in progress)**
-- **Media.** Drafts recommend media and TikTok gets a storyboard and script; the app does not edit or render video. **(in progress)**
+- **Direct posting only for LinkedIn and X, and only with server keys.** LinkedIn posts when `LINKEDIN_ACCESS_TOKEN` is set on the Convex deployment (it is on dev, and a real test post succeeded: `urn:li:share:7527842989080018944`). X posts only when all four of `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN` and `X_ACCESS_TOKEN_SECRET` are set; until then it stays in share-sheet mode. The keys belong to one deployment-wide account, so every device posts as that account; there is no per-user OAuth sign-in.
+- **Instagram, TikTok and Threads use the share sheet.** Zapy opens the app or the share sheet and you post yourself. A pull request for the Instagram API is frozen and not merged.
+- **Published means provider-confirmed.** A draft is marked Published only when the platform returns a post id. "I posted it" after the share sheet is recorded as user-reported, and opening the share sheet only moves a draft to Awaiting user action.
+- **Posting is public and needs your confirmation.** Confirm and publish and Send test post both post publicly to the connected account. Nothing is posted without that tap, and there is no scheduling.
+- **No passwords or scraping.** Connected accounts show booleans from the server only; tokens never reach the app.
+- **Truthful drafts only.** Drafts describe what you saved, not experiences you haven't had: "Found this restaurant and want to try it", never "I had the best dinner here"; a bookmarked repo is never presented as something you built. The model can still phrase things loosely, so read a draft before posting it.
+- **Media.** Drafts suggest media ideas, and TikTok gets a storyboard and script. The app does not edit or render video, and only photos are analyzed for the photo flow.
 
 ## Platform
 

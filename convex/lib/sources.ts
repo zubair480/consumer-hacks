@@ -213,7 +213,7 @@ async function rawReadme(owner: string, repo: string): Promise<string> {
   const results = await Promise.all(
     names.map(async (name) => {
       try {
-        const res = await fetchWithTimeout(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${name}`, { headers: { "User-Agent": "AfterScroll" } });
+        const res = await fetchWithTimeout(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${name}`, { headers: { "User-Agent": "Zapy" } });
         return res.ok ? await res.text() : "";
       } catch {
         return "";
@@ -231,7 +231,7 @@ export async function fetchGitHubRepo(owner: string, repo: string): Promise<Fetc
   const token = process.env.GITHUB_TOKEN;
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
-    "User-Agent": "AfterScroll",
+    "User-Agent": "Zapy",
     "X-GitHub-Api-Version": "2022-11-28",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };

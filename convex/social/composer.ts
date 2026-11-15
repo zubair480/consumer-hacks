@@ -35,17 +35,28 @@ const RELATIONSHIP_BY_TYPE: Record<string, string> = {
 const DEFAULT_RELATIONSHIP =
   "The user saved this content. Do not claim they used, attended, bought, built or experienced it.";
 
-const SHARED_RULES = [
+export function mediaRelationship(kind: Doc<"mediaAssets">["kind"]): string {
+  return [
+    `The user saved this ${kind} to their library. It is not necessarily theirs: they may not have taken, filmed or made it, or been there.`,
+    "Never claim or imply they took, captured, shot, filmed or made it, or were present ('I took this shot', 'I captured this myself', 'Captured this…').",
+    `Use neutral framing such as 'This waterfall…', 'Found this shot…' or 'Look at this ${kind}…'.`,
+    "Use first person about taking it or being there only when brief.userContext explicitly says so (e.g. 'I took this on my hike').",
+    "Describe only what the analysis and the user's context say; do not invent where, when or who.",
+  ].join(" ");
+}
+
+export const SHARED_RULES = [
   "You write social media drafts for one person, in their first-person voice.",
   "TRUTH RULES (strict):",
   "- Use only the facts in brief.facts plus brief.userContext. Never invent numbers, stars, prices, quotes, dates, names, results or achievements.",
   "- Respect brief.relationship exactly. The user context may upgrade it only if it explicitly says so (e.g. 'I ate there last night').",
+  "- For a photo or video: the user saved it, which does not mean they took it, made it or were there. Never claim authorship, capture or presence unless brief.userContext explicitly says so.",
   "- No fake endorsements, testimonials or 'everyone loves it'. Opinions must be framed as curiosity or intent ('want to try', 'looks useful').",
   "- If a fact is uncertain or missing, leave it out instead of guessing.",
   "Match brief.tone and brief.audience when given. Write for THIS platform only; the output must read clearly differently from other platforms.",
 ].join("\n");
 
-function itemBrief(item: Doc<"savedItems">, analysis: Doc<"contentAnalysis"> | null): Omit<ContentBrief, "userContext" | "tone" | "audience"> {
+export function itemBrief(item: Doc<"savedItems">, analysis: Doc<"contentAnalysis"> | null): Omit<ContentBrief, "userContext" | "tone" | "audience"> {
   const source = item.sourceUrl ?? (item.imageStorageId ? "image" : "user_text");
   const facts: BriefFact[] = (analysis?.facts ?? []).map((fact) => ({
     label: fact.label,
@@ -76,7 +87,7 @@ function itemBrief(item: Doc<"savedItems">, analysis: Doc<"contentAnalysis"> | n
   };
 }
 
-function mediaBrief(media: Doc<"mediaAssets">): Omit<ContentBrief, "userContext" | "tone" | "audience"> {
+export function mediaBrief(media: Doc<"mediaAssets">): Omit<ContentBrief, "userContext" | "tone" | "audience"> {
   const a = media.analysis;
   const facts: BriefFact[] = a
     ? [
@@ -89,10 +100,10 @@ function mediaBrief(media: Doc<"mediaAssets">): Omit<ContentBrief, "userContext"
     : [];
   return {
     sourceKind: "media",
-    title: a?.summary ?? `The user's ${media.kind}`,
+    title: a?.summary ?? `Saved ${media.kind}`,
     contentType: media.kind,
     facts,
-    relationship: `The user captured this ${media.kind} themselves. Describe only what the analysis and the user's context say; do not invent where, when or who.`,
+    relationship: mediaRelationship(media.kind),
   };
 }
 
@@ -119,7 +130,7 @@ export const loadSource = internalQuery({
       const media = await ctx.db.get(draft.sourceMediaId);
       if (media) {
         brief = { ...mediaBrief(media), ...extras };
-        mediaReferences.push({ mediaId: media._id, storageId: media.storageId, description: `Your ${media.kind}` });
+        mediaReferences.push({ mediaId: media._id, storageId: media.storageId, description: `Saved ${media.kind}` });
       }
     }
     return brief ? { platform: draft.platform, brief, mediaReferences } : null;
@@ -168,6 +179,10 @@ export const markFailed = internalMutation({
   },
 });
 
+export function systemPrompt(instructions: string, mode: "generated" | "regenerated"): string {
+  return `${SHARED_RULES}\n\n${instructions}${mode === "regenerated" ? "\nThis is a regeneration: take a fresh angle and different wording." : ""}`;
+}
+
 export const run = internalAction({
   args: { draftId: v.id("socialDrafts"), mode: vMode },
   handler: async (ctx, { draftId, mode }) => {
@@ -179,7 +194,7 @@ export const run = internalAction({
     const adapter = ADAPTERS[loaded.platform];
     try {
       const raw = await callLLMJson({
-        system: `${SHARED_RULES}\n\n${adapter.instructions}${mode === "regenerated" ? "\nThis is a regeneration: take a fresh angle and different wording." : ""}`,
+        system: systemPrompt(adapter.instructions, mode),
         user: JSON.stringify({ brief: loaded.brief }),
         schemaHint: adapter.schemaHint,
         maxOutputTokens: 1500,

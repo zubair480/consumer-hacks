@@ -7,10 +7,10 @@ import { useOwnedMutation } from "../identity/OwnerProvider";
 import { api } from "../../convex/_generated/api";
 import type { SuggestionRow } from "./api";
 import { Field } from "./Field";
-import { GradientButton } from "./GradientButton";
 import { errorMessage } from "./media";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
+import { shadows } from "../theme";
 
 function prefill(input: RequiredInput, profile: UserProfile | undefined, item: SavedItemView | undefined): string {
   const from = (input as RequiredInput & { prefillFrom?: string }).prefillFrom;
@@ -27,7 +27,6 @@ function prefill(input: RequiredInput, profile: UserProfile | undefined, item: S
 
 export function ActionCard({ suggestion, color, profile, item }: { suggestion: SuggestionRow; color: string; profile?: UserProfile; item?: SavedItemView }) {
   const execute = useOwnedMutation(api.actions.execute);
-  const [open, setOpen] = useState(false);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +43,6 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
     try {
       const filled = Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim()));
       const executionId = await execute({ suggestionId: suggestion._id, inputs: fields.length ? filled : undefined });
-      setOpen(false);
       openResult(executionId);
     } catch (e) {
       setError(errorMessage(e));
@@ -54,25 +52,43 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
   };
 
   const start = () => {
-    if (fields.length > 0 && !open) return setOpen(true);
     if (!suggestion.requiresApproval) return run();
     Alert.alert(
       suggestion.title,
-      "AfterScroll will prepare this for you as a draft. Nothing is sent, posted, or booked: you review it, then copy or share it yourself.",
+      "Zapy will prepare this for you as a draft. Nothing is sent, posted, or booked: you review it, then copy or share it yourself.",
       [{ text: "Cancel", style: "cancel" }, { text: "Prepare draft", onPress: run }],
     );
   };
 
+  const canRun = suggestion.canExecute && !running;
+  const runLabel = latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run";
+
   return (
-    <View style={[styles.card, { borderColor: color + "55" }]} testID={`action-${suggestion.actionType}`}>
+    <View style={styles.card} testID={`action-${suggestion.actionType}`}>
       <View style={styles.head}>
-        <View style={[styles.rank, { backgroundColor: color + "26" }]}><Text style={[styles.rankText, { color }]}>{suggestion.rank + 1}</Text></View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={type.heading}>{suggestion.title}</Text>
-          <Text style={type.caption}>{suggestion.description}</Text>
+        <View style={[styles.rank, { backgroundColor: color }]}><Text style={styles.rankText}>{suggestion.rank + 1}</Text></View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={styles.title} numberOfLines={2}>{suggestion.title}</Text>
+          <Text style={type.caption} numberOfLines={1}>{suggestion.description}</Text>
         </View>
+        {canRun ? (
+          <Tap
+            testID={`action-button-${suggestion.rank}`}
+            accessibilityRole="button"
+            accessibilityLabel={runLabel}
+            accessibilityState={{ disabled: busy || missing, busy }}
+            disabled={busy || missing}
+            haptic="medium"
+            onPress={start}
+            style={[styles.play, latest?.resultId && styles.playAgain, (busy || missing) && { opacity: 0.4 }]}
+          >
+            {busy ? <ActivityIndicator color={latest?.resultId ? colors.text : "#FFFFFF"} /> : <Ionicons name={latest?.resultId ? "refresh" : "play"} size={18} color={latest?.resultId ? colors.text : "#FFFFFF"} />}
+          </Tap>
+        ) : running ? (
+          <View style={[styles.play, styles.playAgain]}><ActivityIndicator color={colors.text} /></View>
+        ) : null}
       </View>
-      {open ? (
+      {fields.length > 0 ? (
         <View style={{ gap: space.sm }}>
           {fields.map((f) => (
             <View key={f.key} style={{ gap: 4 }}>
@@ -91,45 +107,35 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
       {error ? <Text style={styles.error} testID={`action-error-${suggestion.rank}`}>{error}</Text> : null}
       {running && latest ? (
         <Tap testID={`action-progress-${suggestion.rank}`} onPress={() => openResult(latest._id)} style={styles.status}>
-          <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[styles.statusText, { color: colors.accent }]}>Working on it…</Text>
+          <Text style={styles.statusText}>Working on it… tap to watch</Text>
         </Tap>
       ) : null}
       {latest?.resultId ? (
         <Tap testID={`action-view-result-${suggestion.rank}`} onPress={() => openResult(latest._id)} style={styles.status}>
           <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-          <Text style={[styles.statusText, { color: colors.success }]}>View result</Text>
+          <Text style={styles.statusText}>View result</Text>
         </Tap>
       ) : null}
       {latest?.status === "failed" && latest.error ? <Text style={styles.error}>Last run failed: {latest.error}</Text> : null}
-      {suggestion.canExecute ? (
-        running ? null : (
-          <GradientButton
-            testID={`action-button-${suggestion.rank}`}
-            label={open ? "Run" : latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run"}
-            icon="flash"
-            variant={latest?.resultId && !open ? "secondary" : "primary"}
-            onPress={open ? (suggestion.requiresApproval ? () => { setOpen(false); start(); } : run) : start}
-            loading={busy}
-            disabled={open && missing}
-          />
-        )
-      ) : (
+      {!suggestion.canExecute ? (
         <View style={styles.status} testID={`action-unavailable-${suggestion.rank}`}>
           <Ionicons name="information-circle-outline" size={16} color={colors.textFaint} />
-          <Text style={styles.statusText}>Not available for this save</Text>
+          <Text style={[styles.statusText, { color: colors.textFaint }]}>Not available for this save</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1 },
-  head: { flexDirection: "row", gap: space.md },
-  rank: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  rankText: { fontWeight: "800" },
-  status: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: radius.md, backgroundColor: colors.surfaceRaised },
-  statusText: { color: colors.textFaint, fontWeight: "700" },
+  card: { gap: space.md, padding: space.lg, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, ...shadows.card },
+  head: { flexDirection: "row", gap: space.md, alignItems: "center", minHeight: 44 },
+  rank: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  rankText: { fontWeight: "900", fontSize: 16, color: colors.text },
+  title: { fontSize: 17, lineHeight: 21, fontWeight: "800", color: colors.text },
+  play: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" },
+  playAgain: { backgroundColor: colors.surfaceRaised },
+  status: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
+  statusText: { color: colors.text, fontWeight: "700", fontSize: 14 },
   error: { color: colors.danger, fontWeight: "600" },
 });
