@@ -16,9 +16,9 @@ import { Section } from "../../components/Section";
 import { Skeleton } from "../../components/States";
 import { DraftStatusPill } from "../../components/studio/DraftStatusPill";
 import { platformMeta } from "../../components/studio/platforms";
-import { copyDraftText, shareDraftText } from "../../components/studio/share";
 import { colors, radius, space, type } from "../../components/tokens";
 import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
+import { publishStatusLabel, useDraftSharing } from "../../lib/share";
 import type { SocialDraftView, SocialPlatform } from "../../shared/socialContracts";
 
 type Source = { itemId: Id<"savedItems"> } | { mediaId: Id<"mediaAssets"> };
@@ -86,6 +86,8 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
   const draftId = draft._id as Id<"socialDrafts">;
   const update = useOwnedMutation(api.social.drafts.update);
   const regenerate = useOwnedMutation(api.social.drafts.regenerate);
+  const publish = useOwnedQuery(api.publishing.statusForDraft, draft.generationStatus === "ready" ? { draftId } : "skip");
+  const sharing = useDraftSharing(draftId);
   const m = platformMeta(draft.platform);
   const [text, setText] = useState(draft.draftText);
   const [seen, setSeen] = useState(draft.draftText);
@@ -128,7 +130,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
     ]);
 
   const copy = async () => {
-    await copyDraftText(text);
+    await sharing.copy(text);
     setNote("Copied. Paste it into " + m.label + ".");
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   };
@@ -136,7 +138,8 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
     if (dirty) {
       await update({ draftId, draftText: text, markReady: true });
     }
-    await shareDraftText(text);
+    const result = await sharing.share({ text });
+    setNote(result.outcome === "shared" ? `Sent to the share sheet. Post it in ${m.label} yourself.` : null);
   });
 
   if (draft.generationStatus === "generating") {
@@ -165,7 +168,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
   return (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" testID={`studio-editor-${draft.platform}`}>
       <View style={styles.metaRow}>
-        <DraftStatusPill status={draft.status} testID={`studio-status-${draft.platform}`} />
+        <DraftStatusPill status={publish?.status ?? draft.status} label={publish ? publishStatusLabel(publish) : undefined} testID={`studio-status-${draft.platform}`} />
         <Text style={type.caption} testID="studio-revision">v{draft.revision} · {draft.revisionSource === "user_edit" ? "edited by you" : draft.revisionSource === "regenerated" ? "rewritten" : "generated"}</Text>
       </View>
       {draft.generationStatus === "failed" ? <Text style={styles.error}>Last rewrite failed: {draft.generationError ?? "unknown error"}. Showing your previous version.</Text> : null}
