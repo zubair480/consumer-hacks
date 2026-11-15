@@ -165,14 +165,14 @@ function SourceRow({
 }) {
   const id = `import-source-${source.platform}`;
   const status = source.comingSoon
-    ? "Coming soon"
+    ? "Share a post → Zapy Shortcut. Set it up once from Profile → Share to Zapy."
     : source.connected
       ? [source.username ? `@${source.username}` : "Connected", source.lastSyncedAt ? `synced ${ago(source.lastSyncedAt)}` : null].filter(Boolean).join(" · ")
       : source.configured
         ? "Not connected"
         : "Not set up yet";
   return (
-    <View testID={id} style={[styles.row, source.comingSoon && { opacity: 0.55 }]}>
+    <View testID={id} style={styles.row}>
       <View style={styles.icon}>
         <Ionicons name={ICONS[source.platform]} size={22} color={colors.text} />
       </View>
@@ -188,9 +188,9 @@ function SourceRow({
         ) : null}
       </View>
       {source.comingSoon ? (
-        <View style={styles.chip} testID={`${id}-coming-soon`}>
-          <Text style={styles.chipText}>Soon</Text>
-        </View>
+        <Tap testID={`${id}-share-setup`} accessibilityRole="button" accessibilityLabel={`Set up sharing from ${source.label}`} onPress={() => router.push("/profile")} style={styles.action}>
+          <Text style={styles.actionText}>Set up</Text>
+        </Tap>
       ) : busy ? (
         <ActivityIndicator color={colors.text} />
       ) : source.connected ? (

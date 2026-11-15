@@ -45,6 +45,8 @@ import type * as publishing_linkedin from "../publishing/linkedin.js";
 import type * as publishing_testPost from "../publishing/testPost.js";
 import type * as publishing_types from "../publishing/types.js";
 import type * as publishing_x from "../publishing/x.js";
+import type * as share from "../share.js";
+import type * as shareSchema from "../shareSchema.js";
 import type * as social_adapters_index from "../social/adapters/index.js";
 import type * as social_adapters_instagram from "../social/adapters/instagram.js";
 import type * as social_adapters_linkedin from "../social/adapters/linkedin.js";
@@ -101,6 +103,8 @@ declare const fullApi: ApiFromModules<{
   "publishing/testPost": typeof publishing_testPost;
   "publishing/types": typeof publishing_types;
   "publishing/x": typeof publishing_x;
+  share: typeof share;
+  shareSchema: typeof shareSchema;
   "social/adapters/index": typeof social_adapters_index;
   "social/adapters/instagram": typeof social_adapters_instagram;
   "social/adapters/linkedin": typeof social_adapters_linkedin;
