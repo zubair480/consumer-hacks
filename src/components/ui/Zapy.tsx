@@ -34,13 +34,10 @@ export const typeIconFor = (type?: ContentType): IconName => TYPE_ICONS[type ?? 
 /** Soft holographic backdrop behind a header (refB). One per screen, never on buttons. */
 export function HoloBand({ height = 220, style }: { height?: number; style?: StyleProp<ViewStyle> }) {
   return (
-    <LinearGradient
-      pointerEvents="none"
-      colors={gradients.holo}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[{ position: "absolute", top: 0, left: 0, right: 0, height, opacity: gradients.holoOpacity }, style]}
-    />
+    <View pointerEvents="none" style={[{ position: "absolute", top: 0, left: 0, right: 0, height }, style]}>
+      <LinearGradient colors={gradients.holo} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, opacity: gradients.holoOpacity }} />
+      <LinearGradient colors={[colors.background + "00", colors.background]} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: height * 0.45 }} />
+    </View>
   );
 }
 
@@ -246,9 +243,9 @@ export function WaveBlocks({ blocks, selected, onPress }: { blocks: WaveBlock[];
               borderBottomRightRadius: i === blocks.length - 1 ? radius.card : 0,
             }}
           >
-            <Text style={{ fontSize: 22, fontWeight: "800", letterSpacing: -0.3, color: colors.text }}>{b.label}</Text>
+            <Text style={{ fontSize: 22, lineHeight: 28, fontWeight: "800", letterSpacing: -0.3, color: colors.text }}>{b.label}</Text>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: spacing.xs }}>
-              <Text style={{ fontSize: 28, fontWeight: "900", color: colors.text }}>{b.count}</Text>
+              <Text style={{ fontSize: 28, lineHeight: 34, fontWeight: "900", color: colors.text }}>{b.count}</Text>
               <Text variant="label" style={{ fontWeight: "800" }}>
                 SAVES
               </Text>

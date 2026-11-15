@@ -5,7 +5,7 @@ import { v } from "convex/values";
 // OAuth tokens live only in importConnections and are read only by internal functions;
 // no public query returns them.
 
-export const vImportPlatform = v.union(v.literal("x"), v.literal("instagram"), v.literal("linkedin"), v.literal("youtube"));
+export const vImportPlatform = v.union(v.literal("x"), v.literal("instagram"), v.literal("linkedin"), v.literal("github"), v.literal("youtube"));
 
 export const importTables = {
   /** One connected account per user and platform. */
@@ -46,4 +46,16 @@ export const importTables = {
     savedAt: v.optional(v.number()),
     importedAt: v.number(),
   }).index("by_userId_and_platform_and_externalId", ["userId", "platform", "externalId"]),
+
+  /** GitHub stars import (ZUB-19): the username to sync and the last result. No tokens. */
+  githubImportAccounts: defineTable({
+    userId: v.id("users"),
+    username: v.string(),
+    lastSyncedAt: v.optional(v.number()),
+    lastSyncNew: v.optional(v.number()),
+    lastSyncSkipped: v.optional(v.number()),
+    lastError: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_userId", ["userId"]),
 };

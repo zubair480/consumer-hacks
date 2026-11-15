@@ -127,6 +127,13 @@
       "computedHash": "8fd029098aeadad5dc6362acd7a26df0a80ef2286bc634b1debbca0855e5662c",
       "installMode": "copy"
     },
+    "convex-hackathon-skill": {
+      "source": "convex/convex-hackathon-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "ca629a38787f11573c3d861def29c6dc7fff5e49c830320dd7672db45ab39106",
+      "installMode": "copy"
+    },
     "convex-improve-convex-plugin": {
       "source": "convex/agent-skills",
       "sourceType": "github",

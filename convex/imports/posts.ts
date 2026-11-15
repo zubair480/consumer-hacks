@@ -31,7 +31,7 @@ export type ImportedPost = Infer<typeof vImportedPost>;
 export const vImportResult = v.object({ created: v.number(), duplicates: v.number(), invalid: v.number() });
 export type ImportResult = Infer<typeof vImportResult>;
 
-const PLATFORM_LABELS: Record<ImportedPost["platform"], string> = { x: "X", instagram: "Instagram", linkedin: "LinkedIn", youtube: "YouTube" };
+const PLATFORM_LABELS: Record<ImportedPost["platform"], string> = { x: "X", instagram: "Instagram", linkedin: "LinkedIn", github: "GitHub", youtube: "YouTube" };
 
 function cleanUrl(raw: string): string | null {
   const url = raw.trim();

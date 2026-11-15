@@ -8,7 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
-import { GradientButton } from "../../components/GradientButton";
+import { Button } from "../../components/ui";
 import { errorMessage } from "../../components/media";
 import { Tap } from "../../components/Pressable";
 import { ScreenHeader } from "../../components/ScreenHeader";
@@ -46,7 +46,7 @@ function Editor({ source, initial }: { source: Source; initial?: SocialPlatform 
     return (
       <View style={styles.pad}>
         <EmptyState icon="create-outline" title="No drafts yet" body="Pick platforms to write your first drafts.">
-          <GradientButton testID="studio-editor-start" label="Pick platforms" icon="sparkles" onPress={() => router.replace({ pathname: "/studio/platforms", params: source })} style={{ alignSelf: "stretch", marginTop: space.sm }} />
+          <Button testID="studio-editor-start" title="Pick platforms" icon="arrow-forward" onPress={() => router.replace({ pathname: "/studio/platforms", params: source })} style={{ marginTop: space.sm }}  fullWidth />
         </EmptyState>
       </View>
     );
@@ -74,7 +74,7 @@ function Editor({ source, initial }: { source: Source; initial?: SocialPlatform 
       </ScrollView>
       {writing > 0 ? (
         <View style={styles.progress} testID="studio-generation-progress">
-          <ActivityIndicator color={colors.accent} />
+          <ActivityIndicator color={colors.text} />
           <Text style={[type.caption, { flex: 1 }]}>Writing {writing === drafts.length ? "your drafts" : `${writing} more`}… {drafts.length - writing} of {drafts.length} ready.</Text>
         </View>
       ) : null}
@@ -146,7 +146,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
     return (
       <View style={styles.content} testID={`studio-draft-generating-${draft.platform}`}>
         <View style={styles.genHead}>
-          <ActivityIndicator color={m.color} />
+          <ActivityIndicator color={colors.text} />
           <Text style={type.heading}>Writing your {m.label} draft…</Text>
         </View>
         <Skeleton rows={3} height={56} />
@@ -158,7 +158,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
     return (
       <View style={styles.content}>
         <EmptyState icon="alert-circle-outline" title={`Couldn’t write the ${m.label} draft`} body={draft.generationError ?? "Something went wrong."}>
-          <GradientButton testID="studio-retry-generate" label="Try again" icon="refresh" variant="secondary" loading={busy === "regen"} onPress={doRegenerate} style={{ alignSelf: "stretch", marginTop: space.sm }} />
+          <Button testID="studio-retry-generate" title="Try again" icon="refresh" variant="secondary" loading={busy === "regen"} onPress={doRegenerate} style={{ marginTop: space.sm }}  fullWidth />
         </EmptyState>
       </View>
     );
@@ -189,8 +189,8 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
       {error ? <Text style={styles.error} testID="studio-error">{error}</Text> : null}
 
       <View style={styles.actions}>
-        <GradientButton testID="studio-save" label={dirty ? "Save edit" : "Saved"} icon="checkmark" loading={busy === "save"} disabled={!dirty} onPress={save} style={{ flex: 1 }} />
-        <GradientButton testID="studio-share" label="Share" icon="share-outline" variant="secondary" loading={busy === "share"} disabled={!text.trim()} onPress={share} style={{ flex: 1 }} />
+        <Button testID="studio-save" title={dirty ? "Save edit" : "Saved"} icon="checkmark" loading={busy === "save"} disabled={!dirty} onPress={save} style={{ flex: 1 }} />
+        <Button testID="studio-share" title="Share" icon="share-outline" variant="secondary" loading={busy === "share"} disabled={!text.trim()} onPress={share} style={{ flex: 1 }} />
       </View>
       <View style={styles.smallActions}>
         <Small testID="studio-copy" icon="copy-outline" label="Copy" onPress={copy} />
@@ -211,7 +211,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
 
       {draft.output?.hashtags?.length ? (
         <Section title="Hashtags">
-          <Text style={[type.body, { color: colors.accent }]}>{draft.output.hashtags.map((h) => (h.startsWith("#") ? h : "#" + h)).join(" ")}</Text>
+          <Text style={[type.body, { color: colors.textMuted }]}>{draft.output.hashtags.map((h) => (h.startsWith("#") ? h : "#" + h)).join(" ")}</Text>
         </Section>
       ) : null}
       {draft.output?.mediaSuggestions?.length ? (
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   tabsWrap: { flexGrow: 0 },
   tabs: { paddingHorizontal: space.lg, paddingVertical: space.sm, gap: space.sm },
   tab: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: space.md, height: 38, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  tabOn: { backgroundColor: colors.accent + "26", borderColor: colors.accent },
+  tabOn: { backgroundColor: colors.surfaceRaised, borderColor: colors.text },
   tabText: { color: colors.textMuted, fontWeight: "700", fontSize: 14 },
   progress: { flexDirection: "row", alignItems: "center", gap: space.md, marginHorizontal: space.lg, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   content: { padding: space.lg, gap: space.lg, paddingBottom: 120 },

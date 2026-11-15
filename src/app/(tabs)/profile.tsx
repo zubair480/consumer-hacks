@@ -9,10 +9,11 @@ import { ConnectedAccounts } from "../../components/publishing/ConnectedAccounts
 import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
 import { errorMessage } from "../../components/media";
-import { ScreenHeader } from "../../components/ScreenHeader";
 import { Section } from "../../components/Section";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space, type } from "../../components/tokens";
+import { DisplayTitle, HoloBand } from "../../components/ui";
+import { palette } from "../../theme";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../../identity/OwnerProvider";
 import type { UserProfile } from "../../shared/contracts";
 
@@ -37,8 +38,9 @@ function toText(p: UserProfile, key: Key): string {
 export default function Profile() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      <HoloBand height={260} />
       <ScrollView contentContainerStyle={styles.content} testID="profile-screen" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-        <ScreenHeader title="Profile" />
+        <DisplayTitle>Profile</DisplayTitle>
         <Boundary title="Couldn’t load your profile">
           <Body />
         </Boundary>
@@ -102,8 +104,8 @@ function Body() {
       </View>
 
       <View style={styles.stats}>
-        <Stat testID="stat-saves" label="Saves" value={stats ? `${stats.saves}${stats.capped ? "+" : ""}` : "–"} />
-        <Stat testID="stat-outcomes" label="Outcomes" value={stats ? `${stats.outcomes}${stats.capped ? "+" : ""}` : "–"} />
+        <Stat testID="stat-saves" color={palette.lavender} label="Saves" value={stats ? `${stats.saves}${stats.capped ? "+" : ""}` : "–"} />
+        <Stat testID="stat-outcomes" color={palette.mint} label="Outcomes" value={stats ? `${stats.outcomes}${stats.capped ? "+" : ""}` : "–"} />
       </View>
 
       <Section title="About you">
@@ -134,13 +136,13 @@ function About() {
     <Section title="About & limitations">
       <View style={styles.about} testID="about-section">
         {[
-          ["sparkles", "Zapy reads what you save and suggests three actions. Results come from the source you saved; when a fact isn’t in the source (a deadline, a price, an address) we say so instead of guessing."],
+          ["bulb-outline", "Zapy reads what you save and suggests three actions. Results come from the source you saved; when a fact isn’t in the source (a deadline, a price, an address) we say so instead of guessing."],
           ["lock-closed", "Some links are private or block readers (Instagram, logged-in pages). When that happens, add a screenshot or paste the text."],
           ["share-outline", "Nothing is posted or sent for you. Drafts are copied or shared through your phone’s share sheet."],
           ["phone-portrait-outline", `No account needed: your saves belong to this device (${ownerId.slice(0, 8)}). Deleting the app removes access to them.`],
         ].map(([icon, text]) => (
           <View key={icon} style={styles.aboutRow}>
-            <Ionicons name={icon as "sparkles"} size={16} color={colors.textMuted} style={{ marginTop: 2 }} />
+            <Ionicons name={icon as "bulb-outline"} size={16} color={colors.textMuted} style={{ marginTop: 2 }} />
             <Text style={[type.caption, { flex: 1, lineHeight: 18 }]}>{text}</Text>
           </View>
         ))}
@@ -149,26 +151,27 @@ function About() {
   );
 }
 
-function Stat({ testID, label, value }: { testID: string; label: string; value: string }) {
+function Stat({ testID, label, value, color }: { testID: string; label: string; value: string; color: string }) {
   return (
-    <View style={styles.stat} testID={testID}>
+    <View style={[styles.stat, { backgroundColor: color }]} testID={testID}>
       <Text style={styles.statValue}>{value}</Text>
-      <Text style={type.caption}>{label}</Text>
+      <Text style={styles.statLabel}>{label.toUpperCase()}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.xl, gap: space.xl, paddingBottom: 80 },
+  content: { padding: space.xl, paddingTop: space.md, gap: space.xl, paddingBottom: 120 },
   card: { flexDirection: "row", alignItems: "center", gap: space.lg, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 26, fontWeight: "800" },
   stats: { flexDirection: "row", gap: space.md },
-  stat: { flex: 1, alignItems: "center", paddingVertical: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  statValue: { color: colors.text, fontSize: 26, fontWeight: "800" },
+  stat: { flex: 1, alignItems: "flex-start", padding: space.xl, borderRadius: radius.xl, gap: 2 },
+  statValue: { color: colors.text, fontSize: 34, lineHeight: 38, fontWeight: "900" },
+  statLabel: { color: colors.text, fontSize: 12, fontWeight: "800", letterSpacing: 0.4 },
   fieldLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
   error: { color: colors.danger, fontWeight: "600" },
-  about: { gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  about: { gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   aboutRow: { flexDirection: "row", gap: space.md },
 });

@@ -25,7 +25,7 @@ export function RecentDrafts() {
         const m = platformMeta(d.platform);
         return (
           <Tap key={d._id} testID={`studio-recent-${d._id}`} accessibilityRole="button" accessibilityLabel={`${m.label} draft`} onPress={() => open(d)} style={styles.row}>
-            <View style={[styles.icon, { backgroundColor: m.color + "22" }]}><Ionicons name={m.icon} size={18} color={m.color} /></View>
+            <View style={[styles.icon, { backgroundColor: m.color }]}><Ionicons name={m.icon} size={18} color={colors.text} /></View>
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={type.body} numberOfLines={2}>{d.generationStatus === "generating" ? "Writing…" : d.draftText || "Empty draft"}</Text>
               <View style={styles.meta}>
