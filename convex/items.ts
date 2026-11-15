@@ -3,8 +3,8 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { detectSourcePlatform, LIMITS, type SavedItemView } from "../src/shared/contracts";
-import { ensureUser, getUser, requireOwnedItem, requireUser } from "./lib/auth";
-import { vContentType, vExtractionStatus, vOwnerId } from "./lib/validators";
+import { ensureUser, getUser, requireOwned, requireOwnedItem, requireUser } from "./lib/auth";
+import { keyFactFields, vContentType, vExtractionStatus, vOwnerId } from "./lib/validators";
 
 // OWNER: Lead. Saved item CRUD. Ingestion/analysis (B+C) writes back through
 // internal.items.setExtraction; activity logging (F) may hook logActivity.
@@ -198,6 +198,34 @@ export const remove = mutation({
   },
 });
 
+/**
+ * Persists a checklist (or steps) toggle on an action result. Lives here so
+ * the UI has one stable path; D+E own every other actionResults write.
+ */
+export const setChecklistItem = mutation({
+  args: {
+    ownerId: vOwnerId,
+    resultId: v.id("actionResults"),
+    sectionIndex: v.number(),
+    itemIndex: v.number(),
+    checked: v.boolean(),
+  },
+  handler: async (ctx, { ownerId, resultId, sectionIndex, itemIndex, checked }) => {
+    const user = await requireUser(ctx, ownerId);
+    const row = await requireOwned(ctx, user, resultId);
+    const section = row.result.sections[sectionIndex];
+    if (section?.kind === "checklist" && section.items[itemIndex]) {
+      section.items[itemIndex] = { ...section.items[itemIndex], checked };
+    } else if (section?.kind === "steps" && section.steps[itemIndex]) {
+      section.steps[itemIndex] = { ...section.steps[itemIndex], checked };
+    } else {
+      throw new ConvexError("Checklist item not found");
+    }
+    await ctx.db.patch("actionResults", resultId, { result: row.result, updatedAt: Date.now() });
+    return null;
+  },
+});
+
 /* ---------------- internal: for ingestion/analysis (B+C) ---------------- */
 
 /** Raw item + image URL for server-side processing. */
@@ -220,6 +248,7 @@ export const setExtraction = internalMutation({
     summary: v.optional(v.string()),
     contentTypes: v.optional(v.array(vContentType)),
     primaryType: v.optional(vContentType),
+    ...keyFactFields,
   },
   handler: async (ctx, { itemId, ...fields }) => {
     const item = await ctx.db.get("savedItems", itemId);
@@ -236,4 +265,3 @@ export const setExtraction = internalMutation({
 });
 
 export type { Id };
-export { requireUser };

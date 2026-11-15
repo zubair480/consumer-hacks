@@ -12,6 +12,8 @@ import {
   vRequiredInput,
   vSourceKind,
   vSourcePlatform,
+  keyFactFields,
+  userProfileFields,
 } from "./lib/validators";
 
 // OWNER: Lead. Other threads add only new OPTIONAL fields or new indexes,
@@ -36,6 +38,7 @@ export default defineSchema({
     summary: v.optional(v.string()),
     contentTypes: v.array(vContentType),
     primaryType: v.optional(vContentType),
+    ...keyFactFields,
     extractionStatus: vExtractionStatus,
     extractionError: v.optional(v.string()),
     /** Lowercased title + summary + text + url for Library search; maintained by items.ts / ingest. */
@@ -58,6 +61,7 @@ export default defineSchema({
     summary: v.string(),
     facts: v.array(vExtractedFact),
     model: v.optional(v.string()),
+    ...keyFactFields,
     createdAt: v.number(),
   })
     .index("by_itemId", ["itemId"])
@@ -132,8 +136,8 @@ export default defineSchema({
 
   userPreferences: defineTable({
     userId: v.id("users"),
+    ...userProfileFields,
     homeCity: v.optional(v.string()),
-    interests: v.optional(v.array(v.string())),
     /** Free-form profile facts used by eligibility checks (e.g. GPA, major, citizenship). */
     profileFacts: v.optional(v.record(v.string(), v.string())),
     updatedAt: v.number(),
