@@ -1,0 +1,12 @@
+# Phase 1 Revyl test 7: AI classifies GitHub content
+id: 07-ai-classifies-github
+name: "AI classifies GitHub content"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Open the GitHub item saved in test 3."
+  - "Wait up to 90s for analysis (`item-processing` disappears)."
+expect:
+  - "The item shows a GitHub repository type (primaryType github_repository), a real title/summary about expo/expo, and facts (`facts-list`)."
+evidence: one screenshot per step, saved as renders/CONS-9/07-ai-classifies-github-<step>.png

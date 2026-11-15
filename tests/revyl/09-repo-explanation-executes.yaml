@@ -1,0 +1,12 @@
+# Phase 1 Revyl test 9: Repo explanation executes
+id: 09-repo-explanation-executes
+name: "Repo explanation executes"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "On the GitHub actions screen tap the Understand project action (`action-button-1`)."
+  - "Wait for it to finish (`action-progress-1` disappears), then tap `action-view-result-1`."
+expect:
+  - "`result-screen` shows a completed structured explanation of expo/expo with sections (`result-section-0`) and sources (`result-sources`)."
+evidence: one screenshot per step, saved as renders/CONS-9/09-repo-explanation-executes-<step>.png

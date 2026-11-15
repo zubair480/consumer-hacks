@@ -1,0 +1,11 @@
+# Phase 1 Revyl test 1: App launches
+id: 01-app-launches
+name: "App launches"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Install the Release simulator build on a fresh iPhone 16 and launch it."
+expect:
+  - "The app opens past the boot spinner and shows `home-screen` within 20s, with no red box or crash."
+evidence: one screenshot per step, saved as renders/CONS-9/01-app-launches-<step>.png

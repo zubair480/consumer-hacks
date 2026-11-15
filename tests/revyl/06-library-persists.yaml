@@ -1,0 +1,13 @@
+# Phase 1 Revyl test 6: Library persists after restart
+id: 06-library-persists
+name: "Library persists after restart"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Open Library and note the saved items."
+  - "Kill the app (home button, then relaunch the app from the springboard) or reinstall-free relaunch."
+  - "Open Library again."
+expect:
+  - "The same items from tests 3, 4 and 5 are still listed (data comes from Convex via the persisted device ownerId)."
+evidence: one screenshot per step, saved as renders/CONS-9/06-library-persists-<step>.png

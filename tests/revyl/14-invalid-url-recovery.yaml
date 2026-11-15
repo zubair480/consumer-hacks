@@ -1,0 +1,13 @@
+# Phase 1 Revyl test 14: Invalid URL recovery flow
+id: 14-invalid-url-recovery
+name: "Invalid URL recovery flow"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Open Capture in Link mode, type fixtures.invalidUrl into `url-input`, tap `save-button`."
+  - "Tap `save-as-text-button`, then `save-button`."
+expect:
+  - "`invalid-link-error` shows \"That doesn't look like a link\" with \"Save as text instead\"; no item is created as a URL."
+  - "Text mode is prefilled with the input, and saving creates a text item."
+evidence: one screenshot per step, saved as renders/CONS-9/14-invalid-url-recovery-<step>.png
