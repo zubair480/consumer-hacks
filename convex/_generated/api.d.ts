@@ -8,9 +8,12 @@
  * @module
  */
 
+import type * as analysis from "../analysis.js";
 import type * as ingest from "../ingest.js";
 import type * as items from "../items.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_llm from "../lib/llm.js";
+import type * as lib_sources from "../lib/sources.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as users from "../users.js";
 
@@ -21,9 +24,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analysis: typeof analysis;
   ingest: typeof ingest;
   items: typeof items;
   "lib/auth": typeof lib_auth;
+  "lib/llm": typeof lib_llm;
+  "lib/sources": typeof lib_sources;
   "lib/validators": typeof lib_validators;
   users: typeof users;
 }>;
