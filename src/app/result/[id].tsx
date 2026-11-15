@@ -3,12 +3,13 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
+import { errorMessage } from "../../components/media";
 import { GradientButton } from "../../components/GradientButton";
 import { Tap } from "../../components/Pressable";
 import { ResultView } from "../../components/ResultView";
@@ -52,7 +53,12 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
   const at = result?.createdAt ?? execution.completedAt ?? execution.createdAt;
 
   const copy = async () => {
-    await Clipboard.setStringAsync(text);
+    try {
+      await Clipboard.setStringAsync(text);
+    } catch (e) {
+      Alert.alert("Couldn’t copy", errorMessage(e));
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setCopied(true);
   };
@@ -99,7 +105,7 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
         <>
           <View style={styles.buttons}>
             <GradientButton testID="copy-result-button" label={copied ? "Copied" : "Copy"} icon={copied ? "checkmark" : "copy-outline"} variant="secondary" onPress={copy} style={{ flex: 1 }} />
-            <GradientButton testID="share-result-button" label="Share" icon="share-outline" onPress={() => Share.share({ message: text, title: doc.title })} style={{ flex: 1 }} />
+            <GradientButton testID="share-result-button" label="Share" icon="share-outline" onPress={() => Share.share({ message: text, title: doc.title }).catch((e) => Alert.alert("Couldn’t share", errorMessage(e)))} style={{ flex: 1 }} />
           </View>
           <ResultView doc={doc} resultId={result?._id} />
           <Tap testID="result-open-item-button" onPress={() => router.push({ pathname: "/item/[id]", params: { id: execution.itemId } })} style={styles.itemLink}>

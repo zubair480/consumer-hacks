@@ -13,6 +13,7 @@ import { FactRow } from "../../../components/FactRow";
 import { Field } from "../../../components/Field";
 import { GradientButton } from "../../../components/GradientButton";
 import { itemTitle } from "../../../components/ItemCard";
+import { EmptyState } from "../../../components/EmptyState";
 import { errorMessage, pickImages, uploadImage } from "../../../components/media";
 import { OutcomeRow } from "../../../components/OutcomeRow";
 import { Tap } from "../../../components/Pressable";
@@ -44,7 +45,18 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
   const confirmDelete = () =>
     Alert.alert("Delete this save?", "Its analysis and results will be deleted too.", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => { router.back(); await remove({ itemId }); } },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await remove({ itemId });
+            router.back();
+          } catch (e) {
+            Alert.alert("Couldn’t delete this save", errorMessage(e));
+          }
+        },
+      },
     ]);
 
   const header = (
@@ -62,6 +74,18 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
   );
 
   if (item === undefined) return <>{header}<View style={styles.content}><Skeleton rows={4} /></View></>;
+  if (item === null) {
+    return (
+      <>
+        {header}
+        <View style={styles.content} testID="item-deleted">
+          <EmptyState icon="trash-outline" title="This item was deleted" body="It’s no longer in your Library.">
+            <GradientButton testID="item-deleted-back-button" label="Back" icon="chevron-back" variant="secondary" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={{ alignSelf: "stretch", marginTop: space.sm }} />
+          </EmptyState>
+        </View>
+      </>
+    );
+  }
 
   const m = metaFor(item.primaryType);
   const inProgress = IN_PROGRESS_EXTRACTION_STATUSES.includes(item.extractionStatus);
@@ -74,7 +98,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
   return (
     <>
       {header}
-      <ScrollView contentContainerStyle={styles.content} testID="item-detail-screen">
+      <ScrollView contentContainerStyle={styles.content} testID="item-detail-screen" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" testID="item-image" /> : null}
         <View style={styles.gap}>
           <View style={styles.chips}>

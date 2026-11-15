@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
+import { errorMessage } from "../../components/media";
 import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
 import { ItemCard } from "../../components/ItemCard";
@@ -89,7 +90,7 @@ function Results({ query, filter, setFilter }: { query: string; filter?: Content
             <View>
               <ItemCard item={item} />
               {item.extractionStatus === "failed" ? (
-                <Tap testID={`retry-${item._id}`} accessibilityLabel="Retry analysis" onPress={() => retry({ itemId: item._id as Id<"savedItems"> })} style={styles.retry}>
+                <Tap testID={`retry-${item._id}`} accessibilityLabel="Retry analysis" onPress={() => retry({ itemId: item._id as Id<"savedItems"> }).catch((e) => Alert.alert("Couldn’t retry", errorMessage(e)))} style={styles.retry}>
                   <Ionicons name="refresh" size={14} color={colors.danger} />
                   <Text style={styles.retryText}>Retry</Text>
                 </Tap>
