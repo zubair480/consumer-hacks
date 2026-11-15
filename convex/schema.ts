@@ -17,6 +17,7 @@ import {
 } from "./lib/validators";
 import { importTables } from "./imports/schema";
 import { socialTables } from "./social/schema";
+import { shareTables } from "./shareSchema";
 
 // OWNER: Lead. Other threads add only new OPTIONAL fields or new indexes,
 // coordinated through the Captain. Every row except users carries userId,
@@ -27,7 +28,11 @@ export default defineSchema({
     displayName: v.optional(v.string()),
     createdAt: v.number(),
     lastSeenAt: v.number(),
-  }).index("by_ownerId", ["ownerId"]),
+    /** Bearer token for POST /save (Share to Zapy). */
+    shareToken: v.optional(v.string()),
+  })
+    .index("by_ownerId", ["ownerId"])
+    .index("by_shareToken", ["shareToken"]),
 
   savedItems: defineTable({
     userId: v.id("users"),
@@ -151,4 +156,7 @@ export default defineSchema({
 
   // One-tap Import (CONS-19).
   ...importTables,
+
+  // Share to Zapy (CONS-22).
+  ...shareTables,
 });

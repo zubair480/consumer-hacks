@@ -2,6 +2,7 @@ import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { X_CALLBACK_PATH } from "./imports/xClient";
+import { save } from "./share";
 
 const http = httpRouter();
 
@@ -30,5 +31,8 @@ http.route({
     return new Response(null, { status: 302, headers: { Location: back.toString() } });
   }),
 });
+
+/** Share to Zapy: the iOS Shortcut posts links, text, and images here with a bearer share token. */
+http.route({ path: "/save", method: "POST", handler: save });
 
 export default http;

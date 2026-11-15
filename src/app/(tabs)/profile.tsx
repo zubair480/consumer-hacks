@@ -10,6 +10,7 @@ import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
 import { errorMessage } from "../../components/media";
 import { Section } from "../../components/Section";
+import { ShareToZapyCard } from "../../components/share/ShareToZapyCard";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space, type } from "../../components/tokens";
 import { DisplayTitle, HoloBand } from "../../components/ui";
@@ -47,6 +48,7 @@ export default function Profile() {
         <Boundary title="Couldn’t load connected accounts">
           <ConnectedAccounts />
         </Boundary>
+        <Boundary title="Couldn’t load Share to Zapy"><ShareToZapyCard /></Boundary>
         <About />
       </ScrollView>
     </SafeAreaView>
