@@ -308,6 +308,7 @@ export function HeroTypeCard({
         {age && fullBleed ? <Text style={t(fonts.medium, 12, "rgba(17,17,17,0.6)")}>{age}</Text> : null}
       </View>
       {actionLabel ? (
+        <View style={{ marginTop: "auto", paddingTop: 16, marginHorizontal: -8 }}>
         <ScalePressable
           testID={runTestID}
           accessibilityRole="button"
@@ -315,7 +316,7 @@ export function HeroTypeCard({
           disabled={!onRun && !onPress}
           onPress={onRun ?? onPress}
           haptic
-          style={{ position: "absolute", left: 12, right: 12, bottom: 12, height: 52, borderRadius: 26, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingLeft: 18, paddingRight: 6 }}
+          style={{ height: 52, borderRadius: 26, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingLeft: 18, paddingRight: 6 }}
         >
           <Text style={t(fonts.bold, 14)} numberOfLines={1}>
             {actionLabel}
@@ -324,10 +325,11 @@ export function HeroTypeCard({
             <Ionicons name="play" size={16} color={colors.onPrimary} style={{ marginLeft: 2 }} />
           </View>
         </ScalePressable>
+        </View>
       ) : null}
     </>
   );
-  const style: StyleProp<ViewStyle> = { width, minHeight: fullBleed ? undefined : height, backgroundColor: pastelFor(type), borderRadius: 28, padding: 20, paddingBottom: actionLabel ? 76 : 20, overflow: "hidden" };
+  const style: StyleProp<ViewStyle> = { width, minHeight: fullBleed ? undefined : height, backgroundColor: pastelFor(type), borderRadius: 28, padding: 20, paddingBottom: actionLabel ? 12 : 20, overflow: "hidden" };
   if (!onPress) return <View testID={testID} style={style}>{content}</View>;
   return (
     <ScalePressable testID={testID} accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={style}>

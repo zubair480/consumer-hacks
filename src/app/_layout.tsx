@@ -6,6 +6,7 @@ import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { ZapIntro, introWillPlay } from "../components/brand/ZapIntro";
 import { colors } from "../components/tokens";
 import { ToastHost } from "../components/ui/Toast";
 import { OwnerProvider } from "../identity/OwnerProvider";
@@ -23,7 +24,7 @@ export default function RootLayout() {
   const ready = loaded || !!error;
 
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync().catch(() => {});
+    if (ready && !introWillPlay()) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
   if (!ready) return null;
@@ -36,6 +37,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="capture" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
           </Stack>
+          <ZapIntro />
           <ToastHost />
         </OwnerProvider>
       </ThemeProvider>
