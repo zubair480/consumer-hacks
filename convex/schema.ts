@@ -15,6 +15,7 @@ import {
   keyFactFields,
   userProfileFields,
 } from "./lib/validators";
+import { socialTables } from "./social/schema";
 
 // OWNER: Lead. Other threads add only new OPTIONAL fields or new indexes,
 // coordinated through the Captain. Every row except users carries userId,
@@ -142,4 +143,7 @@ export default defineSchema({
     profileFacts: v.optional(v.record(v.string(), v.string())),
     updatedAt: v.number(),
   }).index("by_userId", ["userId"]),
+
+  // Phase 2 (Social Studio), owned by Thread H+I.
+  ...socialTables,
 });
