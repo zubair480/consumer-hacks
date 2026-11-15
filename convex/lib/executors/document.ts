@@ -10,8 +10,8 @@ import type { ActionResultDocument, ExecutorInput, SourceBlock } from "./types";
 const SECTION_SCHEMA = `Return JSON: {"summary": string, "sections": Section[], "warnings": string[]}
 Section is one of:
 {"kind":"text","heading"?:string,"body":string}
-{"kind":"checklist","heading"?:string,"items":[{"label":string,"detail"?:string,"done":boolean,"evidence"?:{"quote":string}}]}
-{"kind":"steps","heading"?:string,"steps":[{"title":string,"detail"?:string,"code"?:string}]}
+{"kind":"checklist","heading"?:string,"items":[{"label":string,"detail"?:string,"status"?:"met"|"unmet"|"unknown","evidence"?:{"quote":string}}]}
+{"kind":"steps","heading"?:string,"steps":[{"title":string,"detail"?:string,"code"?:string,"evidence"?:{"quote":string}}]}
 {"kind":"key_value","heading"?:string,"rows":[{"label":string,"value":string,"evidence"?:{"quote":string}}]}
 {"kind":"list","heading"?:string,"items":string[]}
 {"kind":"links","heading"?:string,"links":[{"label":string,"url":string}]}
@@ -55,8 +55,10 @@ export function describeInputs(input: ExecutorInput): string {
 }
 
 export function describeProfile(input: ExecutorInput): string {
-  const lines = Object.entries(input.profileFacts).map(([k, val]) => `- ${k}: ${val}`);
-  if (input.homeCity) lines.push(`- home city: ${input.homeCity}`);
+  const lines = Object.entries(input.profile)
+    .filter(([, val]) => val !== undefined && val !== "" && !(Array.isArray(val) && !val.length))
+    .map(([k, val]) => `- ${k}: ${Array.isArray(val) ? val.join(", ") : val}`);
+  for (const [k, val] of Object.entries(input.profileFacts)) lines.push(`- ${k}: ${val}`);
   if (input.inputs.profile?.trim()) lines.push(`- user says: ${input.inputs.profile.trim()}`);
   return lines.length ? lines.join("\n") : "(the user has not shared any profile details)";
 }
@@ -84,13 +86,42 @@ function sourceFor(blocks: SourceBlock[], quote: string): string {
   return blocks[0]?.url ?? blocks[0]?.source ?? "source";
 }
 
+const STATUS_LABEL = { met: "meets", unmet: "does not meet", unknown: "unknown" } as const;
+
+function sectionToMarkdown(s: ResultSection): string {
+  const head = s.heading ? `## ${s.heading}\n\n` : "";
+  switch (s.kind) {
+    case "text":
+      return head + s.body;
+    case "checklist":
+      return (
+        head +
+        s.items
+          .map((i) => `- [${i.checked ?? i.done ? "x" : " "}] **${i.label}**${i.status ? ` _(${STATUS_LABEL[i.status]})_` : ""}${i.detail ? ` - ${i.detail}` : ""}${i.evidence ? `\n  > "${i.evidence.quote}"` : ""}`)
+          .join("\n")
+      );
+    case "steps":
+      return head + s.steps.map((st, i) => `${i + 1}. **${st.title}**${st.detail ? ` - ${st.detail}` : ""}${st.code ? `\n\n   \`\`\`\n   ${st.code.replace(/\n/g, "\n   ")}\n   \`\`\`` : ""}`).join("\n");
+    case "key_value":
+      return head + s.rows.map((r) => `- **${r.label}:** ${r.value}${r.status ? ` _(${STATUS_LABEL[r.status]})_` : ""}`).join("\n");
+    case "list":
+      return head + s.items.map((i) => `- ${i}`).join("\n");
+    case "links":
+      return head + s.links.map((l) => `- [${l.label}](${l.url})`).join("\n");
+    case "code":
+      return head + "```" + (s.language ?? "") + "\n" + s.code + "\n```";
+    case "palette":
+      return head + s.colors.map((c) => `- \`${c.hex}\`${c.name ? ` ${c.name}` : ""}`).join("\n");
+  }
+}
+
 export function sectionToText(s: ResultSection): string {
   const head = s.heading ? `${s.heading}\n` : "";
   switch (s.kind) {
     case "text":
       return head + s.body;
     case "checklist":
-      return head + s.items.map((i) => `${i.done ? "[x]" : "[ ]"} ${i.label}${i.detail ? ` - ${i.detail}` : ""}`).join("\n");
+      return head + s.items.map((i) => `${i.checked ?? i.done ? "[x]" : "[ ]"} ${i.label}${i.status ? ` (${STATUS_LABEL[i.status]})` : ""}${i.detail ? ` - ${i.detail}` : ""}`).join("\n");
     case "steps":
       return head + s.steps.map((st, i) => `${i + 1}. ${st.title}${st.detail ? ` - ${st.detail}` : ""}${st.code ? `\n   ${st.code.replace(/\n/g, "\n   ")}` : ""}`).join("\n");
     case "key_value":
@@ -120,7 +151,17 @@ export function composeDocument(
     [title, summary, ...sections.map(sectionToText), sources.length ? `Sources:\n${sources.map((s) => `- ${s.label}${s.url ? ` ${s.url}` : ""}`).join("\n")}` : ""]
       .filter(Boolean)
       .join("\n\n");
-  return { version: 1, actionType, title, summary, sections, sources, shareText: text, warnings: [...new Set(warnings)] };
+  const uniqueWarnings = [...new Set(warnings)];
+  const markdown = [
+    `# ${title}`,
+    summary,
+    ...(uniqueWarnings.length ? [uniqueWarnings.map((w) => `> ⚠️ ${w}`).join("\n")] : []),
+    ...sections.map(sectionToMarkdown),
+    sources.length ? `## Sources\n\n${sources.map((s) => (s.url ? `- [${s.label}](${s.url})` : `- ${s.label}`)).join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  return { version: 1, actionType, title, summary, sections, sources, shareText: text, warnings: uniqueWarnings, markdown };
 }
 
 export function sourcesFromBlocks(input: ExecutorInput, blocks: SourceBlock[]): ActionResultDocument["sources"] {
@@ -200,7 +241,8 @@ export async function buildDocument(opts: BuildOptions): Promise<ActionResultDoc
             continue;
           }
           const detail = str(it.detail);
-          items.push({ label: lbl, done: it.done === true, ...(detail ? { detail } : {}), ...(ev ? { evidence: ev } : {}) });
+          const status = it.status === "met" || it.status === "unmet" || it.status === "unknown" ? it.status : undefined;
+          items.push({ label: lbl, checked: false, ...(status ? { status } : {}), ...(detail ? { detail } : {}), ...(ev ? { evidence: ev } : {}) });
         }
         if (items.length) sections.push({ kind: "checklist", ...h, items });
         break;
@@ -217,7 +259,8 @@ export async function buildDocument(opts: BuildOptions): Promise<ActionResultDoc
             dropped++;
             code = undefined;
           }
-          steps.push({ title: t, ...(detail ? { detail } : {}), ...(code ? { code } : {}) });
+          const ev = evidence(st.evidence as RawEvidence);
+          steps.push({ title: t, ...(detail ? { detail } : {}), ...(code ? { code } : {}), ...(ev ? { evidence: ev } : {}) });
         }
         if (steps.length) sections.push({ kind: "steps", ...h, steps });
         break;

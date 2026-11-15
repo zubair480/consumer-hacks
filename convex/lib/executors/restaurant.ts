@@ -1,4 +1,4 @@
-import type { ExtractedFact } from "../../../src/shared/contracts";
+import type { ExtractedFact, ResultSection } from "../../../src/shared/contracts";
 import { buildDocument, composeDocument, itemBlocks, sourcesFromBlocks } from "./document";
 import { callJson } from "./openai";
 import { fetchPageText, makeVerifier } from "./sources";
@@ -44,40 +44,60 @@ async function findAddress(input: ExecutorInput, blocks: SourceBlock[]): Promise
 
 const planVisit: Executor = async (input) => {
   const { blocks, warnings } = await placeBlocks(input);
-  const when = input.inputs.when?.trim();
+  const when = input.inputs.date?.trim();
   const party = input.inputs.party_size?.trim();
+  const place = await findAddress(input, blocks).catch(() => null);
   const result = await buildDocument({
     input,
     blocks,
     warnings,
     strictRows: true,
+    append: place ? [mapLinks(`${place.name} ${place.fact.value}`.trim())] : [],
     instruction: `Plan a visit to this restaurant/place${when ? ` on/at "${when}"` : ""}${party ? ` for ${party} people` : ""}.
 1. "key_value" headed "Know before you go": address, neighborhood, hours, price range, reservation policy, phone, ONLY when stated, each with evidence.
 2. "list" headed "What to order": dishes the source mentions or recommends (no evidence needed in a list, but only dishes named in the source).
-3. "checklist" headed "Plan": practical steps (check hours, book a table if reservations are mentioned, plan transit), done=false, guidance only.
+3. "checklist" headed "Plan": practical steps (check hours, book a table if reservations are mentioned, plan transit), guidance only.
 4. "text" headed "Best time to go" only if the source gives hints (busy times, specials); otherwise omit.
 Missing hours/address/prices go in warnings ("Hours not stated in the source - check before you go").`,
   });
-  const place = await findAddress(input, blocks).catch(() => null);
-  if (place) {
-    const q = encodeURIComponent(`${place.name} ${place.fact.value}`.trim());
-    result.sections.push({ kind: "links", heading: "Directions", links: [{ label: "Open in Apple Maps", url: `https://maps.apple.com/?q=${q}` }, { label: "Open in Google Maps", url: `https://www.google.com/maps/search/?api=1&query=${q}` }] });
-  }
   return { result, status: "succeeded" };
 };
+
+function mapLinks(query: string): ResultSection {
+  const q = encodeURIComponent(query);
+  return {
+    kind: "links",
+    heading: "Directions",
+    links: [
+      { label: "Open in Apple Maps", url: `https://maps.apple.com/?q=${q}` },
+      { label: "Open in Google Maps", url: `https://www.google.com/maps/search/?api=1&query=${q}` },
+    ],
+  };
+}
 
 const findLocation: Executor = async (input) => {
   const { blocks, warnings } = await placeBlocks(input);
   const place = await findAddress(input, blocks);
-  if (!place) throw new ExecutorError("The source doesn't state an address, so AfterScroll can't verify where this is.");
-  const q = encodeURIComponent(`${place.name} ${place.fact.value}`.trim());
+  const name = place?.name || input.analysis?.title || input.item.title || "";
+  if (!place) {
+    if (!name) throw new ExecutorError("The source doesn't name a place or state an address.");
+    const result = composeDocument(
+      "find_location",
+      `Location: ${name}`,
+      `The source doesn't state an address, so these links search for "${name}".`,
+      [mapLinks(name)],
+      sourcesFromBlocks(input, blocks),
+      [...warnings, "No address found in the source; map links search by name. Confirm it's the right place."],
+    );
+    return { result, status: "succeeded" };
+  }
   const result = composeDocument(
     "find_location",
-    `Location: ${place.name || "Saved place"}`,
-    `${place.name ? `${place.name} is at ` : "Address: "}${place.fact.value}.`,
+    `Location: ${name || "Saved place"}`,
+    `${name ? `${name} is at ` : "Address: "}${place.fact.value}.`,
     [
-      { kind: "key_value", heading: "Address", rows: [{ label: place.fact.label, value: place.fact.value, evidence: place.fact.evidence }] },
-      { kind: "links", heading: "Directions", links: [{ label: "Open in Apple Maps", url: `https://maps.apple.com/?q=${q}` }, { label: "Open in Google Maps", url: `https://www.google.com/maps/search/?api=1&query=${q}` }] },
+      { kind: "key_value", heading: "Address", rows: [{ label: "Address", value: place.fact.value, evidence: place.fact.evidence }] },
+      mapLinks(`${name} ${place.fact.value}`.trim()),
     ],
     sourcesFromBlocks(input, blocks),
     [...warnings, "Map links search for the stated address; confirm the pin before you go."],
@@ -87,7 +107,7 @@ const findLocation: Executor = async (input) => {
 
 const prepareInvitation: Executor = async (input) => {
   const { blocks, warnings } = await placeBlocks(input);
-  const when = input.inputs.when?.trim();
+  const when = input.inputs.date?.trim();
   const who = input.inputs.who?.trim();
   const result = await buildDocument({
     input,

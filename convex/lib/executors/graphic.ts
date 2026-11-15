@@ -42,7 +42,7 @@ const createDesignBrief: Executor = async (input) => {
 1. "text" headed "Objective": what to design and why${goal ? "" : " (keep general, since the user gave no goal)"}.
 2. "palette" headed "Reference palette" with colors visible in the reference.
 3. "key_value" headed "Visual direction": typography, layout, imagery, tone.
-4. "checklist" headed "Deliverables": suggested deliverables (guidance, done=false).
+4. "checklist" headed "Deliverables": suggested deliverables (guidance).
 5. "list" headed "Do / don't".
 Describe the reference honestly; do not claim who made it.`,
   });

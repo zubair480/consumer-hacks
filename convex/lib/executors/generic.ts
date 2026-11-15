@@ -24,7 +24,7 @@ async function genericBlocks(input: ExecutorInput): Promise<{ blocks: SourceBloc
 
 const INSTRUCTIONS: Partial<Record<ActionType, (input: ExecutorInput) => string>> = {
   create_shopping_list: (i) => `Create a shopping list from this recipe${i.inputs.servings ? ` scaled for ${i.inputs.servings} servings (show the scaling in detail)` : ""}.
-1. One "checklist" per store section (Produce, Dairy, Pantry, Meat & fish, Other): each ingredient with quantity as stated, evidence.quote from the recipe, done=false.
+1. One "checklist" per store section (Produce, Dairy, Pantry, Meat & fish, Other): each ingredient with quantity as stated, evidence.quote from the recipe.
 2. "list" headed "Equipment" only if the recipe names equipment.
 Only ingredients the source lists; if no ingredient list is present, return no checklist and warn.`,
   show_cooking_steps: () => `Rewrite this recipe's method as clean numbered cooking steps.
@@ -34,7 +34,7 @@ Only ingredients the source lists; if no ingredient list is present, return no c
 If the source has no method, warn instead of inventing one.`,
   plan_meal: (i) => `Help the user fit this recipe into their week${i.inputs.day ? ` (they want it on ${i.inputs.day})` : ""}.
 1. "key_value" headed "Recipe facts": servings and total time ONLY when stated, with evidence.
-2. "checklist" headed "Meal plan": when to shop, prep ahead, cook, and leftovers (guidance, done=false).
+2. "checklist" headed "Meal plan": when to shop, prep ahead, cook, and leftovers (guidance).
 3. "list" headed "Pairs well with": 2-4 simple sides (guidance).`,
   explain_code: () => `Explain the saved code snippet.
 1. "text" headed "What it does": 2-3 sentences.
@@ -42,7 +42,7 @@ If the source has no method, warn instead of inventing one.`,
 3. "steps" headed "Walkthrough": key parts in order, each title naming the line/construct and detail explaining it.
 4. "list" headed "Watch out for": pitfalls or assumptions in this code.`,
   suggest_test_cases: () => `Suggest test cases for the saved code snippet.
-1. "checklist" headed "Test cases": 5-10 cases (happy path, edge cases, error cases); label = a short name for the case, detail = input and expected outcome; done=false.
+1. "checklist" headed "Test cases": 5-10 cases (happy path, edge cases, error cases); label = a short name for the case, detail = input and expected outcome.
 2. "code" headed "Example test": one runnable test in a common framework for the snippet's language, testing behavior that the snippet actually implements.`,
   prepare_reusable_example: () => `Turn the saved code snippet into a clean reusable example.
 1. "code" headed "Reusable version": cleaned-up, parameterized, with clear names; keep the original behavior.

@@ -6,6 +6,7 @@ import type {
   ExtractedFact,
   ResultSection,
   SourcePlatform,
+  UserProfile,
 } from "../../../src/shared/contracts";
 
 // OWNER: D+E.
@@ -23,8 +24,8 @@ export type ExecutorInput = {
   };
   imageUrl: string | null;
   analysis: { title: string; summary: string; facts: ExtractedFact[]; primaryType: ContentType } | null;
+  profile: UserProfile;
   profileFacts: Record<string, string>;
-  homeCity?: string;
   inputs: Record<string, string>;
   now: number;
 };

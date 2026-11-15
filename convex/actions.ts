@@ -218,8 +218,17 @@ export const startRun = internalMutation({
       analysis: analysis
         ? { title: analysis.title, summary: analysis.summary, facts: analysis.facts, primaryType: analysis.primaryType }
         : null,
+      profile: {
+        name: prefs?.name,
+        educationLevel: prefs?.educationLevel,
+        fieldOfStudy: prefs?.fieldOfStudy,
+        country: prefs?.country,
+        citizenship: prefs?.citizenship,
+        gpa: prefs?.gpa,
+        city: prefs?.city ?? prefs?.homeCity,
+        interests: prefs?.interests,
+      },
       profileFacts: prefs?.profileFacts ?? {},
-      homeCity: prefs?.homeCity,
       inputs: execution.inputs ?? {},
       now,
     };

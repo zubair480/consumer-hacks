@@ -1,5 +1,5 @@
 import type { ResultSection } from "../../../src/shared/contracts";
-import { buildDocument, itemBlocks } from "./document";
+import { buildDocument, composeDocument, itemBlocks, sourcesFromBlocks } from "./document";
 import { fetchGithubRepo, type GithubRepo } from "./sources";
 import { ExecutorError, type Executor, type ExecutorInput, type SourceBlock } from "./types";
 
@@ -10,10 +10,7 @@ async function repoContext(input: ExecutorInput, needReadme: boolean): Promise<{
   const repo = url ? await fetchGithubRepo(url) : null;
   if (!repo) throw new ExecutorError("Couldn't load this repository from GitHub. Check the link is a public repository.");
   const warnings: string[] = [];
-  if (!repo.readme) {
-    if (needReadme) throw new ExecutorError("This repository has no README, so there are no setup instructions to extract.");
-    warnings.push("This repository has no README; the explanation uses repository metadata only.");
-  }
+  if (!repo.readme && !needReadme) warnings.push("This repository has no README; the explanation uses repository metadata only.");
   const meta = [
     `Repository: ${repo.fullName}`,
     repo.description ? `Description: ${repo.description}` : "",
@@ -60,17 +57,30 @@ const understandProject: Executor = async (input) => {
     append: [repoLinks(repo)],
     instruction: `Explain this GitHub repository to a developer who just bookmarked it.
 1. "text" headed "What it is": 2-3 plain sentences on what it does and who it is for.
-2. "list" headed "Key features": 3-6 features the README actually describes.
-3. "text" headed "How it's built": languages, frameworks, architecture, as stated in the README/metadata.
-4. "list" headed "Good fit when": 2-4 use cases (guidance; no evidence needed).
-5. "key_value" headed "Requirements" for runtime/version requirements ONLY if the README states them, each with evidence.
+2. "text" headed "Who it's for": the audience, based on the README.
+3. "list" headed "Key features": 3-6 features the README actually describes.
+4. "text" headed "How it's built": languages, frameworks, architecture, as stated in the README/metadata.
+5. "list" headed "Good fit when": 2-4 use cases (guidance; no evidence needed).
+6. "key_value" headed "Requirements" for runtime/version requirements ONLY if the README states them, each with evidence.
 The "summary" is one sentence a non-expert understands.`,
   });
   return { result, status: "succeeded" };
 };
 
+function noSetupGuide(input: ExecutorInput, repo: GithubRepo, blocks: SourceBlock[], reason: string) {
+  return composeDocument(
+    "extract_setup_guide",
+    `Set up ${repo.fullName}`,
+    reason,
+    [{ kind: "text", heading: "No setup steps in the README", body: `${reason} AfterScroll only extracts setup steps the README states, so none are listed. Check the repository's docs or homepage.` }, repoLinks(repo)],
+    sourcesFromBlocks(input, blocks),
+    [reason],
+  );
+}
+
 const extractSetupGuide: Executor = async (input) => {
   const { repo, blocks, warnings } = await repoContext(input, true);
+  if (!repo.readme) return { result: noSetupGuide(input, repo, blocks, "This repository has no README."), status: "succeeded" };
   const result = await buildDocument({
     input,
     blocks,
@@ -86,7 +96,7 @@ const extractSetupGuide: Executor = async (input) => {
 If the README has no setup instructions, return no steps and say so in warnings.`,
   });
   if (!result.sections.some((s) => s.kind === "steps")) {
-    throw new ExecutorError("The README doesn't include setup instructions that could be verified.");
+    return { result: noSetupGuide(input, repo, blocks, "The README doesn't include setup instructions."), status: "succeeded" };
   }
   return { result, status: "succeeded" };
 };

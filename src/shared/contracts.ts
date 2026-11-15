@@ -295,6 +295,8 @@ export type RequiredInput = {
   required: boolean;
   /** Options when kind is "choice". */
   options?: string[];
+  /** Where the UI pre-fills the value from, e.g. "profile.gpa", "profile.city", "item.deadline". */
+  prefillFrom?: string;
 };
 
 /** Shape of an actionSuggestions row (written by D+E). */
