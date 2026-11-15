@@ -12,7 +12,7 @@ const config: Record<ExtractionStatus | ExecutionStatus, { label: string; color:
   failed: { label: "Failed", color: colors.danger },
   queued: { label: "Queued", color: colors.textSecondary },
   running: { label: "Running", color: colors.primary },
-  awaiting_approval: { label: "Awaiting you", color: colors.warning },
+  awaiting_approval: { label: "Ready to share", color: colors.warning },
   succeeded: { label: "Done", color: colors.success },
   cancelled: { label: "Cancelled", color: colors.textMuted },
 };
