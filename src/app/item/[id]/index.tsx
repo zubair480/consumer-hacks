@@ -8,6 +8,7 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { CalendarAgentCard } from "../../../components/agents/CalendarAgent";
 import { ActionCard } from "../../../components/ActionCard";
 import { FillFormCard } from "../../../components/formFill/FillFormCard";
 import { Boundary } from "../../../components/Boundary";
@@ -17,6 +18,7 @@ import { itemTitle } from "../../../components/ItemCard";
 import { EmptyState } from "../../../components/EmptyState";
 import { errorMessage, pickImages, uploadImage } from "../../../components/media";
 import { Tap } from "../../../components/Pressable";
+import { RunRepoCard } from "../../../components/RunRepoCard";
 import { ScreenHeader } from "../../../components/ScreenHeader";
 import { BouncingDots, Burst, Shimmer, success } from "../../../components/Signature";
 import { Skeleton } from "../../../components/States";
@@ -25,7 +27,7 @@ import { fonts, palette } from "../../../theme";
 import { AvatarStack, Button, Doodle, Enter, ItemRow, Text, pastelFor, typeIconFor } from "../../../components/ui";
 import { metaFor, timeAgo } from "../../../components/typeMeta";
 import { useOwnedMutation, useOwnedQuery } from "../../../identity/OwnerProvider";
-import { IN_PROGRESS_EXTRACTION_STATUSES, type ExtractionStatus, type SavedItemView } from "../../../shared/contracts";
+import { AGENT_ACTIONS, IN_PROGRESS_EXTRACTION_STATUSES, type ExtractionStatus, type SavedItemView } from "../../../shared/contracts";
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -245,6 +247,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         ) : null}
 
         {ready ? <FillFormCard item={item} /> : null}
+        {ready ? <Boundary fallback={null}><CalendarAgentCard itemId={itemId} primaryType={item.primaryType} /></Boundary> : null}
 
         {ready ? (
           <Button testID="create-post" title="Create post" icon="create-outline" variant="secondary" fullWidth onPress={() => router.push({ pathname: "/studio/platforms", params: { itemId } })} />
@@ -340,6 +343,7 @@ function Actions({ item }: { item: SavedItemView }) {
       ) : (
         [...suggestions].sort((a, b) => a.rank - b.rank).map((s) => <ActionCard key={s._id} suggestion={s} color={color} profile={profile} item={item} />)
       )}
+      {suggestions && suggestions.length > 0 && item.primaryType && AGENT_ACTIONS.run_repo?.contentTypes.includes(item.primaryType) ? <RunRepoCard itemId={itemId} color={color} /> : null}
     </Block>
   );
 }

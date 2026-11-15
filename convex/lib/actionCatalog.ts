@@ -87,6 +87,7 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     requiresApproval: false,
     requiredInputs: [{ key: "collection", label: "Collection name", kind: "text", required: false }],
   },
+  run_repo: none,
 };
 
 type Trio = readonly [ActionType, ActionType, ActionType];

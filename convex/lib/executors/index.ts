@@ -4,7 +4,7 @@ import { githubExecutors } from "./github";
 import { graphicExecutors } from "./graphic";
 import { restaurantExecutors } from "./restaurant";
 import { scholarshipExecutors } from "./scholarship";
-import type { Executor } from "./types";
+import { ExecutorError, type Executor } from "./types";
 
 // OWNER: D+E. Every action type has an executor; the catalog reads this map.
 
@@ -14,6 +14,9 @@ export const EXECUTORS: Record<ActionType, Executor> = {
   ...graphicExecutors,
   ...restaurantExecutors,
   ...genericExecutors,
+  run_repo: async () => {
+    throw new ExecutorError("Run it for me starts from its own button.");
+  },
 };
 
 export { ExecutorError } from "./types";
