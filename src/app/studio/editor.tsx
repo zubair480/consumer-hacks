@@ -76,8 +76,8 @@ function Editor({ source, initial }: { source: Source; initial?: SocialPlatform 
             </Tap>
           );
         })}
-        <Tap testID="studio-add-platform" accessibilityLabel="Add platforms" onPress={() => router.push({ pathname: "/studio/platforms", params: source })} style={styles.tab}>
-          <Ionicons name="add-outline" size={22} color={colors.text} />
+        <Tap testID="studio-add-platform" accessibilityLabel="More platforms" onPress={() => router.push({ pathname: "/studio/platforms", params: source })} style={styles.tab}>
+          <Text style={[styles.tabText, { color: colors.text }]}>More platforms</Text>
         </Tap>
       </ScrollView>
       {writing > 0 ? (
