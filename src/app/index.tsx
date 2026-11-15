@@ -1,17 +1,17 @@
-import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { Button, FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
+import { useOwnedMutation, useOwnedQuery } from "../identity/OwnerProvider";
 
 export default function Index() {
-  const items = useQuery(api.items.list);
-  const add = useMutation(api.items.add);
+  const items = useOwnedQuery(api.items.list, {});
+  const add = useOwnedMutation(api.items.create);
   const [text, setText] = useState("");
 
   const submit = async () => {
     if (!text.trim()) return;
-    await add({ text: text.trim() });
+    await add({ rawText: text.trim() });
     setText("");
   };
 
@@ -33,7 +33,7 @@ export default function Index() {
       <FlatList
         data={items ?? []}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <Text style={{ fontSize: 16, paddingVertical: 6 }}>{item.text}</Text>}
+        renderItem={({ item }) => <Text style={{ fontSize: 16, paddingVertical: 6 }}>{item.title ?? item.sourceUrl ?? item.rawText ?? "Image"}</Text>}
       />
     </SafeAreaView>
   );

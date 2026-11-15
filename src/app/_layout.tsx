@@ -1,5 +1,6 @@
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { Stack } from "expo-router";
+import { OwnerProvider } from "../identity/OwnerProvider";
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
@@ -8,7 +9,9 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
 export default function RootLayout() {
   return (
     <ConvexProvider client={convex}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <OwnerProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </OwnerProvider>
     </ConvexProvider>
   );
 }
