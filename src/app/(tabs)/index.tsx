@@ -83,7 +83,7 @@ function Feed({ items }: { items: Items | undefined }) {
   return (
     <>
       {counts.size > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }} style={styles.bleed}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm, paddingHorizontal: space.xl }} style={styles.bleed}>
           {[...counts.entries()].map(([t, n]) => (
             <TypeChip key={t} type={t} label={metaFor(t).label} count={n} onPress={openLibrary} testID={`home-type-chip-${t}`} />
           ))}
