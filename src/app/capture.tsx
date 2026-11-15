@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Image, Keyboard, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,16 +11,16 @@ import { Field } from "../components/Field";
 import { errorMessage, isValidLink, pickImages, uploadImage, type PickedImage } from "../components/media";
 import { Tap } from "../components/Pressable";
 import { colors, radius, space, type } from "../components/tokens";
-import { Button, DisplayTitle, HoloBand, TypeChip } from "../components/ui";
+import { Button, DisplayTitle, HoloBand, TypeChip, pastelFor } from "../components/ui";
 import { useOwnedMutation } from "../identity/OwnerProvider";
 import type { ContentType } from "../shared/contracts";
 
 type Mode = "url" | "text" | "image";
 
-const MODES: { key: Mode; label: string; icon: "link" | "document-text" | "image" }[] = [
-  { key: "url", label: "Link", icon: "link" },
-  { key: "text", label: "Text", icon: "document-text" },
-  { key: "image", label: "Photo", icon: "image" },
+const MODES: { key: Mode; label: string; icon: "link" | "document-text" | "image"; tint: ContentType }[] = [
+  { key: "url", label: "Link", icon: "link", tint: "github_repository" },
+  { key: "text", label: "Text", icon: "document-text", tint: "scholarship" },
+  { key: "image", label: "Photo", icon: "image", tint: "graphic" },
 ];
 
 const EXAMPLES: { key: string; label: string; type: ContentType; mode: Mode; value: string }[] = [
@@ -39,9 +39,11 @@ const EXAMPLES: { key: string; label: string; type: ContentType; mode: Mode; val
 const MIN_TEXT = 10;
 
 export default function Capture() {
-  const [mode, setMode] = useState<Mode>("url");
-  const [url, setUrl] = useState("");
-  const [text, setText] = useState("");
+  const { example } = useLocalSearchParams<{ example?: string }>();
+  const preset = EXAMPLES.find((ex) => ex.key === example);
+  const [mode, setMode] = useState<Mode>(preset?.mode ?? "url");
+  const [url, setUrl] = useState(preset?.mode === "url" ? preset.value : "");
+  const [text, setText] = useState(preset?.mode === "text" ? preset.value : "");
   const [images, setImages] = useState<PickedImage[]>([]);
   const [progress, setProgress] = useState<string | null>(null);
   const [linkInvalid, setLinkInvalid] = useState(false);
@@ -130,12 +132,12 @@ export default function Capture() {
         </Tap>
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        <DisplayTitle>Save something</DisplayTitle>
+        <DisplayTitle highlight="something">Save something</DisplayTitle>
         <View style={styles.segment}>
           {MODES.map((m) => (
-            <Tap key={m.key} testID={`capture-mode-${m.key}`} accessibilityRole="tab" accessibilityLabel={m.label} accessibilityState={{ selected: mode === m.key }} onPress={() => switchMode(m.key)} style={[styles.segmentItem, mode === m.key && styles.segmentActive]}>
-              <Ionicons name={m.icon} size={16} color={mode === m.key ? colors.surface : colors.textMuted} />
-              <Text style={[styles.segmentText, mode === m.key && { color: colors.surface }]}>{m.label}</Text>
+            <Tap key={m.key} testID={`capture-mode-${m.key}`} accessibilityRole="tab" accessibilityLabel={m.label} accessibilityState={{ selected: mode === m.key }} onPress={() => switchMode(m.key)} style={[styles.segmentItem, { backgroundColor: pastelFor(m.tint) }, mode === m.key && styles.segmentActive]}>
+              <View style={styles.tileIcon}><Ionicons name={m.icon} size={22} color={colors.text} /></View>
+              <Text style={styles.segmentText}>{m.label}</Text>
             </Tap>
           ))}
         </View>
@@ -253,12 +255,13 @@ const styles = StyleSheet.create({
   content: { padding: space.xl, gap: space.md, paddingBottom: 40 },
   gap: { gap: space.sm },
   row: { flexDirection: "row", gap: space.sm, alignItems: "center" },
-  segment: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: radius.pill, padding: 4, borderWidth: 1, borderColor: colors.border, marginTop: space.sm },
-  segmentItem: { flex: 1, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", height: 44, borderRadius: radius.pill },
-  segmentActive: { backgroundColor: colors.text },
-  segmentText: { color: colors.textMuted, fontWeight: "600", fontSize: 13 },
-  inputCard: { backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: space.xl, fontSize: 16 },
-  inputTall: { minHeight: 180 },
+  segment: { flexDirection: "row", gap: space.md, marginTop: space.sm },
+  segmentItem: { flex: 1, height: 104, borderRadius: radius.xl, padding: space.lg, justifyContent: "space-between", borderWidth: 2, borderColor: "transparent", opacity: 0.55 },
+  segmentActive: { borderColor: colors.text, opacity: 1 },
+  tileIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.6)", alignItems: "center", justifyContent: "center" },
+  segmentText: { color: colors.text, fontWeight: "800", fontSize: 16 },
+  inputCard: { backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: space.xl, fontSize: 17, minHeight: 64, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  inputTall: { minHeight: 200 },
   tile: { flex: 1, alignItems: "center", justifyContent: "center", gap: space.sm, paddingVertical: space.xl, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   tileText: { color: colors.text, fontWeight: "600", textAlign: "center", paddingHorizontal: space.sm },
   preview: { width: 120, height: 160, borderRadius: radius.lg, backgroundColor: colors.surfaceRaised },
