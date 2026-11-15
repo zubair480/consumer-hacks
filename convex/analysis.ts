@@ -55,7 +55,8 @@ const SCHEMA_HINT = `{
   "deadline": "2027-03-01 or null",
   "location": "string or null",
   "price": "string or null",
-  "organization": "string or null"
+  "organization": "string or null",
+  "imageIsDesign": "true when an attached image is a screenshot of a website or app UI, a poster, flyer, logo, illustration, or layout; false otherwise or when there is no image"
 }`;
 
 type RawAnalysis = {
@@ -69,6 +70,7 @@ type RawAnalysis = {
   location?: unknown;
   price?: unknown;
   organization?: unknown;
+  imageIsDesign?: unknown;
 };
 
 /** The understood item: ContentAnalysis plus the top-level fields the UI and executors read directly. */
@@ -148,8 +150,8 @@ export async function analyzeContent(input: {
   const listed = Array.isArray(raw.contentTypes) ? raw.contentTypes.filter(isType) : [];
   const modelPrimary = isType(raw.primaryType) ? raw.primaryType : (listed[0] ?? "general_content");
   const imageOnly = input.images.length > 0 && input.parts.length === 0;
-  const primaryType =
-    imageOnly && listed.includes("graphic") && (modelPrimary === "product" || modelPrimary === "general_content") ? "graphic" : modelPrimary;
+  const designImage = imageOnly && (raw.imageIsDesign === true || raw.imageIsDesign === "true" || listed.includes("graphic"));
+  const primaryType = designImage && (modelPrimary === "product" || modelPrimary === "general_content") ? "graphic" : modelPrimary;
   const facts = verifiedFacts(raw.facts, input.parts, input.images.length > 0);
   const deadline = backed(raw.deadline, facts, /deadline|due/);
   return {
