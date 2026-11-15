@@ -17,7 +17,6 @@ export default function TabsLayout() {
       <Tabs
         tabBar={(props) => <InkTabBar {...props} saves={items?.length} latestResultAt={outcomes?.[0]?.createdAt} captureOpen={captureOpen} />}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
-        screenListeners={{ tabPress: () => Haptics.selectionAsync().catch(() => {}) }}
       >
         <Tabs.Screen name="index" options={tab("Home", "tab-home")} />
         <Tabs.Screen name="library" options={tab("Library", "tab-library")} />
