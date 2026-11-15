@@ -20,7 +20,7 @@ More detail: [docs/architecture.md](docs/architecture.md), [docs/limitations.md]
 
 ### Phase 2: Social Studio (in progress)
 
-Being built in parallel today; nothing below is on main yet.
+Being built in parallel today. On main so far: the six Phase 2 tables, `src/shared/socialContracts.ts` and the `api.social.drafts.*` API surface (generate, listForSource, listRecent, get, update, regenerate, restoreRevision, recommendPlatforms); the composer, publishing and screens are still landing.
 
 - **Composer + platform adapters:** distinct LinkedIn, X, Instagram, TikTok and Threads drafts from one brief built from a saved item or a new photo, stored as versioned drafts. Facts (with source) are kept separate from creative text, and wording stays truthful ("Found this restaurant and want to try it", never "I had the best dinner here").
 - **Publishing states + share:** copy and the native share sheet only. Drafts move through Draft, Ready to share and Awaiting user action; "Published" requires provider confirmation, which never happens without a platform connection.
@@ -40,7 +40,7 @@ flowchart LR
 ```
 
 - **App:** routes live in `src/app` (four tabs plus the Capture modal, item detail, actions and result screens). Shared shapes are in `src/shared/contracts.ts`; the design tokens are in `src/theme` and the UI kit in `src/components/ui`.
-- **Convex:** 9 tables (`users`, `savedItems`, `contentAnalysis`, `actionSuggestions`, `actionExecutions`, `actionResults`, `collections`, `activityEvents`, `userPreferences`). Public functions live in `items`, `actions`, `analysis`, `activity`, `collections`, `preferences` and `users`; ingestion and executors are internal actions.
+- **Convex:** 9 Phase 1 tables (`users`, `savedItems`, `contentAnalysis`, `actionSuggestions`, `actionExecutions`, `actionResults`, `collections`, `activityEvents`, `userPreferences`). Public functions live in `items`, `actions`, `analysis`, `activity`, `collections`, `preferences` and `users`; ingestion and executors are internal actions. Phase 2 adds 6 tables from `convex/social/schema.ts` and `api.social.drafts.*`.
 - **OpenAI** is called only from Convex actions through `convex/lib/llm.ts` (`callLLMJson`), in JSON mode, with the model from `OPENAI_MODEL`.
 - **Identity:** there is no login. `src/identity/OwnerProvider.tsx` creates a UUID once (expo-crypto) and keeps it in expo-secure-store, with a file fallback where the keychain is unavailable. Every public Convex function takes `ownerId`; use `useOwnedQuery(api.x.y, args)` and `useOwnedMutation(api.x.y)`, which inject it. On the server, resolve it with `convex/lib/auth.ts` (`requireUser`, `requireOwnedItem`, `requireOwned`) before touching data.
 
@@ -79,7 +79,8 @@ Edit only the files your thread owns. Shared types change only through `src/shar
 | B+C — ingestion + understanding | `convex/ingest.ts`, `convex/analysis.ts`, `convex/lib/llm.ts`, `convex/lib/sources.ts` |
 | D+E — routing + executors | `convex/lib/actionCatalog.ts`, `convex/actions.ts`, `convex/lib/executors/**` |
 | F — backend | `convex/activity.ts`, `convex/collections.ts`, `convex/preferences.ts` |
-| H+I — composer + adapters (Phase 2) | all Phase 2 schema additions (socialDrafts + revisions, mediaAssets, platformConnections, publishingJobs, publishingResults), `src/shared/socialContracts.ts`, `convex/social/**`, `convex/socialDrafts.ts`, `convex/mediaAssets.ts` |
+| H+I — composer + adapters (Phase 2) | all Phase 2 schema (`convex/social/schema.ts`: socialDrafts, socialDraftRevisions, mediaAssets, platformConnections, publishingJobs, publishingResults), `convex/social/validators.ts`, `src/shared/socialContracts.ts`, `convex/social/**` |
+| Photo flow (Phase 2) | `mediaAssets` upload/analyze functions (e.g. `convex/mediaAssets.ts`); writes `mediaAssets` rows |
 | J — publishing + share (Phase 2) | `convex/publishing.ts`, `convex/lib/publishers/**`, `src/lib/share.ts` |
 | K — Social Studio screens (Phase 2) | `src/app/studio/**` or `src/app/(studio)/**`, `src/components/studio/**` |
 | Docs | `README.md`, `docs/**` |
@@ -94,4 +95,4 @@ Schema changes by other threads: new optional fields or new indexes only, coordi
 - **Actions (D+E):** `actionsForType(primaryType)` from contracts gives the three actions. `api.actions.execute` schedules `internal.actions.run`; executors return an `ActionResultDocument` stored in `actionResults.result`, and status lives on `actionExecutions`.
 - **UI (A):** `SavedItemView` is what `items.list/get/search` return. Build screens from `src/components/ui` and `src/theme` (dark-first). Put a `testID` on every button and input a test touches.
 - **Activity (F):** `internal.activity.log` records events; `api.activity.list` and `listForItem` read them.
-- **Social Studio (Phase 2):** function signatures are published by H+I; see `src/shared/socialContracts.ts` once it lands.
+- **Social Studio (Phase 2):** types in `src/shared/socialContracts.ts`, API in `convex/social/drafts.ts` (`api.social.drafts.*`, all take `ownerId`). Drafts have two separate statuses: `generationStatus` (generating | ready | failed, the composer's progress) and `status` (draft | ready_to_share | awaiting_user_action | publishing | published | failed, owned by J's publishing code). `update` and `regenerate` write a new revision on that draft only, so other platforms and earlier edits are kept.
