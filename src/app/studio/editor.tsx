@@ -18,6 +18,7 @@ import { DraftStatusPill } from "../../components/studio/DraftStatusPill";
 import { platformMeta } from "../../components/studio/platforms";
 import { colors, radius, space, type } from "../../components/tokens";
 import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
+import { PublishSheet } from "../../components/publishing/PublishSheet";
 import { publishStatusLabel, useDraftSharing } from "../../lib/share";
 import type { SocialDraftView, SocialPlatform } from "../../shared/socialContracts";
 
@@ -88,6 +89,8 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
   const regenerate = useOwnedMutation(api.social.drafts.regenerate);
   const publish = useOwnedQuery(api.publishing.jobs.statusForDraft, draft.generationStatus === "ready" ? { draftId } : "skip");
   const sharing = useDraftSharing(draftId);
+  const item = useOwnedQuery(api.items.get, draft.sourceSavedItemId ? { itemId: draft.sourceSavedItemId as Id<"savedItems"> } : "skip");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const m = platformMeta(draft.platform);
   const [text, setText] = useState(draft.draftText);
   const [seen, setSeen] = useState(draft.draftText);
@@ -135,11 +138,8 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   };
   const share = () => run("share", async () => {
-    if (dirty) {
-      await update({ draftId, draftText: text, markReady: true });
-    }
-    const result = await sharing.share({ text });
-    setNote(result.outcome === "shared" ? `Sent to the share sheet. Post it in ${m.label} yourself.` : null);
+    if (dirty) await update({ draftId, draftText: text, markReady: true });
+    setSheetOpen(true);
   });
 
   if (draft.generationStatus === "generating") {
@@ -197,7 +197,17 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
         <Small testID="studio-preview" icon="eye-outline" label="Preview" onPress={() => router.push({ pathname: "/studio/preview", params: { draftId, text: dirty ? text : undefined } })} />
         <Small testID="studio-regenerate" icon="refresh" label="Rewrite" onPress={askRegenerate} busy={busy === "regen"} />
       </View>
-      <Text style={type.caption}>Nothing is posted for you. Share opens the iOS share sheet; you post it yourself.</Text>
+      <Text style={type.caption}>Nothing is posted without your confirmation. Without a connected account, Share opens {m.label} or the share sheet and you post it yourself.</Text>
+      <PublishSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        draftId={draftId}
+        platform={draft.platform}
+        text={draft.draftText}
+        revision={draft.revision}
+        sourceUrl={item?.sourceUrl ?? undefined}
+        fallback={draft.platform === "x" || draft.platform === "linkedin" ? "intent_url" : draft.platform === "instagram" || draft.platform === "tiktok" ? "share_file" : undefined}
+      />
 
       {draft.output?.hashtags?.length ? (
         <Section title="Hashtags">
