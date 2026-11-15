@@ -9,12 +9,14 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { Field } from "../../../components/Field";
 import { GradientButton } from "../../../components/GradientButton";
-import { errorMessage, pickImages, uploadImage, type PickedImage } from "../../../components/media";
+import { errorMessage, pickImages, type PickedImage } from "../../../components/media";
 import { Tap } from "../../../components/Pressable";
 import { ScreenHeader } from "../../../components/ScreenHeader";
+import { PublishSheet } from "../../../components/publishing/PublishSheet";
 import { Section } from "../../../components/Section";
 import { colors, radius, space, type } from "../../../components/tokens";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../../../identity/OwnerProvider";
+import { shareMediaFallback, uploadInstagramJpeg, useMediaShareToast } from "../../../lib/mediaShare";
 import { SOCIAL_PLATFORM_LABELS, type MediaAnalysis, type SocialDraftView, type SocialPlatform } from "../../../shared/socialContracts";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -39,6 +41,9 @@ export default function PhotoStudio() {
   const [analysis, setAnalysis] = useState<MediaAnalysis | null>(null);
   const [mediaId, setMediaId] = useState<Id<"mediaAssets"> | null>(null);
   const [requested, setRequested] = useState<SocialPlatform[]>([]);
+  const [jpeg, setJpeg] = useState<{ storageId: Id<"_storage">; uri: string } | null>(null);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const toast = useMediaShareToast();
   const getUploadUrl = useOwnedMutation(api.media.generateUploadUrl);
   const createAsset = useOwnedMutation(api.media.createMediaAsset);
   const ownerId = useOwnerId();
@@ -47,6 +52,7 @@ export default function PhotoStudio() {
   const allDrafts = useOwnedQuery(api.social.drafts.listForSource, mediaId ? { mediaId } : "skip");
   const drafts = mediaId ? (allDrafts ?? []).filter((d) => requested.includes(d.platform)) : null;
   const writing = !!drafts?.some((d) => d.generationStatus === "generating");
+  const instagramDraft = drafts?.find((d) => d.platform === "instagram" && d.generationStatus === "ready");
 
   const choose = async (source: "library" | "camera") => {
     setError(null);
@@ -54,6 +60,7 @@ export default function PhotoStudio() {
       const [picked] = await pickImages(source);
       if (picked) {
         setPhoto(picked);
+        setJpeg(null);
         setMediaId(null);
         setAnalysis(null);
       }
@@ -73,8 +80,9 @@ export default function PhotoStudio() {
     setAnalysis(null);
     try {
       setStep("upload");
-      const storageId = await uploadImage(photo, () => getUploadUrl({}));
-      const mediaId = await createAsset({ storageId: storageId as Id<"_storage">, context: context.trim() || undefined });
+      const uploaded = await uploadInstagramJpeg(photo, () => getUploadUrl({}));
+      setJpeg(uploaded);
+      const mediaId = await createAsset({ storageId: uploaded.storageId, context: context.trim() || undefined });
       setStep("analyze");
       setAnalysis(await analyze({ ownerId, mediaId }));
       setStep("write");
@@ -186,7 +194,33 @@ export default function PhotoStudio() {
             onPress={() => router.push({ pathname: "/studio/editor", params: { mediaId, platform: drafts[0].platform } })}
           />
         ) : null}
+        {instagramDraft && jpeg && !writing ? (
+          <GradientButton testID="photo-publish-instagram" label="Publish to Instagram" icon="logo-instagram" onPress={() => setPublishOpen(true)} />
+        ) : null}
       </ScrollView>
+      {instagramDraft && jpeg ? (
+        <PublishSheet
+          visible={publishOpen}
+          onClose={() => setPublishOpen(false)}
+          draftId={instagramDraft._id as Id<"socialDrafts">}
+          platform="instagram"
+          text={instagramDraft.draftText}
+          revision={instagramDraft.revision}
+          imageUri={jpeg.uri}
+          imageStorageId={jpeg.storageId}
+          fallback={async (caption) => {
+            setPublishOpen(false);
+            await new Promise((resolve) => setTimeout(resolve, 400));
+            await shareMediaFallback({ caption, imageUri: jpeg.uri });
+          }}
+        />
+      ) : null}
+      {toast ? (
+        <View style={styles.toast} testID="media-share-toast" pointerEvents="none">
+          <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+          <Text style={type.body}>{toast}</Text>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -373,6 +407,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.md },
   cardHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
   status: { ...type.caption, fontWeight: "700", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, overflow: "hidden" },
+  toast: { position: "absolute", top: 60, left: space.lg, right: space.lg, flexDirection: "row", alignItems: "center", gap: space.sm, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceRaised },
   copy: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
   copyLabel: { color: colors.text, fontSize: 13, fontWeight: "700" },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: space.xs },

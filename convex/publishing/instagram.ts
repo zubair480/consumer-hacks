@@ -85,7 +85,7 @@ async function waitUntilFinished(deps: InstagramDeps, token: string, containerId
 
 export async function publishToInstagram(
   caption: string,
-  opts: PublishOptions & { imageUrl?: string },
+  opts: PublishOptions,
   deps: InstagramDeps = defaultDeps,
 ): Promise<PublishResult> {
   const token = process.env.INSTAGRAM_ACCESS_TOKEN;
