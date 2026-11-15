@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAction } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import { useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
 import { Field } from "./Field";
@@ -83,7 +83,7 @@ export function GitHubStarsRow() {
             onPress={onSync}
             style={[styles.action, !username.trim() && { opacity: 0.4 }]}
           >
-            <Text style={styles.actionText}>Sync</Text>
+            <Text style={[styles.actionText, Platform.OS === "android" && styles.onAccent]}>Sync</Text>
           </Tap>
         )}
       </View>
@@ -102,4 +102,5 @@ const styles = StyleSheet.create({
   icon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" },
   action: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill, backgroundColor: colors.accent, borderWidth: 1, borderColor: colors.accent },
   actionText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  onAccent: { color: colors.surface },
 });

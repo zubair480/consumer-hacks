@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
 import { errorMessage } from "./media";
@@ -113,7 +113,7 @@ export function YouTubeSourceRow({ onNotice }: { onNotice: (notice: Notice | nul
           onPress={connect}
           style={[styles.action, styles.connect, !status.configured && { opacity: 0.4 }]}
         >
-          <Text style={styles.actionText}>Connect</Text>
+          <Text style={[styles.actionText, Platform.OS === "android" && styles.onAccent]}>Connect</Text>
         </Tap>
       )}
     </View>
@@ -126,5 +126,6 @@ const styles = StyleSheet.create({
   action: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.border },
   connect: { backgroundColor: colors.accent, borderColor: colors.accent },
   actionText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  onAccent: { color: colors.surface },
   disconnect: { color: colors.textFaint, fontSize: 12, marginTop: space.xs },
 });
