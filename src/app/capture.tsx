@@ -82,18 +82,20 @@ export default function Capture() {
     }
   };
 
-  const save = async () => {
+  const save = async (asText?: string) => {
     Keyboard.dismiss();
     setError(null);
-    if (mode === "url" && !isValidLink(url)) {
+    const saveMode: Mode = asText !== undefined ? "text" : mode;
+    const saveText = (asText ?? text).trim();
+    if (saveMode === "url" && !isValidLink(url)) {
       setLinkInvalid(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       return;
     }
-    if (mode === "text" && trimmedText.length < MIN_TEXT) return setError(`Add at least ${MIN_TEXT} characters.`);
+    if (saveMode === "text" && saveText.length < MIN_TEXT) return setError(`Add at least ${MIN_TEXT} characters.`);
     try {
       let firstId: string | null = null;
-      if (mode === "image") {
+      if (saveMode === "image") {
         for (const [i, image] of images.entries()) {
           setProgress(images.length > 1 ? `Uploading ${i + 1} of ${images.length}…` : "Uploading photo…");
           const imageStorageId = (await uploadImage(image, () => getUploadUrl({}))) as Id<"_storage">;
@@ -102,10 +104,10 @@ export default function Capture() {
         }
       } else {
         setProgress("Saving…");
-        firstId = await create({ sourceUrl: mode === "url" ? url.trim() : undefined, rawText: mode === "text" ? trimmedText : undefined });
+        firstId = await create({ sourceUrl: saveMode === "url" ? url.trim() : undefined, rawText: saveMode === "text" ? saveText : undefined });
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      if (images.length > 1 && mode === "image") router.replace("/library");
+      if (images.length > 1 && saveMode === "image") router.replace("/library");
       else if (firstId) router.replace({ pathname: "/item/[id]", params: { id: firstId } });
     } catch (e) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
@@ -122,7 +124,7 @@ export default function Capture() {
           <Ionicons name="close" size={22} color={colors.text} />
         </Tap>
         <Text style={type.heading}>Save something</Text>
-        <Tap testID="capture-header-save-button" accessibilityRole="button" accessibilityLabel="Save" disabled={!canSave || saving} onPress={save} style={[styles.headerSave, (!canSave || saving) && { opacity: 0.4 }]}>
+        <Tap testID="capture-header-save-button" accessibilityRole="button" accessibilityLabel="Save" disabled={!canSave || saving} onPress={() => save()} style={[styles.headerSave, (!canSave || saving) && { opacity: 0.4 }]}>
           <Text style={styles.headerSaveText}>Save</Text>
         </Tap>
       </View>
@@ -146,7 +148,7 @@ export default function Capture() {
                   <Text style={styles.errorText}>That doesn’t look like a link</Text>
                 </View>
                 <View style={styles.row}>
-                  <Tap testID="save-as-text-button" onPress={() => { setText(url); switchMode("text"); }} style={styles.fallbackBtn}>
+                  <Tap testID="save-as-text-button" onPress={() => { setText(url); switchMode("text"); void save(url); }} style={styles.fallbackBtn}>
                     <Ionicons name="document-text" size={16} color={colors.text} />
                     <Text style={styles.fallbackText}>Save as text instead</Text>
                   </Tap>
@@ -226,7 +228,7 @@ export default function Capture() {
           </View>
         </View>
 
-        <GradientButton testID="save-button" label={progress ?? "Save"} icon="bookmark" onPress={save} loading={saving} disabled={!canSave} />
+        <GradientButton testID="save-button" label={progress ?? "Save"} icon="bookmark" onPress={() => save()} loading={saving} disabled={!canSave} />
       </ScrollView>
     </SafeAreaView>
   );
