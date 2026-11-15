@@ -4,7 +4,8 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import type { RequiredInput, SavedItemView, UserProfile } from "../shared/contracts";
 import { useOwnedMutation } from "../identity/OwnerProvider";
-import { actionsApi, type SuggestionRow } from "./api";
+import { api } from "../../convex/_generated/api";
+import type { SuggestionRow } from "./api";
 import { Field } from "./Field";
 import { GradientButton } from "./GradientButton";
 import { errorMessage } from "./media";
@@ -25,7 +26,7 @@ function prefill(input: RequiredInput, profile: UserProfile | undefined, item: S
 }
 
 export function ActionCard({ suggestion, color, profile, item }: { suggestion: SuggestionRow; color: string; profile?: UserProfile; item?: SavedItemView }) {
-  const execute = useOwnedMutation(actionsApi.execute);
+  const execute = useOwnedMutation(api.actions.execute);
   const [open, setOpen] = useState(false);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);

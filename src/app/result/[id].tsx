@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { actionsApi } from "../../components/api";
+import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
 import { GradientButton } from "../../components/GradientButton";
@@ -31,8 +31,8 @@ export default function ActionResult() {
 }
 
 function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
-  const execution = useOwnedQuery(actionsApi.getExecution, { executionId });
-  const result = useOwnedQuery(actionsApi.getResult, { executionId });
+  const execution = useOwnedQuery(api.actions.getExecution, { executionId });
+  const result = useOwnedQuery(api.actions.getResult, { executionId });
   const [copied, setCopied] = useState(false);
 
   if (execution === undefined) return <View style={styles.content}><Skeleton rows={4} /></View>;
@@ -104,7 +104,7 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
           <ResultView doc={doc} resultId={result?._id} />
           <Tap testID="result-open-item-button" onPress={() => router.push({ pathname: "/item/[id]", params: { id: execution.itemId } })} style={styles.itemLink}>
             <Ionicons name="bookmark-outline" size={16} color={colors.accent} />
-            <Text style={styles.link}>{result?.itemTitle ? `Open “${result.itemTitle}”` : "Open the saved item"}</Text>
+            <Text style={styles.link}>Open the saved item</Text>
           </Tap>
         </>
       ) : null}
