@@ -9,6 +9,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ActionCard } from "../../../components/ActionCard";
+import { FillFormCard } from "../../../components/formFill/FillFormCard";
 import { Boundary } from "../../../components/Boundary";
 import { FactRow } from "../../../components/FactRow";
 import { Field } from "../../../components/Field";
@@ -242,6 +243,8 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
             <Actions item={item} />
           </Boundary>
         ) : null}
+
+        {ready ? <FillFormCard item={item} /> : null}
 
         {ready ? (
           <Button testID="create-post" title="Create post" icon="create-outline" variant="secondary" fullWidth onPress={() => router.push({ pathname: "/studio/platforms", params: { itemId } })} />
