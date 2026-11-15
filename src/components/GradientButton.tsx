@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import type { ComponentProps } from "react";
-import { ActivityIndicator, StyleSheet, Text, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { colors as theme } from "../theme/tokens";
 import { Tap } from "./Pressable";
-import { colors, gradient, radius } from "./tokens";
+import { colors, radius } from "./tokens";
 
 type Props = {
   testID: string;
@@ -18,12 +18,7 @@ type Props = {
 
 export function GradientButton({ testID, label, icon, onPress, loading, disabled, variant = "primary", style }: Props) {
   const inactive = disabled || loading;
-  const content = (
-    <>
-      {loading ? <ActivityIndicator color={colors.text} /> : icon ? <Ionicons name={icon} size={18} color={variant === "danger" ? colors.danger : colors.text} /> : null}
-      <Text style={[styles.label, variant === "danger" && { color: colors.danger }]}>{label}</Text>
-    </>
-  );
+  const fg = variant === "primary" ? theme.onPrimary : variant === "danger" ? colors.danger : colors.text;
   return (
     <Tap
       testID={testID}
@@ -35,18 +30,18 @@ export function GradientButton({ testID, label, icon, onPress, loading, disabled
       onPress={onPress}
       style={[style, inactive && styles.disabled]}
     >
-      {variant === "primary" ? (
-        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btn}>{content}</LinearGradient>
-      ) : (
-        <LinearGradient colors={[colors.surfaceRaised, colors.surfaceRaised]} style={[styles.btn, styles.secondary]}>{content}</LinearGradient>
-      )}
+      <View style={[styles.btn, variant === "primary" ? styles.primary : styles.secondary]}>
+        {loading ? <ActivityIndicator color={fg} /> : icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
+        <Text style={[styles.label, { color: fg }]}>{label}</Text>
+      </View>
     </Tap>
   );
 }
 
 const styles = StyleSheet.create({
-  btn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15, paddingHorizontal: 20, borderRadius: radius.md },
-  secondary: { borderWidth: 1, borderColor: colors.border },
-  label: { color: colors.text, fontSize: 16, fontWeight: "700" },
+  btn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 52, paddingHorizontal: 20, borderRadius: radius.pill },
+  primary: { backgroundColor: theme.primary },
+  secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  label: { fontSize: 16, fontWeight: "700" },
   disabled: { opacity: 0.5 },
 });

@@ -13,7 +13,7 @@ export function Input({ label, error, hint, style, multiline, onFocus, onBlur, .
       <TextInput
         placeholderTextColor={colors.textMuted}
         selectionColor={colors.primary}
-        keyboardAppearance="dark"
+        keyboardAppearance="light"
         multiline={multiline}
         onFocus={(e) => {
           setFocused(true);
@@ -29,10 +29,10 @@ export function Input({ label, error, hint, style, multiline, onFocus, onBlur, .
           {
             color: colors.text,
             backgroundColor: colors.surface,
-            borderRadius: radius.lg,
-            borderWidth: 1.5,
+            borderRadius: multiline ? radius.lg : radius.pill,
+            borderWidth: 1,
             borderColor: error ? colors.danger : focused ? colors.primary : colors.border,
-            paddingHorizontal: spacing.lg,
+            paddingHorizontal: spacing.xl,
             paddingVertical: spacing.md,
             minHeight: multiline ? 120 : 52,
             textAlignVertical: multiline ? "top" : "center",
