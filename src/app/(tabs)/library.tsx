@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -14,8 +14,9 @@ import { Tap } from "../../components/Pressable";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space } from "../../components/tokens";
 import { metaFor, timeAgo } from "../../components/typeMeta";
-import { DisplayTitle, ItemRow, SearchPill, TypeChip, WaveBlocks, pastelFor } from "../../components/ui";
+import { CountChips, DisplayTitle, ItemRow, SearchPill, WaveBlocks, pastelFor } from "../../components/ui";
 import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
+import { palette } from "../../theme";
 import { CONTENT_TYPES, type ContentType, type ExtractionStatus } from "../../shared/contracts";
 
 const STATUS_META: Partial<Record<ExtractionStatus, string>> = {
@@ -29,17 +30,20 @@ const STATUS_META: Partial<Record<ExtractionStatus, string>> = {
 export default function Library() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ContentType | undefined>();
+  const [chipsOpen, setChipsOpen] = useState(true);
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.top}>
         <View style={styles.titleRow}>
-          <DisplayTitle>Library</DisplayTitle>
+          <DisplayTitle highlight="LIBRARY" highlightColor={palette.lavender}>YOUR LIBRARY</DisplayTitle>
           <Tap testID="library-add-button" accessibilityLabel="Save something" onPress={() => router.push("/capture")} style={styles.add}>
-            <Ionicons name="add" size={24} color={colors.surface} />
+            <Text style={styles.addText}>Save</Text>
           </Tap>
         </View>
         <SearchPill
           testID="library-search-input"
+          onFilterPress={() => setChipsOpen((o) => !o)}
+          filterTestID="library-filter-button"
           value={query}
           onChangeText={setQuery}
           autoCorrect={false}
@@ -48,13 +52,13 @@ export default function Library() {
         />
       </View>
       <Boundary title="Couldn’t load your library">
-        <Results query={query} filter={filter} setFilter={setFilter} />
+        <Results query={query} filter={filter} setFilter={setFilter} chipsOpen={chipsOpen} />
       </Boundary>
     </SafeAreaView>
   );
 }
 
-function Results({ query, filter, setFilter }: { query: string; filter?: ContentType; setFilter: (t?: ContentType) => void }) {
+function Results({ query, filter, setFilter, chipsOpen }: { query: string; filter?: ContentType; setFilter: (t?: ContentType) => void; chipsOpen: boolean }) {
   const searching = query.trim().length > 0;
   const all = useOwnedQuery(api.items.list, { limit: 200 });
   const searched = useOwnedQuery(api.items.search, searching ? { query, primaryType: filter } : "skip");
@@ -68,13 +72,16 @@ function Results({ query, filter, setFilter }: { query: string; filter?: Content
 
   return (
     <>
-      {present.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters} style={styles.filterBar}>
-          <TypeChip testID="filter-all" label="All" count={all?.length} color={colors.surface} selected={!filter} onPress={() => setFilter(undefined)} />
-          {present.map((t) => (
-            <TypeChip key={t} testID={`filter-${t}`} type={t} label={metaFor(t).label} count={counts.get(t)} selected={filter === t} onPress={() => toggle(t)} />
-          ))}
-        </ScrollView>
+      {chipsOpen && present.length > 0 ? (
+        <View style={styles.filters}>
+          <CountChips
+            chips={[
+              { key: "all", label: "All", count: all?.length, selected: !filter, testID: "filter-all" },
+              ...present.map((t) => ({ key: t, label: metaFor(t).label, count: counts.get(t), type: t, selected: filter === t, testID: `filter-${t}` })),
+            ]}
+            onPress={(key) => (key === "all" ? setFilter(undefined) : toggle(key as ContentType))}
+          />
+        </View>
       ) : null}
       {items === undefined ? (
         <View style={styles.list}>
@@ -88,7 +95,7 @@ function Results({ query, filter, setFilter }: { query: string; filter?: Content
           contentContainerStyle={styles.list}
           keyboardDismissMode="on-drag"
           ListHeaderComponent={
-            !searching && !filter && present.length > 1 ? (
+            !searching && !filter && present.length > 0 ? (
               <View style={styles.blocks}>
                 <WaveBlocks
                   blocks={present.map((t) => ({ key: t, label: metaFor(t).label, count: counts.get(t) ?? 0, color: pastelFor(t), testID: `library-block-${t}` }))}
@@ -117,6 +124,7 @@ function Results({ query, filter, setFilter }: { query: string; filter?: Content
                 type={item.primaryType}
                 title={itemTitle(item)}
                 meta={[STATUS_META[item.extractionStatus] ?? metaFor(item.primaryType).label, timeAgo(item.createdAt)].join(" · ")}
+                status={item.extractionStatus === "ready" ? "ready" : item.extractionStatus === "failed" ? "failed" : "working"}
                 onPress={() => router.push({ pathname: "/item/[id]", params: { id: item._id } })}
               />
               {item.extractionStatus === "failed" ? (
@@ -141,10 +149,10 @@ function Results({ query, filter, setFilter }: { query: string; filter?: Content
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.xl, paddingTop: space.md, gap: space.lg, paddingBottom: space.md },
-  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  add: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" },
-  filterBar: { flexGrow: 0 },
-  filters: { gap: space.sm, paddingHorizontal: space.xl, paddingVertical: 4 },
+  titleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: space.md },
+  add: { height: 40, paddingHorizontal: space.lg, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  addText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  filters: { paddingHorizontal: space.xl, paddingVertical: 4 },
   blocks: { marginBottom: space.sm },
   list: { padding: space.xl, paddingTop: space.md, gap: space.md, paddingBottom: 120 },
   retry: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-end", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.text },
