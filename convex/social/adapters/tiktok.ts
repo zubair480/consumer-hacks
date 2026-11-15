@@ -5,7 +5,7 @@ import { hashtags, joinBlocks, str, strings } from "./types";
 export const tiktok: PlatformAdapter = {
   platform: "tiktok",
   instructions: [
-    "Platform: TikTok. A 15-40 second vertical video plan, casual and energetic, spoken in first person.",
+    "Platform: TikTok. A 15-40 second vertical video plan, casual and energetic, spoken in first person as someone who found or saved this, not as its creator unless brief.relationship or brief.userContext says so.",
     "hook: what is said/shown in the first 2 seconds.",
     "shots: 4-7 shots, each { visual (what the camera shows), durationSec }. Only shots the user can actually film or source; never stage experiences they have not had.",
     "voiceover: the full spoken script. onScreenText: 3-6 short text overlays. caption: ≤150 chars.",
