@@ -16,6 +16,7 @@ import { itemTitle } from "../../../components/ItemCard";
 import { EmptyState } from "../../../components/EmptyState";
 import { errorMessage, pickImages, uploadImage } from "../../../components/media";
 import { Tap } from "../../../components/Pressable";
+import { RunRepoCard } from "../../../components/RunRepoCard";
 import { ScreenHeader } from "../../../components/ScreenHeader";
 import { BouncingDots, Burst, Shimmer, success } from "../../../components/Signature";
 import { Skeleton } from "../../../components/States";
@@ -24,7 +25,7 @@ import { fonts, palette } from "../../../theme";
 import { AvatarStack, Button, Doodle, Enter, ItemRow, Text, pastelFor, typeIconFor } from "../../../components/ui";
 import { metaFor, timeAgo } from "../../../components/typeMeta";
 import { useOwnedMutation, useOwnedQuery } from "../../../identity/OwnerProvider";
-import { IN_PROGRESS_EXTRACTION_STATUSES, type ExtractionStatus, type SavedItemView } from "../../../shared/contracts";
+import { AGENT_ACTIONS, IN_PROGRESS_EXTRACTION_STATUSES, type ExtractionStatus, type SavedItemView } from "../../../shared/contracts";
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -337,6 +338,7 @@ function Actions({ item }: { item: SavedItemView }) {
       ) : (
         [...suggestions].sort((a, b) => a.rank - b.rank).map((s) => <ActionCard key={s._id} suggestion={s} color={color} profile={profile} item={item} />)
       )}
+      {suggestions && suggestions.length > 0 && item.primaryType && AGENT_ACTIONS.run_repo?.contentTypes.includes(item.primaryType) ? <RunRepoCard itemId={itemId} color={color} /> : null}
     </Block>
   );
 }
