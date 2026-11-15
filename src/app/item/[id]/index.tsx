@@ -10,6 +10,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { CalendarAgentCard } from "../../../components/agents/CalendarAgent";
 import { ActionCard } from "../../../components/ActionCard";
+import { FillFormCard } from "../../../components/formFill/FillFormCard";
 import { Boundary } from "../../../components/Boundary";
 import { FactRow } from "../../../components/FactRow";
 import { Field } from "../../../components/Field";
@@ -245,6 +246,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
           </Boundary>
         ) : null}
 
+        {ready ? <FillFormCard item={item} /> : null}
         {ready ? <Boundary fallback={null}><CalendarAgentCard itemId={itemId} primaryType={item.primaryType} /></Boundary> : null}
 
         {ready ? (

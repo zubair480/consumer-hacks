@@ -18,6 +18,7 @@ import {
 import { importTables } from "./imports/schema";
 import { socialTables } from "./social/schema";
 import { shareTables } from "./shareSchema";
+import { formFillTables } from "./formFillSchema";
 import { agentTables } from "./agents/schema";
 
 // OWNER: Lead. Other threads add only new OPTIONAL fields or new indexes,
@@ -161,6 +162,8 @@ export default defineSchema({
   // Share to Zapy (CONS-22).
   ...shareTables,
 
+  // Browserbase "Fill it for me".
+  ...formFillTables,
   // Agent mode 2 (ZUB-36).
   ...agentTables,
 });
