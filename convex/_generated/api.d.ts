@@ -14,6 +14,8 @@ import type * as analysis from "../analysis.js";
 import type * as collections from "../collections.js";
 import type * as http from "../http.js";
 import type * as imports_connections from "../imports/connections.js";
+import type * as imports_github from "../imports/github.js";
+import type * as imports_githubClient from "../imports/githubClient.js";
 import type * as imports_posts from "../imports/posts.js";
 import type * as imports_xClient from "../imports/xClient.js";
 import type * as ingest from "../ingest.js";
@@ -66,6 +68,8 @@ declare const fullApi: ApiFromModules<{
   collections: typeof collections;
   http: typeof http;
   "imports/connections": typeof imports_connections;
+  "imports/github": typeof imports_github;
+  "imports/githubClient": typeof imports_githubClient;
   "imports/posts": typeof imports_posts;
   "imports/xClient": typeof imports_xClient;
   ingest: typeof ingest;
