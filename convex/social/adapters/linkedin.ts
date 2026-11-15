@@ -7,7 +7,7 @@ export const linkedin: PlatformAdapter = {
   instructions: [
     "Platform: LinkedIn. Professional, first-person, insight-led.",
     "Structure: a one-line hook, 2-4 short paragraphs on why it matters, a concrete takeaway, and a closing question or call to action.",
-    "120-220 words. Line breaks between paragraphs. At most 3 hashtags at the end. No emoji walls.",
+    "hook, body, takeaway and cta are separate fields and must not repeat each other. 120-220 words in total. Line breaks between paragraphs. At most 3 hashtags at the end. No emoji walls.",
   ].join("\n"),
   schemaHint: '{ "hook": string, "body": string, "takeaway": string, "cta": string, "hashtags": string[], "mediaSuggestions": string[] }',
   normalize: (raw) => ({

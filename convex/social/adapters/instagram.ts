@@ -6,7 +6,7 @@ export const instagram: PlatformAdapter = {
   platform: "instagram",
   instructions: [
     "Platform: Instagram. Visual, warm, scroll-stopping first line.",
-    "caption: hook line, 2-4 short lines with a few tasteful emoji, then a soft call to action (save / share / tag a friend).",
+    "hook: the scroll-stopping first line. caption: 2-4 short lines with a few tasteful emoji that continue after the hook (do not repeat the hook or the cta). cta: one soft call to action (save / share / tag a friend).",
     "slides: a 3-6 slide carousel, each { title (≤40 chars), body (≤140 chars) }. Slide 1 is the cover.",
     "hashtags: 5-12 relevant hashtags (without spaces).",
     "mediaSuggestions: describe the photos or graphics to use for the post.",
