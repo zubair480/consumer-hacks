@@ -5,7 +5,7 @@ import { v } from "convex/values";
 // OAuth tokens live only in importConnections and are read only by internal functions;
 // no public query returns them.
 
-export const vImportPlatform = v.union(v.literal("x"), v.literal("instagram"), v.literal("linkedin"));
+export const vImportPlatform = v.union(v.literal("x"), v.literal("instagram"), v.literal("linkedin"), v.literal("youtube"));
 
 export const importTables = {
   /** One connected account per user and platform. */

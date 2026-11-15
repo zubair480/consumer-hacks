@@ -31,7 +31,7 @@ export type ImportedPost = Infer<typeof vImportedPost>;
 export const vImportResult = v.object({ created: v.number(), duplicates: v.number(), invalid: v.number() });
 export type ImportResult = Infer<typeof vImportResult>;
 
-const PLATFORM_LABELS: Record<ImportedPost["platform"], string> = { x: "X", instagram: "Instagram", linkedin: "LinkedIn" };
+const PLATFORM_LABELS: Record<ImportedPost["platform"], string> = { x: "X", instagram: "Instagram", linkedin: "LinkedIn", youtube: "YouTube" };
 
 function cleanUrl(raw: string): string | null {
   const url = raw.trim();
@@ -40,16 +40,23 @@ function cleanUrl(raw: string): string | null {
 }
 
 const X_STATUS = /^https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/([^/?#]+)\/status(?:es)?\/(\d+)/i;
+const YOUTUBE_VIDEO = /^https?:\/\/(?:(?:www\.|m\.)?youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/)|youtu\.be\/)([\w-]{11})/i;
 
 /** The platform id for a post, from the caller or parsed from its URL. */
 export function externalIdFor(post: ImportedPost): string | undefined {
   if (post.externalId) return post.externalId;
   if (post.platform === "x") return X_STATUS.exec(post.url)?.[2];
+  if (post.platform === "youtube") return YOUTUBE_VIDEO.exec(post.url)?.[1];
   return undefined;
 }
 
 /** URL spellings, without query strings, that a user may already have saved by pasting (x.com vs twitter.com). */
 export function urlVariants(url: string): string[] {
+  const video = YOUTUBE_VIDEO.exec(url)?.[1];
+  if (video) {
+    const hosts = ["https://www.youtube.com", "https://youtube.com", "https://m.youtube.com"];
+    return [...hosts.map((h) => `${h}/watch?v=${video}`), ...hosts.map((h) => `${h}/shorts/${video}`), `https://youtu.be/${video}`];
+  }
   const out = new Set([url.split(/[?#]/)[0]!.replace(/\/$/, "")]);
   const x = X_STATUS.exec(url);
   if (x) {
@@ -105,7 +112,7 @@ export async function importPosts(ctx: MutationCtx, user: Doc<"users">, posts: I
           .query("savedItems")
           .withIndex("by_userId_and_sourceUrl", (q) => q.eq("userId", user._id).gte("sourceUrl", candidate).lt("sourceUrl", candidate + "\uffff"))
           .take(20);
-        if (nearby.some((item) => item.sourceUrl === candidate || /^[/?#]/.test(item.sourceUrl!.slice(candidate.length)))) {
+        if (nearby.some((item) => item.sourceUrl === candidate || /^[/?#&]/.test(item.sourceUrl!.slice(candidate.length)))) {
           alreadySaved = true;
           break;
         }

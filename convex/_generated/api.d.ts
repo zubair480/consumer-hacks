@@ -16,6 +16,8 @@ import type * as http from "../http.js";
 import type * as imports_connections from "../imports/connections.js";
 import type * as imports_posts from "../imports/posts.js";
 import type * as imports_xClient from "../imports/xClient.js";
+import type * as imports_youtube from "../imports/youtube.js";
+import type * as imports_youtubeClient from "../imports/youtubeClient.js";
 import type * as ingest from "../ingest.js";
 import type * as items from "../items.js";
 import type * as lib_actionCatalog from "../lib/actionCatalog.js";
@@ -68,6 +70,8 @@ declare const fullApi: ApiFromModules<{
   "imports/connections": typeof imports_connections;
   "imports/posts": typeof imports_posts;
   "imports/xClient": typeof imports_xClient;
+  "imports/youtube": typeof imports_youtube;
+  "imports/youtubeClient": typeof imports_youtubeClient;
   ingest: typeof ingest;
   items: typeof items;
   "lib/actionCatalog": typeof lib_actionCatalog;
