@@ -67,7 +67,6 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
   const inProgress = IN_PROGRESS_EXTRACTION_STATUSES.includes(item.extractionStatus);
   const keyFacts = [
     ["Deadline", item.deadline],
-    ["Organization", item.organization],
     ["Location", item.location],
     ["Price", item.price],
   ].filter((f): f is [string, string] => !!f[1]);
@@ -88,17 +87,6 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
 
         {item.summary ? <Text style={[type.body, styles.summary, { borderLeftColor: m.color }]} testID="item-summary">{item.summary}</Text> : null}
 
-        {keyFacts.length > 0 ? (
-          <View style={styles.keyFacts}>
-            {keyFacts.map(([label, value]) => (
-              <View key={label} style={styles.keyFact}>
-                <Text style={type.label}>{label}</Text>
-                <Text style={type.heading}>{value}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
         {inProgress ? (
           <View style={styles.progress} testID="item-processing">
             <ActivityIndicator color={colors.accent} />
@@ -112,6 +100,23 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         {item.extractionStatus === "needs_input" ? <NeedsInfo item={item} /> : null}
         {item.extractionStatus === "failed" ? <Failed item={item} /> : null}
 
+        {item.extractionStatus === "ready" ? (
+          <Boundary title="Couldn’t load actions">
+            <Actions item={item} />
+          </Boundary>
+        ) : null}
+
+        {keyFacts.length > 0 ? (
+          <View style={styles.keyFacts}>
+            {keyFacts.map(([label, value]) => (
+              <View key={label} style={styles.keyFact}>
+                <Text style={type.label}>{label}</Text>
+                <Text style={type.heading}>{value}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         {item.extractionStatus === "ready" || item.extractionStatus === "needs_input" ? (
           <Boundary fallback={null}>
             <Facts itemId={itemId} />
@@ -119,8 +124,8 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         ) : null}
 
         {item.extractionStatus === "ready" ? (
-          <Boundary title="Couldn’t load actions">
-            <Actions item={item} />
+          <Boundary fallback={null}>
+            <PreviousResults itemId={itemId} />
           </Boundary>
         ) : null}
 
@@ -140,12 +145,24 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
   );
 }
 
+const FACTS_PREVIEW = 4;
+
 function Facts({ itemId }: { itemId: Id<"savedItems"> }) {
   const analysis = useOwnedQuery(api.analysis.getForItem, { itemId });
+  const [showAll, setShowAll] = useState(false);
   if (!analysis || analysis.facts.length === 0) return null;
+  const facts = showAll ? analysis.facts : analysis.facts.slice(0, FACTS_PREVIEW);
   return (
     <Section title="Facts">
-      <View testID="facts-list">{analysis.facts.map((f, i) => <FactRow key={f.key + i} fact={f} index={i} />)}</View>
+      <View testID="facts-list">
+        {facts.map((f, i) => <FactRow key={f.key + i} fact={f} index={i} />)}
+        {analysis.facts.length > FACTS_PREVIEW ? (
+          <Tap testID="facts-show-all" accessibilityRole="button" haptic="none" onPress={() => setShowAll(!showAll)} style={styles.showAll}>
+            <Text style={styles.link}>{showAll ? "Show less" : `Show all (${analysis.facts.length})`}</Text>
+            <Ionicons name={showAll ? "chevron-up" : "chevron-down"} size={16} color={colors.accent} />
+          </Tap>
+        ) : null}
+      </View>
     </Section>
   );
 }
@@ -153,29 +170,31 @@ function Facts({ itemId }: { itemId: Id<"savedItems"> }) {
 function Actions({ item }: { item: SavedItemView }) {
   const itemId = item._id as Id<"savedItems">;
   const suggestions = useOwnedQuery(api.actions.listSuggestions, { itemId });
-  const results = useOwnedQuery(api.actions.listResultsForItem, { itemId });
   const profile = useOwnedQuery(api.preferences.get, {});
   const color = metaFor(item.primaryType).color;
   return (
-    <>
-      <Section
-        title="What you can do"
-        right={<Tap testID="open-actions-button" onPress={() => router.push({ pathname: "/item/[id]/actions", params: { id: item._id } })}><Text style={styles.link}>Details</Text></Tap>}
-      >
-        {suggestions === undefined ? (
-          <Skeleton rows={3} height={110} />
-        ) : suggestions.length === 0 ? (
-          <View style={styles.progress}><ActivityIndicator color={colors.accent} /><Text style={type.caption}>Picking the best actions for this save…</Text></View>
-        ) : (
-          [...suggestions].sort((a, b) => a.rank - b.rank).map((s) => <ActionCard key={s._id} suggestion={s} color={color} profile={profile} item={item} />)
-        )}
-      </Section>
-      {results && results.length > 0 ? (
-        <Section title="Previous results">
-          {results.map((r) => <OutcomeRow key={r._id} row={r} />)}
-        </Section>
-      ) : null}
-    </>
+    <Section
+      title="Do something with it"
+      right={<Tap testID="open-actions-button" onPress={() => router.push({ pathname: "/item/[id]/actions", params: { id: item._id } })}><Text style={styles.link}>Details</Text></Tap>}
+    >
+      {suggestions === undefined ? (
+        <Skeleton rows={3} height={110} />
+      ) : suggestions.length === 0 ? (
+        <View style={styles.progress}><ActivityIndicator color={colors.accent} /><Text style={type.caption}>Picking the best actions for this save…</Text></View>
+      ) : (
+        [...suggestions].sort((a, b) => a.rank - b.rank).map((s) => <ActionCard key={s._id} suggestion={s} color={color} profile={profile} item={item} />)
+      )}
+    </Section>
+  );
+}
+
+function PreviousResults({ itemId }: { itemId: Id<"savedItems"> }) {
+  const results = useOwnedQuery(api.actions.listResultsForItem, { itemId });
+  if (!results || results.length === 0) return null;
+  return (
+    <Section title="Previous results">
+      {results.map((r) => <OutcomeRow key={r._id} row={r} />)}
+    </Section>
   );
 }
 
@@ -273,6 +292,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: space.sm, alignItems: "center" },
   error: { color: colors.danger, fontWeight: "600" },
   link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+  showAll: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: space.md },
   source: { flexDirection: "row", alignItems: "center", gap: 8, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface },
   sourceText: { flex: 1, color: colors.text },
   raw: { color: colors.textMuted, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface },
