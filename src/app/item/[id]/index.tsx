@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ActionCard } from "../../../components/ActionCard";
-import { actionsApi, analysisApi, preferencesApi } from "../../../components/api";
+import { actionsApi, preferencesApi } from "../../../components/api";
 import { Boundary } from "../../../components/Boundary";
 import { FactRow } from "../../../components/FactRow";
 import { Field } from "../../../components/Field";
@@ -142,7 +142,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
 }
 
 function Facts({ itemId }: { itemId: Id<"savedItems"> }) {
-  const analysis = useOwnedQuery(analysisApi.getForItem, { itemId });
+  const analysis = useOwnedQuery(api.analysis.getForItem, { itemId });
   if (!analysis || analysis.facts.length === 0) return null;
   return (
     <Section title="Facts">

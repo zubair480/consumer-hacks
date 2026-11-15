@@ -1,6 +1,6 @@
 import { makeFunctionReference } from "convex/server";
 import type { Id } from "../../convex/_generated/dataModel";
-import type { ActionResultDocument, ActionSuggestion, ActionType, ActivityEventType, ContentType, ExecutionStatus, ExtractedFact, KeyFacts, OwnerArgs, UserProfile } from "../shared/contracts";
+import type { ActionResultDocument, ActionSuggestion, ActionType, ActivityEventType, ContentType, ExecutionStatus, OwnerArgs, UserProfile } from "../shared/contracts";
 
 export type LatestExecution = { _id: Id<"actionExecutions">; status: ExecutionStatus; error: string | null; resultId: Id<"actionResults"> | null; createdAt: number };
 export type SuggestionRow = ActionSuggestion & { _id: Id<"actionSuggestions">; itemId: Id<"savedItems">; latestExecution: LatestExecution | null };
@@ -17,7 +17,6 @@ export type ResultRow = {
   itemPrimaryType?: ContentType;
   status?: ExecutionStatus;
 };
-export type AnalysisRow = KeyFacts & { _id: string; contentTypes: ContentType[]; primaryType: ContentType; title: string; summary: string; facts: ExtractedFact[] };
 export type ActivityRow = {
   _id: Id<"activityEvents">;
   type: ActivityEventType;
@@ -39,10 +38,6 @@ export const actionsApi = {
   getResult: q<"query", OwnerArgs & { executionId: Id<"actionExecutions"> }, ResultRow | null>("actions:getResult"),
   listResultsForItem: q<"query", OwnerArgs & { itemId: Id<"savedItems"> }, ResultRow[]>("actions:listResultsForItem"),
   recentOutcomes: q<"query", OwnerArgs & { limit?: number }, ResultRow[]>("actions:recentOutcomes"),
-};
-
-export const analysisApi = {
-  getForItem: q<"query", OwnerArgs & { itemId: Id<"savedItems"> }, AnalysisRow | null>("analysis:getForItem"),
 };
 
 export const activityApi = {
