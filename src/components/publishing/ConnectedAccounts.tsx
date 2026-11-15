@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 import { ACCOUNT_LABELS } from "../../lib/share";
-import { colors, spacing } from "../../theme";
+import { colors, palette, radius, spacing } from "../../theme";
 import { Button, Card, Divider, Skeleton, Text } from "../ui";
 import { localTimeNow, TestPostSheet, type TestPostPlatform } from "./TestPostSheet";
 
@@ -35,9 +35,16 @@ export function ConnectedAccounts() {
               }}
             >
               <Text variant="bodyStrong">{ACCOUNT_LABELS[a.platform]}</Text>
-              <Text variant="caption" color={a.connected ? colors.success : colors.textMuted}>
-                {a.connected ? "Connected" : "Share-sheet mode"}
-              </Text>
+              <View
+                style={{
+                  paddingHorizontal: spacing.md,
+                  paddingVertical: spacing.xs,
+                  borderRadius: radius.pill,
+                  backgroundColor: a.connected ? palette.mint : colors.surfaceRaised,
+                }}
+              >
+                <Text variant="label">{a.connected ? "Connected" : "Share-sheet mode"}</Text>
+              </View>
             </View>
             {a.connected && (a.platform === "x" || a.platform === "linkedin") ? (
               <Button

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState, type ReactNode } from "react";
 import { Animated, View, type DimensionValue } from "react-native";
-import { colors, radius, spacing } from "../../theme";
+import { colors, palette, radius, spacing } from "../../theme";
 import { Button, type IconName } from "./Button";
 import { Text } from "./Text";
 
@@ -19,7 +19,7 @@ export function Divider() {
 }
 
 export function EmptyState({
-  icon = "sparkles-outline",
+  icon = "bookmark-outline",
   title,
   body,
   actionLabel,
@@ -35,8 +35,8 @@ export function EmptyState({
 }) {
   return (
     <View testID={testID} style={{ alignItems: "center", gap: spacing.md, paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl }}>
-      <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name={icon} size={28} color={colors.primary} />
+      <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: palette.butter, alignItems: "center", justifyContent: "center" }}>
+        <Ionicons name={icon} size={28} color={colors.text} />
       </View>
       <Text variant="heading" align="center">{title}</Text>
       {body ? <Text tone="secondary" align="center">{body}</Text> : null}

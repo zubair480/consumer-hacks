@@ -14,7 +14,7 @@ export default function RootLayout() {
   return (
     <ConvexProvider client={convex}>
       <ThemeProvider value={theme}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <OwnerProvider>
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: "slide_from_right" }}>
             <Stack.Screen name="(tabs)" />

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { ActivityIndicator, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, radius, shadows, spacing } from "../../theme";
+import { colors, radius, spacing } from "../../theme";
 import { ScalePressable } from "./Pressable";
 import { Text } from "./Text";
 
@@ -24,14 +24,14 @@ export type ButtonProps = {
 
 const variantStyle: Record<ButtonVariant, { bg: string; fg: string; border?: string }> = {
   primary: { bg: colors.primary, fg: colors.onPrimary },
-  secondary: { bg: colors.surfaceRaised, fg: colors.text, border: colors.borderStrong },
-  ghost: { bg: "transparent", fg: colors.primary },
+  secondary: { bg: colors.surface, fg: colors.text, border: colors.border },
+  ghost: { bg: "transparent", fg: colors.text },
   danger: { bg: colors.danger, fg: colors.onPrimary },
 };
 
 const sizeStyle: Record<ButtonSize, { height: number; px: number; icon: number }> = {
-  sm: { height: 36, px: spacing.md, icon: 16 },
-  md: { height: 48, px: spacing.lg, icon: 18 },
+  sm: { height: 38, px: spacing.lg, icon: 16 },
+  md: { height: 52, px: spacing.xl, icon: 18 },
   lg: { height: 58, px: spacing.xl, icon: 22 },
 };
 
@@ -62,7 +62,6 @@ export function Button({ title, onPress, variant = "primary", size = "md", icon,
           opacity: disabled ? 0.45 : 1,
           alignSelf: fullWidth ? "stretch" : "flex-start",
         },
-        variant === "primary" && !disabled ? shadows.glow : null,
         style,
       ]}
     >
@@ -103,7 +102,9 @@ export function IconButton({ icon, onPress, accessibilityLabel, testID, size = 4
         borderRadius: size / 2,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: tone === "primary" ? colors.primary : colors.surfaceRaised,
+        backgroundColor: tone === "primary" ? colors.primary : colors.surface,
+        borderWidth: tone === "primary" ? 0 : 1,
+        borderColor: colors.border,
       }}
     >
       <Ionicons name={icon} size={size * 0.45} color={tone === "primary" ? colors.onPrimary : colors.text} />

@@ -8,3 +8,4 @@ export { ScalePressable, type ScalePressableProps } from "./Pressable";
 export { Screen, type ScreenProps } from "./Screen";
 export { StatusBadge } from "./StatusBadge";
 export { Text, type TextProps, type TextTone, type TextVariant } from "./Text";
+export { DisplayTitle, Header, HeroTypeCard, HoloBand, ItemRow, SearchPill, TabPlus, TypeChip, WaveBlocks, pastelFor, tabBarTheme, typeIconFor, type WaveBlock } from "./Zapy";

@@ -11,7 +11,6 @@ import { ActionCard } from "../../../components/ActionCard";
 import { Boundary } from "../../../components/Boundary";
 import { FactRow } from "../../../components/FactRow";
 import { Field } from "../../../components/Field";
-import { GradientButton } from "../../../components/GradientButton";
 import { itemTitle } from "../../../components/ItemCard";
 import { EmptyState } from "../../../components/EmptyState";
 import { errorMessage, pickImages, uploadImage } from "../../../components/media";
@@ -22,7 +21,8 @@ import { Section } from "../../../components/Section";
 import { Skeleton } from "../../../components/States";
 import { StatusPill } from "../../../components/StatusPill";
 import { colors, radius, space, type } from "../../../components/tokens";
-import { TypeChip } from "../../../components/TypeChip";
+import { colors as theme } from "../../../theme";
+import { Button, TypeChip, pastelFor } from "../../../components/ui";
 import { metaFor, timeAgo } from "../../../components/typeMeta";
 import { useOwnedMutation, useOwnedQuery } from "../../../identity/OwnerProvider";
 import { IN_PROGRESS_EXTRACTION_STATUSES, type SavedItemView } from "../../../shared/contracts";
@@ -66,7 +66,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         back
         right={item ? (
           <Tap testID="delete-item-button" accessibilityLabel="Delete save" onPress={confirmDelete} style={styles.iconBtn}>
-            <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
+            <Ionicons name="trash-outline" size={18} color={colors.text} />
           </Tap>
         ) : null}
       />
@@ -80,14 +80,14 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         {header}
         <View style={styles.content} testID="item-deleted">
           <EmptyState icon="trash-outline" title="This item was deleted" body="It’s no longer in your Library.">
-            <GradientButton testID="item-deleted-back-button" label="Back" icon="chevron-back" variant="secondary" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={{ alignSelf: "stretch", marginTop: space.sm }} />
+            <Button testID="item-deleted-back-button" title="Back" icon="chevron-back" variant="secondary" fullWidth onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={{ marginTop: space.sm }} />
           </EmptyState>
         </View>
       </>
     );
   }
 
-  const m = metaFor(item.primaryType);
+  const pastel = pastelFor(item.primaryType);
   const inProgress = IN_PROGRESS_EXTRACTION_STATUSES.includes(item.extractionStatus);
   const keyFacts = [
     ["Deadline", item.deadline],
@@ -100,16 +100,18 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
       {header}
       <ScrollView contentContainerStyle={styles.content} testID="item-detail-screen" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" testID="item-image" /> : null}
-        <View style={styles.gap}>
+        <View style={[styles.hero, { backgroundColor: pastel }]}>
           <View style={styles.chips}>
             <StatusPill status={item.extractionStatus} />
-            {item.contentTypes.map((t) => <TypeChip key={t} type={t} />)}
+            {item.contentTypes.map((t) => <TypeChip key={t} type={t} label={metaFor(t).label} color={colors.surface} />)}
           </View>
-          <Text style={type.display} testID="item-title">{itemTitle(item)}</Text>
-          <Text style={type.caption}>Saved {timeAgo(item.createdAt)}{item.sourcePlatform !== "manual" ? ` · ${item.sourcePlatform}` : ""}</Text>
+          <Text style={styles.heroTitle} testID="item-title">{itemTitle(item)}</Text>
+          {item.summary ? <Text style={styles.heroSummary} testID="item-summary">{item.summary}</Text> : null}
+          <View style={styles.row}>
+            <Ionicons name={item.sourceUrl ? "link" : "time-outline"} size={13} color={colors.text} />
+            <Text style={styles.heroMeta} numberOfLines={1}>Saved {timeAgo(item.createdAt)}{item.sourcePlatform !== "manual" ? ` · ${item.sourcePlatform}` : ""}</Text>
+          </View>
         </View>
-
-        {item.summary ? <Text style={[type.body, styles.summary, { borderLeftColor: m.color }]} testID="item-summary">{item.summary}</Text> : null}
 
         {inProgress ? (
           <View style={styles.progress} testID="item-processing">
@@ -131,7 +133,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         ) : null}
 
         {item.extractionStatus === "ready" ? (
-          <GradientButton testID="create-post" label="Create post" icon="sparkles" variant="secondary" onPress={() => router.push({ pathname: "/studio/platforms", params: { itemId } })} />
+          <Button testID="create-post" title="Create post" icon="create-outline" variant="secondary" fullWidth onPress={() => router.push({ pathname: "/studio/platforms", params: { itemId } })} />
         ) : null}
 
         {keyFacts.length > 0 ? (
@@ -160,7 +162,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         <Section title="Source">
           {item.sourceUrl ? (
             <Tap testID="open-source-button" accessibilityLabel="Open source" onPress={() => WebBrowser.openBrowserAsync(item.sourceUrl!).catch(() => {})} style={styles.source}>
-              <Ionicons name="link" size={16} color={colors.accent} />
+              <Ionicons name="link" size={16} color={colors.text} />
               <Text style={styles.sourceText} numberOfLines={1}>{item.sourceUrl}</Text>
               <Ionicons name="open-outline" size={16} color={colors.textFaint} />
             </Tap>
@@ -199,10 +201,10 @@ function Actions({ item }: { item: SavedItemView }) {
   const itemId = item._id as Id<"savedItems">;
   const suggestions = useOwnedQuery(api.actions.listSuggestions, { itemId });
   const profile = useOwnedQuery(api.preferences.get, {});
-  const color = metaFor(item.primaryType).color;
+  const color = pastelFor(item.primaryType);
   return (
     <Section
-      title="Do something with it"
+      title="Do something"
       right={<Tap testID="open-actions-button" onPress={() => router.push({ pathname: "/item/[id]/actions", params: { id: item._id } })}><Text style={styles.link}>Details</Text></Tap>}
     >
       {suggestions === undefined ? (
@@ -271,19 +273,19 @@ function NeedsInfo({ item }: { item: SavedItemView }) {
 
   return (
     <View style={styles.attention} testID="needs-input-panel">
-      <View style={styles.row}><Ionicons name="lock-closed" size={18} color={colors.warning} /><Text style={[type.heading, { color: colors.warning, flex: 1 }]}>Needs more info</Text></View>
+      <View style={styles.row}><Ionicons name="lock-closed" size={18} color={colors.text} /><Text style={[type.heading, { flex: 1 }]}>Needs more info</Text></View>
       <Text style={type.caption}>
         {item.sourceUrl ? "We couldn’t read this link" : "We couldn’t get enough from this"}{item.extractionError ? ` (${item.extractionError})` : ""}. We kept it. Add a screenshot or paste the text and we’ll run the analysis again.
       </Text>
       {item.missingInfo && item.missingInfo.length > 0 ? <Text style={type.caption}>Missing: {item.missingInfo.join(", ")}</Text> : null}
       <View style={styles.row}>
-        <GradientButton testID="needs-info-add-screenshot-button" label="Add screenshot" icon="image" onPress={addScreenshot} loading={busy && !pasting} style={{ flex: 1 }} />
-        <GradientButton testID="needs-info-paste-text-button" label="Paste text" icon="document-text" variant="secondary" onPress={() => setPasting(true)} style={{ flex: 1 }} />
+        <Button testID="needs-info-add-screenshot-button" title="Add screenshot" icon="image" onPress={addScreenshot} loading={busy && !pasting} style={{ flex: 1 }} />
+        <Button testID="needs-info-paste-text-button" title="Paste text" icon="document-text" variant="secondary" onPress={() => setPasting(true)} style={{ flex: 1 }} />
       </View>
       {pasting ? (
         <>
           <Field testID="needs-info-text-input" placeholder="Paste the text from the page" value={text} onChangeText={setText} multiline autoFocus />
-          <GradientButton testID="needs-info-submit-button" label="Analyze this text" icon="sparkles" disabled={text.trim().length < 10} loading={busy} onPress={submitText} />
+          <Button testID="needs-info-submit-button" title="Analyze this text" icon="arrow-forward" fullWidth disabled={text.trim().length < 10} loading={busy} onPress={submitText} />
         </>
       ) : null}
       {error ? <Text style={styles.error} testID="needs-info-error">{error}</Text> : null}
@@ -295,10 +297,10 @@ function Failed({ item }: { item: SavedItemView }) {
   const retry = useOwnedMutation(api.items.retry);
   const { busy, error, run } = useRun();
   return (
-    <View style={[styles.attention, { borderColor: colors.danger + "55", backgroundColor: colors.danger + "10" }]} testID="failed-panel">
+    <View style={[styles.attention, { backgroundColor: theme.dangerSoft }]} testID="failed-panel">
       <View style={styles.row}><Ionicons name="alert-circle" size={18} color={colors.danger} /><Text style={[type.heading, { color: colors.danger }]}>Analysis failed</Text></View>
       {item.extractionError ? <Text style={type.caption}>{item.extractionError}</Text> : null}
-      <GradientButton testID="retry-button" label="Retry analysis" icon="refresh" onPress={() => run(() => retry({ itemId: item._id as Id<"savedItems"> }))} loading={busy} />
+      <Button testID="retry-button" title="Retry analysis" icon="refresh" fullWidth onPress={() => run(() => retry({ itemId: item._id as Id<"savedItems"> }))} loading={busy} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -308,21 +310,22 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.xl },
   content: { padding: space.xl, gap: space.xl, paddingBottom: 80 },
-  gap: { gap: space.sm },
   chips: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
-  iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" },
-  image: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.lg, backgroundColor: colors.surface },
-  summary: { borderLeftWidth: 3, paddingLeft: space.md, color: colors.textMuted },
-  keyFacts: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  keyFact: { flexGrow: 1, minWidth: "45%", gap: 4, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  progress: { flexDirection: "row", gap: space.md, alignItems: "center", padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  attention: { gap: space.md, padding: space.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.warning + "55", backgroundColor: colors.warning + "10" },
+  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  image: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.xl, backgroundColor: colors.surfaceRaised },
+  hero: { borderRadius: radius.xl, padding: space.xl, gap: space.md },
+  heroTitle: { fontSize: 26, lineHeight: 30, fontWeight: "800", letterSpacing: -0.5, color: colors.text },
+  heroSummary: { fontSize: 15, lineHeight: 21, color: "rgba(14,14,16,0.7)" },
+  heroMeta: { flex: 1, fontSize: 13, fontWeight: "500", color: colors.text },
+  keyFacts: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
+  keyFact: { flexGrow: 1, minWidth: "45%", gap: 4, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  progress: { flexDirection: "row", gap: space.md, alignItems: "center", padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  attention: { gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: theme.warningSoft },
   row: { flexDirection: "row", gap: space.sm, alignItems: "center" },
   error: { color: colors.danger, fontWeight: "600" },
-  link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+  link: { color: colors.text, fontWeight: "700", fontSize: 14, textDecorationLine: "underline" },
   showAll: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: space.md },
-  source: { flexDirection: "row", alignItems: "center", gap: 8, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface },
+  source: { flexDirection: "row", alignItems: "center", gap: 8, padding: space.lg, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   sourceText: { flex: 1, color: colors.text },
-  raw: { color: colors.textMuted, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface },
+  raw: { color: colors.textMuted, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
 });
-

@@ -34,7 +34,7 @@ export function StatusBadge({ status, testID }: { status: ExtractionStatus | Exe
         paddingHorizontal: spacing.sm,
         height: 24,
         borderRadius: radius.pill,
-        backgroundColor: color + "22",
+        backgroundColor: colors.surfaceRaised,
       }}
     >
       {spinning.has(status) ? <ActivityIndicator size="small" color={color} style={{ transform: [{ scale: 0.7 }] }} /> : <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />}

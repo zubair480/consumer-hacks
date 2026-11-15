@@ -4,14 +4,15 @@ import { itemTitle } from "../ItemCard";
 import { Tap } from "../Pressable";
 import { colors, radius, space, type } from "../tokens";
 import { metaFor, timeAgo } from "../typeMeta";
+import { pastelFor } from "../ui";
 import type { SavedItemView } from "../../shared/contracts";
 
 export function SourceRow({ item, onPress }: { item: SavedItemView; onPress: () => void }) {
   const m = metaFor(item.primaryType);
   return (
     <Tap testID={`studio-source-${item._id}`} accessibilityRole="button" accessibilityLabel={itemTitle(item)} onPress={onPress} style={styles.row}>
-      <View style={[styles.thumb, { backgroundColor: m.color + "22" }]}>
-        {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.thumb} /> : <Ionicons name={m.icon} size={22} color={m.color} />}
+      <View style={[styles.thumb, { backgroundColor: pastelFor(item.primaryType) }]}>
+        {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.thumb} /> : <Ionicons name={m.icon} size={22} color={colors.text} />}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={type.heading} numberOfLines={1}>{itemTitle(item)}</Text>
@@ -23,6 +24,6 @@ export function SourceRow({ item, onPress }: { item: SavedItemView; onPress: () 
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  thumb: { width: 48, height: 48, borderRadius: radius.sm, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  row: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, paddingRight: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  thumb: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center", overflow: "hidden" },
 });
