@@ -1,19 +1,20 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { PUBLISH_STATUS_LABELS } from "../../lib/share";
 import { colors, radius } from "../tokens";
 
 const config: Record<string, { label: string; color: string; spin?: boolean }> = {
   generating: { label: "Writing…", color: colors.info, spin: true },
-  draft: { label: "Draft", color: colors.textMuted },
-  ready_to_share: { label: "Ready to share", color: colors.success },
-  awaiting_user_action: { label: "Awaiting you", color: colors.warning },
-  publishing: { label: "Publishing…", color: colors.info, spin: true },
-  published: { label: "Published", color: colors.success },
-  shared_by_user: { label: "You posted it", color: colors.success },
-  failed: { label: "Failed", color: colors.danger },
+  draft: { label: PUBLISH_STATUS_LABELS.draft, color: colors.textMuted },
+  ready_to_share: { label: PUBLISH_STATUS_LABELS.ready_to_share, color: colors.success },
+  awaiting_user_action: { label: PUBLISH_STATUS_LABELS.awaiting_user_action, color: colors.warning },
+  publishing: { label: PUBLISH_STATUS_LABELS.publishing, color: colors.info, spin: true },
+  published: { label: PUBLISH_STATUS_LABELS.published, color: colors.success },
+  failed: { label: PUBLISH_STATUS_LABELS.failed, color: colors.danger },
 };
 
-export function DraftStatusPill({ status, testID }: { status: string; testID?: string }) {
-  const c = config[status] ?? { label: status.replace(/_/g, " "), color: colors.textMuted };
+export function DraftStatusPill({ status, label, testID }: { status: string; label?: string; testID?: string }) {
+  const base = config[status] ?? { label: status.replace(/_/g, " "), color: colors.textMuted };
+  const c = label ? { ...base, label } : base;
   return (
     <View style={[styles.pill, { borderColor: c.color + "55", backgroundColor: c.color + "1A" }]} testID={testID ?? `draft-status-${status}`}>
       {c.spin ? <ActivityIndicator size="small" color={c.color} style={styles.spin} /> : <View style={[styles.dot, { backgroundColor: c.color }]} />}
