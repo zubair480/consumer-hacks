@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { ScrollView, StyleSheet, View } from "react-native";
-import Animated, { interpolate, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue, type SharedValue } from "react-native-reanimated";
+import { useEffect, useState, type ReactNode } from "react";
+import { DeviceEventEmitter, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import Animated, { FadeIn, FadeInDown, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue, type SharedValue } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
@@ -10,7 +11,7 @@ import { itemTitle } from "../../components/ItemCard";
 import { OnboardingSheet } from "../../components/OnboardingSheet";
 import { Skeleton } from "../../components/States";
 import { metaFor, timeAgo } from "../../components/typeMeta";
-import { CountChips, Enter, HeroTypeCard, HoloBand, InkCTA, ItemRow, ScalePressable, SearchPill, SectionTitle, Text, WaveBlock, pastelFor } from "../../components/ui";
+import { CountChips, HeroTypeCard, HoloBand, InkCTA, ItemRow, ScalePressable, SearchPill, SectionTitle, Text, WaveBlock, pastelFor } from "../../components/ui";
 import { TAB_BAR_SPACE, useTabBarScroll } from "../../components/ui/InkTabBar";
 import { MarkerTitle } from "../../components/ui/MarkerTitle";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
@@ -42,6 +43,32 @@ const ACTION_LABEL: Partial<Record<ContentType, string>> = {
 
 type Items = NonNullable<ReturnType<typeof useOwnedQuery<typeof api.items.list>>>;
 
+const introPending = () => (globalThis as { __zapyIntroPending?: boolean }).__zapyIntroPending === true;
+
+/** Holds Home at opacity 0 while the cold-start intro plays; reveals on "zapy:introDone" or after 4s. */
+function useIntroGate() {
+  const [revealed, setRevealed] = useState(() => !introPending());
+  useEffect(() => {
+    if (revealed) return;
+    const sub = DeviceEventEmitter.addListener("zapy:introDone", () => setRevealed(true));
+    const timer = setTimeout(() => setRevealed(true), 4000);
+    return () => {
+      sub.remove();
+      clearTimeout(timer);
+    };
+  }, [revealed]);
+  return revealed;
+}
+
+function Enter({ index = 0, style, children }: { index?: number; style?: StyleProp<ViewStyle>; children: ReactNode }) {
+  const reduce = useReducedMotion();
+  return (
+    <Animated.View entering={reduce ? FadeIn.duration(200) : FadeInDown.delay(index * 50).springify().damping(18).stiffness(320)} style={style}>
+      {children}
+    </Animated.View>
+  );
+}
+
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
@@ -53,10 +80,13 @@ export default function Home() {
   const scroll = useTabBarScroll();
   const name = me?.displayName ?? "there";
   const ready = items?.filter((i) => i.extractionStatus === "ready").length ?? 0;
+  const saves = items?.length ?? 0;
+  const revealed = useIntroGate();
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <HoloBand height={140} />
       <ScrollView {...scroll} contentContainerStyle={styles.content} testID="home-screen" showsVerticalScrollIndicator={false}>
+        <View key={revealed ? "shown" : "held"} style={[styles.stack, !revealed && { opacity: 0 }]}>
         <Enter index={0}>
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
@@ -64,7 +94,7 @@ export default function Home() {
                 {greeting()}, {name}
               </Text>
               <Text testID="home-subline" style={{ fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, color: INK2 }}>
-                {items === undefined ? " " : ready > 0 ? `${ready} ${ready === 1 ? "save" : "saves"} ready to act on` : "Nothing waiting. Save something new"}
+                {items === undefined ? " " : saves > 0 ? `${saves} ${saves === 1 ? "save" : "saves"} · ${ready} ready` : "Nothing waiting. Save something new"}
               </Text>
             </View>
             <ScalePressable testID="home-avatar" accessibilityRole="button" accessibilityLabel="Profile" scaleTo={0.97} onPress={() => router.push("/profile")}>
@@ -89,6 +119,7 @@ export default function Home() {
         <Boundary title="Couldn’t load your saves">
           <Feed items={items} />
         </Boundary>
+        </View>
       </ScrollView>
       <OnboardingSheet visible={me !== undefined && !me.onboarded} />
     </SafeAreaView>
@@ -260,7 +291,8 @@ function Completed() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingTop: 12, gap: 28, paddingBottom: TAB_BAR_SPACE },
+  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: TAB_BAR_SPACE },
+  stack: { gap: 28 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   ring: { width: 48, height: 48, borderRadius: 24, padding: 2 },
   avatar: { flex: 1, borderRadius: 22, alignItems: "center", justifyContent: "center" },

@@ -217,8 +217,8 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: "flex-start", padding: 14, borderRadius: 18, gap: 2 },
   statValue: { color: colors.text, fontSize: 30, lineHeight: 34, fontFamily: fonts.display, fontVariant: ["tabular-nums"] },
   statLabel: { color: colors.text, fontSize: 11, lineHeight: 14, fontFamily: fonts.extraBold, letterSpacing: 0.9 },
-  fieldLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
-  error: { color: colors.danger, fontWeight: "600" },
+  fieldLabel: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.bold },
+  error: { color: colors.danger, fontFamily: fonts.bold },
   about: { gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   aboutRow: { flexDirection: "row", gap: space.md },
 });

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { ActivityIndicator, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors as theme } from "../theme/tokens";
+import { colors as theme, fonts } from "../theme/tokens";
 import { Tap } from "./Pressable";
 import { colors, radius } from "./tokens";
 
@@ -42,6 +42,6 @@ const styles = StyleSheet.create({
   btn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 52, paddingHorizontal: 20, borderRadius: radius.pill },
   primary: { backgroundColor: theme.primary },
   secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  label: { fontSize: 16, fontWeight: "700" },
-  disabled: { opacity: 0.5 },
+  label: { fontSize: 16, fontFamily: fonts.bold },
+  disabled: { opacity: 0.25 },
 });

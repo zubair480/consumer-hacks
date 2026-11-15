@@ -9,6 +9,7 @@ import { Field } from "./Field";
 import { errorMessage } from "./media";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
+import { fonts } from "../theme";
 
 // OWNER: GitHub stars import thread (ZUB-19). Import-screen row: enter a username once, then Sync.
 
@@ -101,6 +102,6 @@ const styles = StyleSheet.create({
   top: { flexDirection: "row", alignItems: "center", gap: space.md },
   icon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" },
   action: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill, backgroundColor: colors.accent, borderWidth: 1, borderColor: colors.accent },
-  actionText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  actionText: { color: colors.text, fontFamily: fonts.bold, fontSize: 14 },
   onAccent: { color: colors.surface },
 });

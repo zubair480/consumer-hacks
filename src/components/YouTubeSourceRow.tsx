@@ -10,6 +10,7 @@ import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../identity/OwnerPr
 import { errorMessage } from "./media";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
+import { fonts } from "../theme";
 
 // OWNER: YouTube import thread (ZUB-20). The YouTube liked-videos row on the Import screen.
 
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
   icon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" },
   action: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.border },
   connect: { backgroundColor: colors.accent, borderColor: colors.accent },
-  actionText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  actionText: { color: colors.text, fontFamily: fonts.bold, fontSize: 14 },
   onAccent: { color: colors.surface },
-  disconnect: { color: colors.textFaint, fontSize: 12, marginTop: space.xs },
+  disconnect: { color: colors.textFaint, fontSize: 12, fontFamily: fonts.medium, marginTop: space.xs },
 });

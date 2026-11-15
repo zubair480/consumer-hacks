@@ -16,6 +16,7 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { Skeleton } from "../components/States";
 import { YouTubeSourceRow } from "../components/YouTubeSourceRow";
 import { colors, radius, space, type } from "../components/tokens";
+import { fonts } from "../theme";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
 
 // OWNER: Import thread (CONS-19). One-tap Import: connect accounts once, then pull saved posts in.
@@ -222,17 +223,17 @@ const styles = StyleSheet.create({
   notice: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.lg, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.success },
   noticeError: { borderColor: colors.danger },
   noticeText: { ...type.body, flex: 1 },
-  link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+  link: { color: colors.accent, fontFamily: fonts.bold, fontSize: 14 },
   row: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   icon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" },
   action: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.border },
   connect: { backgroundColor: colors.accent, borderColor: colors.accent },
-  actionText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  actionText: { color: colors.text, fontFamily: fonts.bold, fontSize: 14 },
   onAccent: { color: colors.surface },
   chip: { paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
-  chipText: { color: colors.textMuted, fontSize: 12, fontWeight: "700" },
-  disconnect: { color: colors.textFaint, fontSize: 12, marginTop: space.xs },
+  chipText: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.bold },
+  disconnect: { color: colors.textFaint, fontSize: 12, fontFamily: fonts.medium, marginTop: space.xs },
   footnote: { ...type.caption, color: colors.textFaint },
   fallback: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.sm, paddingVertical: space.md },
-  fallbackText: { color: colors.textMuted, fontSize: 14 },
+  fallbackText: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.medium },
 });
