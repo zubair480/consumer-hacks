@@ -137,7 +137,7 @@ export async function analyzeContent(input: {
         user: `Analyze this save.\n\n${sources}`,
         images: input.images,
         schemaHint: SCHEMA_HINT,
-        timeoutMs: 18000,
+        timeoutMs: 45000,
       });
       const hasTypes = isType(candidate.primaryType) || (Array.isArray(candidate.contentTypes) && candidate.contentTypes.some(isType));
       if (!hasTypes || !str(candidate.summary)) throw new Error("the model's answer was missing a content type or summary");
