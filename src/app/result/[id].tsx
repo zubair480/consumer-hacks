@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
@@ -23,8 +23,7 @@ import { ACTION_LABELS } from "../../shared/contracts";
 export default function ActionResult() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.top}><ScreenHeader title="Result" back /></View>
+    <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
       <Boundary title="Couldn’t load this result">
         <Body executionId={id as Id<"actionExecutions">} />
       </Boundary>
@@ -37,11 +36,14 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
   const result = useOwnedQuery(api.actions.getResult, { executionId });
   const item = useOwnedQuery(api.items.get, execution ? { itemId: execution.itemId } : "skip");
   const [copied, setCopied] = useState(false);
+  const insets = useSafeAreaInsets();
+  const plainHeader = <View style={[styles.top, { paddingTop: insets.top }]}><ScreenHeader title="Result" back /></View>;
 
-  if (execution === undefined) return <View style={styles.content}><Skeleton rows={4} /></View>;
+  if (execution === undefined) return <>{plainHeader}<View style={styles.content}><Skeleton rows={4} /></View></>;
   if (execution === null) {
     return (
       <View style={styles.content}>
+        {plainHeader}
         <EmptyState icon="help-circle-outline" title="Result not found" body="It may have been deleted with its save.">
           <Button testID="result-go-home-button" title="Go home" variant="secondary" fullWidth onPress={() => router.replace("/")} />
         </EmptyState>
@@ -67,12 +69,14 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
 
   return (
     <>
-    <ScrollView contentContainerStyle={[styles.content, doc ? { paddingBottom: 120 } : null]} testID="result-screen">
-      <View style={styles.gap}>
-        <Text style={type.label}>{label}</Text>
-        <Text style={type.display} numberOfLines={4}>{doc?.title ?? label}</Text>
-        <Text style={type.caption} testID="result-timestamp">{new Date(at).toLocaleString()}</Text>
+    <ScrollView contentContainerStyle={doc ? { paddingBottom: 120 } : null} testID="result-screen">
+      <View style={[styles.band, { backgroundColor: pastelFor(item?.primaryType), paddingTop: insets.top }]}>
+        <ScreenHeader title="" back />
+        <View style={styles.pill}><Text style={styles.pillText}>{label}</Text></View>
+        <Text style={styles.display} numberOfLines={4}>{doc?.title ?? label}</Text>
+        <Text style={styles.stamp} testID="result-timestamp">{new Date(at).toLocaleString()}</Text>
       </View>
+      <View style={styles.content}>
 
       {execution.status === "queued" || execution.status === "running" ? (
         <View style={styles.state} testID="result-running">
@@ -113,6 +117,7 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
           </Tap>
         </>
       ) : null}
+      </View>
     </ScrollView>
     {doc ? (
       <View style={styles.bar}>
@@ -127,7 +132,12 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.xl },
-  content: { padding: space.xl, gap: space.xl, paddingBottom: 60 },
+  content: { padding: space.xl, gap: space.xl },
+  band: { paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.md, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
+  pill: { alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.6)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
+  pillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase", color: colors.text },
+  display: { fontSize: 40, lineHeight: 40, fontWeight: "900", letterSpacing: -1.5, textTransform: "uppercase", color: colors.text },
+  stamp: { fontSize: 13, fontWeight: "600", color: "rgba(14,14,16,0.6)" },
   gap: { gap: space.sm },
   state: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   bar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: space.md, paddingHorizontal: space.xl, paddingTop: space.md, paddingBottom: space.xxl, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },

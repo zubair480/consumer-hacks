@@ -9,7 +9,7 @@ import { useOwnedMutation } from "../identity/OwnerProvider";
 import type { ActionResultDocument, FactEvidence, RequirementStatus, ResultSection } from "../shared/contracts";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
-import { colors as theme, palette } from "../theme";
+import { palette } from "../theme";
 
 const open = (url: string) => WebBrowser.openBrowserAsync(url).catch(() => {});
 
@@ -29,8 +29,8 @@ export function ResultView({ doc, resultId, accent = palette.mint }: { doc: Acti
         <View style={styles.warn} testID="result-warnings">
           {doc.warnings.map((w, i) => (
             <View key={i} style={styles.row}>
-              <Ionicons name="warning" size={15} color={colors.text} />
-              <Text style={[type.caption, { color: colors.text, flex: 1 }]}>{w}</Text>
+              <Ionicons name="alert-circle-outline" size={18} color={colors.text} />
+              <Text style={[type.body, { color: colors.text, flex: 1, fontWeight: "600" }]}>{w}</Text>
             </View>
           ))}
         </View>
@@ -78,7 +78,7 @@ function CheckRow({ testID, checked, onToggle, accent, children }: { testID: str
   const value = local ?? checked;
   return (
     <Tap testID={testID} accessibilityRole="checkbox" accessibilityState={{ checked: value }} haptic="none" onPress={() => { setLocal(!value); onToggle(!value); }} style={styles.check}>
-      <View style={[styles.box, value ? { backgroundColor: accent, borderColor: accent } : null]}>{value ? <Ionicons name="checkmark" size={15} color={colors.text} /> : null}</View>
+      <View style={[styles.box, value ? { backgroundColor: accent, borderColor: accent } : null]}>{value ? <Ionicons name="checkmark" size={17} color={colors.text} /> : null}</View>
       <View style={{ flex: 1, gap: 3 }}>{children}</View>
     </Tap>
   );
@@ -173,13 +173,13 @@ const styles = StyleSheet.create({
   wrap: { gap: space.md },
   summary: { fontSize: 17, lineHeight: 24 },
   card: { gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  heading: { fontSize: 20, lineHeight: 25, fontWeight: "800", letterSpacing: -0.2, color: colors.text },
-  warn: { gap: 6, padding: space.lg, borderRadius: radius.lg, backgroundColor: theme.warningSoft },
-  box: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.textFaint, alignItems: "center", justifyContent: "center", marginTop: -1 },
-  row: { flexDirection: "row", alignItems: "center", gap: 8 },
+  heading: { fontSize: 20, lineHeight: 25, fontWeight: "900", letterSpacing: -0.3, color: colors.text },
+  warn: { gap: space.sm, padding: space.lg, borderRadius: radius.lg, backgroundColor: palette.butter },
+  box: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: colors.textFaint, alignItems: "center", justifyContent: "center" },
+  row: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   bulletRow: { flexDirection: "row", gap: 10 },
   bullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.text, marginTop: 8 },
-  check: { flexDirection: "row", gap: space.md, alignItems: "flex-start" },
+  check: { flexDirection: "row", gap: space.md, alignItems: "center", minHeight: 56, paddingVertical: space.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tag: { fontSize: 11, fontWeight: "800", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, overflow: "hidden" },
   evidence: { fontSize: 12, fontStyle: "italic", color: colors.textFaint },
   code: { fontFamily: "Menlo", fontSize: 12, color: colors.text, backgroundColor: colors.surfaceRaised, padding: space.md, borderRadius: radius.sm, overflow: "hidden" },
