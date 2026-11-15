@@ -9,9 +9,9 @@ export const x: PlatformAdapter = {
   platform: "x",
   instructions: [
     "Platform: X (Twitter). Punchy, plain, scannable. No corporate tone.",
-    `"post" is ONE standalone post of at most ${MAX} characters including hashtags (aim for 200).`,
+    `"post" is ONE standalone post of at most ${MAX} characters (aim for 200).`,
     `Optionally add "thread": 2-4 follow-up posts, each at most ${MAX} characters, that add detail. Use [] when one post is enough.`,
-    "At most 2 hashtags, inside the post text. No numbering like 1/5.",
+    "No emoji. No hashtags (hashtags: []). No numbering like 1/5.",
   ].join("\n"),
   schemaHint: '{ "post": string, "thread": string[], "hashtags": string[], "mediaSuggestions": string[] }',
   normalize: (raw) => {

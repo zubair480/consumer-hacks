@@ -9,7 +9,7 @@ export const tiktok: PlatformAdapter = {
     "hook: what is said/shown in the first 2 seconds.",
     "shots: 4-7 shots, each { visual (what the camera shows), durationSec }. Only shots the user can actually film or source; never stage experiences they have not had.",
     "voiceover: the full spoken script. onScreenText: 3-6 short text overlays. caption: ≤150 chars.",
-    "hashtags: 3-6.",
+    "No emoji. hashtags: at most 3 relevant ones.",
   ].join("\n"),
   schemaHint: '{ "hook": string, "shots": [{ "visual": string, "durationSec": number }], "voiceover": string, "onScreenText": string[], "caption": string, "hashtags": string[], "mediaSuggestions": string[] }',
   normalize: (raw) => {
