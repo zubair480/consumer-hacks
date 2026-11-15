@@ -6,8 +6,9 @@ import { Boundary } from "../Boundary";
 import { Tap } from "../Pressable";
 import { ScreenHeader } from "../ScreenHeader";
 import { Section } from "../Section";
-import { colors, gradient, radius, space, type } from "../tokens";
-import { LinearGradient } from "expo-linear-gradient";
+import { colors, radius, space, type } from "../tokens";
+import { palette } from "../../theme";
+import { HoloBand } from "../ui";
 import { api } from "../../../convex/_generated/api";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 import { Skeleton } from "../States";
@@ -17,21 +18,22 @@ import { SourceRow } from "./SourceRow";
 export default function StudioHome() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      <HoloBand height={260} />
       <ScrollView contentContainerStyle={styles.content} testID="studio-home-screen">
         <ScreenHeader title="Create" />
         <Text style={[type.caption, styles.lede]}>Turn a save or a new photo into posts for each platform. You edit, copy and share; nothing is posted for you.</Text>
         <Tap testID="studio-from-save" accessibilityRole="button" accessibilityLabel="Post from a save" onPress={() => router.push("/studio/source")} haptic="medium">
-          <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <View style={styles.hero}>
             <View style={styles.heroIcon}><Ionicons name="bookmark" size={22} color={colors.text} /></View>
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={type.title}>From a save</Text>
               <Text style={styles.heroBody}>Pick something from your Library and get LinkedIn, X and more drafts.</Text>
             </View>
             <Ionicons name="chevron-forward" size={22} color={colors.text} />
-          </LinearGradient>
+          </View>
         </Tap>
         <Tap testID="studio-new-photo" accessibilityRole="button" accessibilityLabel="Post from a new photo" onPress={() => router.push("/studio/photo")} style={styles.card}>
-          <View style={[styles.heroIcon, { backgroundColor: colors.accentAlt + "22" }]}><Ionicons name="camera" size={22} color={colors.accentAlt} /></View>
+          <View style={[styles.heroIcon, { backgroundColor: palette.peach }]}><Ionicons name="camera" size={22} color={colors.text} /></View>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={type.heading}>New photo</Text>
             <Text style={type.caption}>Shoot or pick a photo for an Instagram caption or a TikTok script.</Text>
@@ -62,12 +64,12 @@ function RecentSaves() {
 }
 
 const styles = StyleSheet.create({
-  link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+  link: { color: colors.text, fontWeight: "700", fontSize: 14, textDecorationLine: "underline" },
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.lg, gap: space.lg, paddingBottom: 120 },
+  content: { padding: space.xl, gap: space.md, paddingBottom: 120 },
   lede: { marginTop: -space.sm },
-  hero: { flexDirection: "row", alignItems: "center", gap: space.lg, padding: space.xl, borderRadius: radius.xl },
-  heroIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" },
-  heroBody: { color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 19 },
-  card: { flexDirection: "row", alignItems: "center", gap: space.lg, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  hero: { flexDirection: "row", alignItems: "center", gap: space.lg, padding: space.xl, borderRadius: radius.xl, backgroundColor: palette.lavender },
+  heroIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
+  heroBody: { color: "rgba(14,14,16,0.7)", fontSize: 14, lineHeight: 19 },
+  card: { flexDirection: "row", alignItems: "center", gap: space.lg, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
 });

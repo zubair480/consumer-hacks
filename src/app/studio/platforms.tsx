@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Boundary } from "../../components/Boundary";
-import { GradientButton } from "../../components/GradientButton";
+import { Button } from "../../components/ui";
 import { itemTitle } from "../../components/ItemCard";
 import { errorMessage } from "../../components/media";
 import { Tap } from "../../components/Pressable";
@@ -67,8 +67,8 @@ function Selector({ itemId, mediaId }: { itemId?: Id<"savedItems">; mediaId?: Id
           const on = selected.includes(p);
           const rec = reasons.get(p);
           return (
-            <Tap key={p} testID={`studio-platform-${p}`} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={m.label} onPress={() => toggle(p)} style={[styles.row, on && { borderColor: colors.accent, backgroundColor: colors.accent + "14" }]}>
-              <View style={[styles.icon, { backgroundColor: m.color + "22" }]}><Ionicons name={m.icon} size={20} color={m.color} /></View>
+            <Tap key={p} testID={`studio-platform-${p}`} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={m.label} onPress={() => toggle(p)} style={[styles.row, on && { borderColor: colors.text }]}>
+              <View style={[styles.icon, { backgroundColor: m.color }]}><Ionicons name={m.icon} size={20} color={colors.text} /></View>
               <View style={{ flex: 1, gap: 2 }}>
                 <View style={styles.titleRow}>
                   <Text style={type.heading}>{m.label}</Text>
@@ -76,7 +76,7 @@ function Selector({ itemId, mediaId }: { itemId?: Id<"savedItems">; mediaId?: Id
                 </View>
                 <Text style={type.caption} numberOfLines={2}>{rec?.reason || m.blurb}</Text>
               </View>
-              <Ionicons name={on ? "checkmark-circle" : "ellipse-outline"} size={24} color={on ? colors.accent : colors.textFaint} />
+              <Ionicons name={on ? "checkmark-circle" : "ellipse-outline"} size={24} color={on ? colors.text : colors.textFaint} />
             </Tap>
           );
         })}
@@ -94,7 +94,7 @@ function Selector({ itemId, mediaId }: { itemId?: Id<"savedItems">; mediaId?: Id
         <Text style={type.caption}>Drafts only use facts from your save plus what you write here.</Text>
       </Section>
       {error ? <Text style={styles.error} testID="studio-generate-error">{error}</Text> : null}
-      <GradientButton testID="studio-generate" label={`Write ${selected.length} draft${selected.length === 1 ? "" : "s"}`} icon="sparkles" loading={busy} disabled={selected.length === 0} onPress={start} />
+      <Button testID="studio-generate" title={`Write ${selected.length} draft${selected.length === 1 ? "" : "s"}`} icon="arrow-forward" loading={busy} disabled={selected.length === 0} onPress={start}  fullWidth />
     </ScrollView>
   );
 }
