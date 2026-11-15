@@ -24,19 +24,15 @@ export function Chip({ label, selected, onPress, color = colors.primary, icon, t
         alignItems: "center",
         gap: spacing.xs,
         paddingHorizontal: spacing.md,
-        height: 32,
+        height: 36,
         borderRadius: radius.pill,
-        backgroundColor: selected ? color : colors.surfaceRaised,
-        borderWidth: 1,
-        borderColor: selected ? color : colors.border,
+        backgroundColor: selected ? colors.primary : color === colors.primary ? colors.surface : color,
+        borderWidth: selected || color !== colors.primary ? 0 : 1,
+        borderColor: colors.border,
       }}
     >
-      {icon ? (
-        <Ionicons name={icon} size={14} color={selected ? colors.textInverse : color} />
-      ) : (
-        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: selected ? colors.textInverse : color }} />
-      )}
-      <Text variant="caption" color={selected ? colors.textInverse : colors.text} style={{ fontWeight: "700" }}>
+      {icon ? <Ionicons name={icon} size={14} color={selected ? colors.onPrimary : colors.text} /> : null}
+      <Text variant="label" color={selected ? colors.onPrimary : colors.text}>
         {label}
       </Text>
     </View>

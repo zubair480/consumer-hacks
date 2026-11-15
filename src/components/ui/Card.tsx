@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, radius, shadows, spacing } from "../../theme";
+import { colors, palette, radius, shadows, spacing } from "../../theme";
 import { ScalePressable } from "./Pressable";
 
 export type CardProps = {
@@ -18,11 +18,11 @@ export type CardProps = {
 export function Card({ children, onPress, accent, variant = "default", padded = true, testID, accessibilityLabel, style }: CardProps) {
   const cardStyle: StyleProp<ViewStyle> = [
     {
-      backgroundColor: variant === "raised" ? colors.surfaceRaised : variant === "hero" ? colors.primaryPressed : colors.surface,
-      borderRadius: radius.xl,
-      borderWidth: variant === "outline" ? 1 : 0,
+      backgroundColor: variant === "raised" ? colors.surfaceRaised : variant === "hero" ? palette.butter : colors.surface,
+      borderRadius: radius.card,
+      borderWidth: variant === "default" || variant === "outline" ? 1 : 0,
       borderColor: colors.border,
-      padding: padded ? spacing.lg : 0,
+      padding: padded ? spacing.xl : 0,
       overflow: "hidden",
     },
     variant === "outline" ? null : shadows.card,

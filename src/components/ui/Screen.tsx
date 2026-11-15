@@ -18,7 +18,7 @@ export type ScreenProps = {
   contentStyle?: StyleProp<ViewStyle>;
 };
 
-/** Dark full-screen container with safe areas, optional large title, and keyboard handling. */
+/** Light full-screen container with safe areas, optional large title, and keyboard handling. */
 export function Screen({ children, title, subtitle, headerRight, scroll = true, padded = true, edges = ["top"], testID, contentStyle }: ScreenProps) {
   const header = title ? (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.lg }}>
@@ -29,7 +29,7 @@ export function Screen({ children, title, subtitle, headerRight, scroll = true, 
       {headerRight}
     </View>
   ) : null;
-  const inner = [{ padding: padded ? spacing.lg : 0, gap: spacing.lg }, contentStyle];
+  const inner = [{ padding: padded ? spacing.xl : 0, gap: spacing.md }, contentStyle];
   return (
     <SafeAreaView testID={testID} edges={edges} style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
