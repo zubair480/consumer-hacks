@@ -24,14 +24,14 @@ export type ButtonProps = {
 
 const variantStyle: Record<ButtonVariant, { bg: string; fg: string; border?: string }> = {
   primary: { bg: colors.primary, fg: colors.onPrimary },
-  secondary: { bg: colors.surface, fg: colors.text, border: colors.border },
+  secondary: { bg: colors.surface, fg: colors.text, border: colors.text },
   ghost: { bg: "transparent", fg: colors.text },
   danger: { bg: colors.danger, fg: colors.onPrimary },
 };
 
 const sizeStyle: Record<ButtonSize, { height: number; px: number; icon: number }> = {
   sm: { height: 38, px: spacing.lg, icon: 16 },
-  md: { height: 52, px: spacing.xl, icon: 18 },
+  md: { height: 54, px: spacing.xl, icon: 18 },
   lg: { height: 58, px: spacing.xl, icon: 22 },
 };
 
@@ -46,6 +46,7 @@ export function Button({ title, onPress, variant = "primary", size = "md", icon,
       accessibilityLabel={title}
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       disabled={inactive}
+      haptic={variant === "primary"}
       onPress={onPress}
       style={[
         {
@@ -70,7 +71,7 @@ export function Button({ title, onPress, variant = "primary", size = "md", icon,
       ) : (
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           {icon ? <Ionicons name={icon} size={s.icon} color={v.fg} /> : null}
-          <Text variant={size === "sm" ? "caption" : "bodyStrong"} color={v.fg} style={{ fontWeight: "700" }}>
+          <Text variant={size === "sm" ? "label" : "bodyStrong"} color={v.fg}>
             {title}
           </Text>
         </View>

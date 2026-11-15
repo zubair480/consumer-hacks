@@ -1,4 +1,4 @@
-import { colors as theme, radius as themeRadius, typography } from "../theme/tokens";
+import { colors as theme, fonts, radius as themeRadius, typography } from "../theme/tokens";
 
 // Feature-component aliases over src/theme/tokens.ts, the single source.
 
@@ -28,8 +28,8 @@ export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 32 };
 export const type = {
   display: { ...typography.display, color: colors.text },
   title: { ...typography.title, color: colors.text },
-  heading: { fontSize: 17, fontWeight: "700" as const, color: colors.text },
-  body: { fontSize: 15, lineHeight: 21, color: colors.text },
-  caption: { fontSize: 13, color: colors.textMuted },
-  label: { fontSize: 13, fontWeight: "600" as const, color: colors.textFaint },
+  heading: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.text },
+  body: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: colors.text },
+  caption: { fontFamily: fonts.medium, fontSize: 13, color: colors.textMuted },
+  label: { fontFamily: fonts.bold, fontSize: 13, color: colors.textFaint },
 };
