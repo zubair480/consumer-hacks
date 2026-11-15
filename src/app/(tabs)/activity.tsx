@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import type { ComponentProps } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { ActivityRow } from "../../components/api";
@@ -9,33 +9,37 @@ import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
 import { GradientButton } from "../../components/GradientButton";
 import { Tap } from "../../components/Pressable";
-import { ScreenHeader } from "../../components/ScreenHeader";
 import { Skeleton } from "../../components/States";
-import { colors, radius, space, type } from "../../components/tokens";
+import { colors, radius, space } from "../../components/tokens";
 import { timeAgo } from "../../components/typeMeta";
+import { DisplayTitle, Text as UIText } from "../../components/ui";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
+import { colors as themeColors, palette } from "../../theme";
 import type { ActivityEventType } from "../../shared/contracts";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const EVENT: Record<ActivityEventType, { icon: IconName; color: string; verb: string }> = {
-  item_saved: { icon: "bookmark", color: colors.accent, verb: "Saved" },
-  item_updated: { icon: "create", color: colors.textMuted, verb: "Updated" },
-  item_deleted: { icon: "trash", color: colors.textFaint, verb: "Deleted" },
-  analysis_started: { icon: "sparkles", color: colors.info, verb: "Analyzing" },
-  analysis_completed: { icon: "sparkles", color: colors.success, verb: "Understood" },
-  analysis_needs_input: { icon: "help-circle", color: colors.warning, verb: "Needs info" },
-  analysis_failed: { icon: "alert-circle", color: colors.danger, verb: "Analysis failed" },
-  action_started: { icon: "flash", color: colors.info, verb: "Started" },
-  action_completed: { icon: "checkmark-done", color: colors.success, verb: "Completed" },
-  action_failed: { icon: "close-circle", color: colors.danger, verb: "Action failed" },
-  collection_updated: { icon: "folder", color: colors.accent, verb: "Collection" },
+  item_saved: { icon: "bookmark", color: palette.lavender, verb: "Saved" },
+  item_updated: { icon: "create", color: palette.paper, verb: "Updated" },
+  item_deleted: { icon: "trash", color: palette.paper, verb: "Deleted" },
+  analysis_started: { icon: "eye", color: palette.sky, verb: "Analyzing" },
+  analysis_completed: { icon: "bulb", color: palette.mint, verb: "Understood" },
+  analysis_needs_input: { icon: "help-circle", color: palette.butter, verb: "Needs info" },
+  analysis_failed: { icon: "alert-circle", color: themeColors.dangerSoft, verb: "Analysis failed" },
+  action_started: { icon: "play", color: palette.sky, verb: "Started" },
+  action_completed: { icon: "checkmark-done", color: palette.mint, verb: "Completed" },
+  action_failed: { icon: "close-circle", color: themeColors.dangerSoft, verb: "Action failed" },
+  collection_updated: { icon: "folder", color: palette.peach, verb: "Collection" },
 };
 
 export default function Activity() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.top}><ScreenHeader title="Activity" /></View>
+      <View style={styles.top}>
+        <DisplayTitle>Activity</DisplayTitle>
+        <UIText variant="caption" tone="secondary">Saves, analysis and finished actions, newest first.</UIText>
+      </View>
       <Boundary title="Couldn’t load activity">
         <Feed />
       </Boundary>
@@ -62,23 +66,20 @@ function Feed() {
           <GradientButton testID="activity-empty-save-button" label="Save something" icon="add" onPress={() => router.push("/capture")} style={{ alignSelf: "stretch" }} />
         </EmptyState>
       }
-      renderItem={({ item: e, index }) => {
+      renderItem={({ item: e }) => {
         const m = EVENT[e.type] ?? EVENT.item_updated;
         const tappable = !!(e.itemId || e.executionId) && e.type !== "item_deleted";
         return (
           <Tap testID={`activity-${e._id}`} disabled={!tappable} accessibilityLabel={`${m.verb}: ${e.title}`} onPress={() => open(e)} style={styles.row}>
-            <View style={styles.rail}>
-              <View style={[styles.node, { backgroundColor: m.color + "26", borderColor: m.color }]}>
-                <Ionicons name={m.icon} size={14} color={m.color} />
-              </View>
-              {index < events.length - 1 ? <View style={styles.line} /> : null}
+            <View style={[styles.node, { backgroundColor: m.color }]}>
+              <Ionicons name={m.icon} size={20} color={colors.text} />
             </View>
             <View style={styles.body}>
-              <Text style={type.caption}>{m.verb} · {timeAgo(e.createdAt)}</Text>
-              <Text style={type.heading} numberOfLines={2}>{e.title}</Text>
-              {e.detail ? <Text style={type.caption} numberOfLines={2}>{e.detail}</Text> : null}
+              <UIText variant="caption" tone="secondary">{m.verb} · {timeAgo(e.createdAt)}</UIText>
+              <UIText style={styles.title} numberOfLines={2}>{e.title}</UIText>
+              {e.detail ? <UIText variant="caption" tone="secondary" numberOfLines={2}>{e.detail}</UIText> : null}
             </View>
-            {tappable ? <Ionicons name="chevron-forward" size={16} color={colors.textFaint} style={{ marginTop: 6 }} /> : null}
+            {tappable ? <Ionicons name="chevron-forward" size={18} color={colors.textFaint} /> : null}
           </Tap>
         );
       }}
@@ -88,11 +89,10 @@ function Feed() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  top: { paddingHorizontal: space.xl },
-  list: { padding: space.xl, paddingBottom: 60 },
-  row: { flexDirection: "row", gap: space.md },
-  rail: { alignItems: "center", width: 30 },
-  node: { width: 30, height: 30, borderRadius: radius.pill, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  line: { flex: 1, width: 2, backgroundColor: colors.border, marginVertical: 4 },
-  body: { flex: 1, gap: 4, paddingBottom: space.xl },
+  top: { paddingHorizontal: space.xl, paddingTop: space.md, gap: space.xs, paddingBottom: space.md },
+  list: { padding: space.xl, paddingTop: space.sm, gap: space.md, paddingBottom: 120 },
+  row: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, paddingRight: space.lg, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border },
+  node: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  body: { flex: 1, gap: 2 },
+  title: { fontSize: 16, lineHeight: 21, fontWeight: "700" },
 });
