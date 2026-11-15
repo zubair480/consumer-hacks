@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -15,7 +15,7 @@ import { Skeleton } from "../../components/States";
 import { colors, radius, space } from "../../components/tokens";
 import { metaFor, timeAgo } from "../../components/typeMeta";
 import { CountChips, DisplayTitle, ItemRow, SearchPill, WaveBlocks, pastelFor } from "../../components/ui";
-import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
+import { useOwnedMutation, useOwnedPaginatedQuery, useOwnedQuery } from "../../identity/OwnerProvider";
 import { palette } from "../../theme";
 import { CONTENT_TYPES, type ContentType, type ExtractionStatus } from "../../shared/contracts";
 
@@ -61,12 +61,13 @@ export default function Library() {
 function Results({ query, filter, setFilter, chipsOpen }: { query: string; filter?: ContentType; setFilter: (t?: ContentType) => void; chipsOpen: boolean }) {
   const searching = query.trim().length > 0;
   const all = useOwnedQuery(api.items.list, { limit: 200 });
+  const paged = useOwnedPaginatedQuery(api.items.listPage, searching ? "skip" : { primaryType: filter }, { initialNumItems: 20 });
   const searched = useOwnedQuery(api.items.search, searching ? { query, primaryType: filter } : "skip");
   const retry = useOwnedMutation(api.items.retry);
   const counts = new Map<ContentType, number>();
   for (const i of all ?? []) if (i.primaryType) counts.set(i.primaryType, (counts.get(i.primaryType) ?? 0) + 1);
   const present = CONTENT_TYPES.filter((t) => counts.has(t));
-  const items = searching ? searched : all?.filter((i) => !filter || i.primaryType === filter);
+  const items = searching ? searched : paged.status === "LoadingFirstPage" ? undefined : paged.results;
   const filtered = searching || !!filter;
   const toggle = (t: ContentType) => setFilter(filter === t ? undefined : t);
 
@@ -94,6 +95,9 @@ function Results({ query, filter, setFilter, chipsOpen }: { query: string; filte
           keyExtractor={(i) => i._id}
           contentContainerStyle={styles.list}
           keyboardDismissMode="on-drag"
+          onEndReached={() => (!searching && paged.status === "CanLoadMore" ? paged.loadMore(20) : undefined)}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={!searching && paged.status === "LoadingMore" ? <ActivityIndicator testID="library-loading-more" color={colors.text} style={{ padding: space.lg }} /> : undefined}
           ListHeaderComponent={
             !searching && !filter && present.length > 0 ? (
               <View style={styles.blocks}>
