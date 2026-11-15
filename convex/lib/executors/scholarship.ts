@@ -71,6 +71,7 @@ const checkEligibility: Executor = async (raw) => {
     blocks,
     warnings,
     strictRows: true,
+    allowStatus: true,
     instruction: `Check the user's eligibility for this opportunity (scholarship, application, or job).
 1. A "checklist" section headed "Eligibility requirements": one item per requirement or qualification the SOURCE states (GPA, year, major, citizenship, residency, enrollment, financial need, age, experience, etc.). Every item MUST carry evidence.quote from the source. Set status to "met" only when the user profile clearly satisfies it, "unmet" when the profile clearly contradicts it, otherwise "unknown". Put a one-line reason in detail.
 2. A "text" section headed "Verdict": likely eligible / not eligible / can't tell yet, and why, based only on the requirements above.
@@ -126,6 +127,10 @@ const prepareApplication: Executor = async (input) => {
 5. A "key_value" section headed "Key facts": award amount, number of awards, contact, only when stated with evidence. Do not repeat the deadline.
 6. A "links" section with application/official URLs that appear verbatim in the source.`,
   });
+  if (!prompt) {
+    result.sections = result.sections.filter((sec) => !(sec.kind === "steps" && /essay outline/i.test(sec.heading ?? "") && !sec.steps[0]?.evidence));
+    Object.assign(result, composeDocument(result.actionType, result.title, result.summary, result.sections, result.sources, result.warnings));
+  }
   return { result, status: "succeeded" };
 };
 

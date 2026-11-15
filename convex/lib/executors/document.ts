@@ -36,6 +36,8 @@ export type BuildOptions = {
   title?: string;
   /** Verify every line of code against the source (repo instructions). */
   verifyCode?: boolean;
+  /** Keep met/unmet/unknown on checklist items (eligibility checks only). */
+  allowStatus?: boolean;
   /** key_value rows must carry verified evidence. */
   strictRows?: boolean;
   prepend?: ResultSection[];
@@ -241,7 +243,7 @@ export async function buildDocument(opts: BuildOptions): Promise<ActionResultDoc
             continue;
           }
           const detail = str(it.detail);
-          const status = it.status === "met" || it.status === "unmet" || it.status === "unknown" ? it.status : undefined;
+          const status = !opts.allowStatus ? undefined : it.status === "met" || it.status === "unmet" || it.status === "unknown" ? it.status : undefined;
           items.push({ label: lbl, checked: false, ...(status ? { status } : {}), ...(detail ? { detail } : {}), ...(ev ? { evidence: ev } : {}) });
         }
         if (items.length) sections.push({ kind: "checklist", ...h, items });
