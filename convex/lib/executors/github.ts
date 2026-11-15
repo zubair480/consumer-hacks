@@ -34,13 +34,13 @@ function metaSection(repo: GithubRepo): ResultSection {
   const ev = { quote: repo.fullName, source: repo.url };
   const rows: { label: string; value: string; evidence: typeof ev }[] = [
     { label: "Repository", value: repo.fullName, evidence: ev },
-    { label: "Stars", value: repo.stars.toLocaleString("en-US"), evidence: ev },
   ];
+  if (repo.stars !== null) rows.push({ label: "Stars", value: repo.stars.toLocaleString("en-US"), evidence: ev });
   if (repo.language) rows.push({ label: "Language", value: repo.language, evidence: ev });
   if (repo.license) rows.push({ label: "License", value: repo.license, evidence: ev });
   if (repo.pushedAt) rows.push({ label: "Last push", value: repo.pushedAt.slice(0, 10), evidence: ev });
   if (repo.topics.length) rows.push({ label: "Topics", value: repo.topics.slice(0, 6).join(", "), evidence: ev });
-  return { kind: "key_value", heading: "At a glance (GitHub API)", rows };
+  return { kind: "key_value", heading: "At a glance (GitHub)", rows };
 }
 
 function repoLinks(repo: GithubRepo): ResultSection {

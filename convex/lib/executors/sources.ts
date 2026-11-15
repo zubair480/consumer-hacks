@@ -11,11 +11,9 @@ export type GithubRepo = {
   description: string | null;
   homepage: string | null;
   language: string | null;
-  stars: number;
-  forks: number;
+  stars: number | null;
   license: string | null;
   topics: string[];
-  defaultBranch: string;
   pushedAt: string | null;
   readme: string | null;
   readmeUrl: string | null;
@@ -29,6 +27,40 @@ export function parseGithubRepo(url: string): { owner: string; repo: string } | 
   return { owner: m[1], repo };
 }
 
+async function fetchRawReadme(owner: string, repo: string): Promise<string | null> {
+  for (const name of ["README.md", "readme.md", "README.markdown", "README.rst", "README"]) {
+    const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${name}`);
+    if (res.ok) return (await res.text()).slice(0, MAX_README_CHARS);
+  }
+  return null;
+}
+
+/** Repository page fallback when the GitHub API is rate limited (no token on the deployment). */
+async function fetchGithubRepoFromPage(owner: string, repo: string): Promise<GithubRepo | null> {
+  const url = `https://github.com/${owner}/${repo}`;
+  const [page, readme] = await Promise.all([
+    fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; AfterScroll/1.0)" } }).catch(() => null),
+    fetchRawReadme(owner, repo).catch(() => null),
+  ]);
+  if (!page?.ok && !readme) return null;
+  const html = page?.ok ? await page.text() : "";
+  const og = html.match(/<meta property="og:description" content="([^"]*)"/i)?.[1];
+  const description = og ? og.replace(/ - [\w.-]+\/[\w.-]+$/, "").replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"') : null;
+  return {
+    fullName: `${owner}/${repo}`,
+    url,
+    description: description || null,
+    homepage: null,
+    language: null,
+    stars: null,
+    license: null,
+    topics: [],
+    pushedAt: null,
+    readme,
+    readmeUrl: readme ? `${url}#readme` : null,
+  };
+}
+
 export async function fetchGithubRepo(url: string): Promise<GithubRepo | null> {
   const parsed = parseGithubRepo(url);
   if (!parsed) return null;
@@ -36,7 +68,7 @@ export async function fetchGithubRepo(url: string): Promise<GithubRepo | null> {
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   const api = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}`;
   const metaRes = await fetch(api, { headers });
-  if (!metaRes.ok) return null;
+  if (!metaRes.ok) return metaRes.status === 404 ? null : await fetchGithubRepoFromPage(parsed.owner, parsed.repo);
   const meta = (await metaRes.json()) as {
     full_name: string;
     html_url: string;
@@ -44,19 +76,12 @@ export async function fetchGithubRepo(url: string): Promise<GithubRepo | null> {
     homepage: string | null;
     language: string | null;
     stargazers_count: number;
-    forks_count: number;
     license: { spdx_id?: string; name?: string } | null;
     topics?: string[];
-    default_branch: string;
     pushed_at: string | null;
   };
-  let readme: string | null = null;
-  let readmeUrl: string | null = null;
   const readmeRes = await fetch(`${api}/readme`, { headers: { ...headers, Accept: "application/vnd.github.raw+json" } });
-  if (readmeRes.ok) {
-    readme = (await readmeRes.text()).slice(0, MAX_README_CHARS);
-    readmeUrl = `${meta.html_url}#readme`;
-  }
+  const readme = readmeRes.ok ? (await readmeRes.text()).slice(0, MAX_README_CHARS) : await fetchRawReadme(parsed.owner, parsed.repo);
   return {
     fullName: meta.full_name,
     url: meta.html_url,
@@ -64,13 +89,11 @@ export async function fetchGithubRepo(url: string): Promise<GithubRepo | null> {
     homepage: meta.homepage || null,
     language: meta.language,
     stars: meta.stargazers_count,
-    forks: meta.forks_count,
     license: meta.license?.spdx_id && meta.license.spdx_id !== "NOASSERTION" ? meta.license.spdx_id : meta.license?.name ?? null,
     topics: meta.topics ?? [],
-    defaultBranch: meta.default_branch,
     pushedAt: meta.pushed_at,
     readme,
-    readmeUrl,
+    readmeUrl: readme ? `${meta.html_url}#readme` : null,
   };
 }
 
