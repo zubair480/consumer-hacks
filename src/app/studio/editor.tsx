@@ -8,7 +8,9 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
-import { Button } from "../../components/ui";
+import { Button, DisplayTitle, InkPill } from "../../components/ui";
+import { elevation, studioText } from "../../components/studio/studioStyles";
+import { palette } from "../../theme";
 import { errorMessage } from "../../components/media";
 import { Tap } from "../../components/Pressable";
 import { ScreenHeader } from "../../components/ScreenHeader";
@@ -16,7 +18,7 @@ import { Section } from "../../components/Section";
 import { Skeleton } from "../../components/States";
 import { DraftStatusPill } from "../../components/studio/DraftStatusPill";
 import { platformMeta } from "../../components/studio/platforms";
-import { colors, radius, space, type } from "../../components/tokens";
+import { colors, radius, space } from "../../components/tokens";
 import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
 import { PublishSheet } from "../../components/publishing/PublishSheet";
 import { publishStatusLabel, useDraftSharing } from "../../lib/share";
@@ -29,7 +31,13 @@ export default function StudioEditor() {
   const source: Source = itemId ? { itemId: itemId as Id<"savedItems"> } : { mediaId: mediaId as Id<"mediaAssets"> };
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.pad}><ScreenHeader title="Your drafts" back /></View>
+      <View style={styles.pad}>
+        <ScreenHeader title="" back />
+        <View style={styles.header}>
+          <InkPill label="Drafts" />
+          <DisplayTitle highlight="yours" highlightColor={palette.butter} size={34}>{"Make it yours"}</DisplayTitle>
+        </View>
+      </View>
       <Boundary title="Couldn’t load drafts">
         <Editor source={source} initial={platform as SocialPlatform | undefined} />
       </Boundary>
@@ -62,20 +70,20 @@ function Editor({ source, initial }: { source: Source; initial?: SocialPlatform 
           const m = platformMeta(d.platform);
           const on = d._id === current._id;
           return (
-            <Tap key={d._id} testID={`studio-tab-${d.platform}`} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={m.label} onPress={() => setActive(d.platform)} style={[styles.tab, on && styles.tabOn]}>
-              {d.generationStatus === "generating" ? <ActivityIndicator size="small" color={colors.textMuted} /> : <Ionicons name={m.icon} size={16} color={on ? colors.text : colors.textMuted} />}
-              <Text style={[styles.tabText, on && { color: colors.text }]}>{m.label}</Text>
+            <Tap key={d._id} testID={`studio-tab-${d.platform}`} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={m.label} onPress={() => setActive(d.platform)} style={[styles.tab, { backgroundColor: m.color }, on && styles.tabOn]}>
+              {d.generationStatus === "generating" ? <ActivityIndicator size="small" color={m.fg} /> : <Ionicons name={on ? "checkmark-circle" : m.icon} size={18} color={m.fg} />}
+              <Text style={[styles.tabText, { color: m.fg }]}>{m.label}</Text>
             </Tap>
           );
         })}
         <Tap testID="studio-add-platform" accessibilityLabel="Add platforms" onPress={() => router.push({ pathname: "/studio/platforms", params: source })} style={styles.tab}>
-          <Ionicons name="add" size={18} color={colors.textMuted} />
+          <Ionicons name="add-outline" size={22} color={colors.text} />
         </Tap>
       </ScrollView>
       {writing > 0 ? (
         <View style={styles.progress} testID="studio-generation-progress">
           <ActivityIndicator color={colors.text} />
-          <Text style={[type.caption, { flex: 1 }]}>Writing {writing === drafts.length ? "your drafts" : `${writing} more`}… {drafts.length - writing} of {drafts.length} ready.</Text>
+          <Text style={[studioText.footnote, { flex: 1, color: colors.text }]}>Writing {writing === drafts.length ? "your drafts" : `${writing} more`}… {drafts.length - writing} of {drafts.length} ready.</Text>
         </View>
       ) : null}
       <DraftPanel key={current._id} draft={current} />
@@ -97,6 +105,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
   const [busy, setBusy] = useState<null | "save" | "regen" | "share">(null);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
   if (seen !== draft.draftText) {
     if (text === seen) setText(draft.draftText);
     setSeen(draft.draftText);
@@ -147,7 +156,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
       <View style={styles.content} testID={`studio-draft-generating-${draft.platform}`}>
         <View style={styles.genHead}>
           <ActivityIndicator color={colors.text} />
-          <Text style={type.heading}>Writing your {m.label} draft…</Text>
+          <Text style={studioText.headline}>Writing your {m.label} draft…</Text>
         </View>
         <Skeleton rows={3} height={56} />
       </View>
@@ -169,9 +178,10 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" testID={`studio-editor-${draft.platform}`}>
       <View style={styles.metaRow}>
         <DraftStatusPill status={publish?.status ?? draft.status} label={publish ? publishStatusLabel(publish) : undefined} testID={`studio-status-${draft.platform}`} />
-        <Text style={type.caption} testID="studio-revision">v{draft.revision} · {draft.revisionSource === "user_edit" ? "edited by you" : draft.revisionSource === "regenerated" ? "rewritten" : "generated"}</Text>
+        <Text style={studioText.footnote} testID="studio-revision">v{draft.revision} · {draft.revisionSource === "user_edit" ? "edited by you" : draft.revisionSource === "regenerated" ? "rewritten" : "generated"}</Text>
       </View>
       {draft.generationStatus === "failed" ? <Text style={styles.error}>Last rewrite failed: {draft.generationError ?? "unknown error"}. Showing your previous version.</Text> : null}
+      <View style={[styles.draftCard, focused && styles.inputFocused]}>
       <TextInput
         testID={`studio-draft-input-${draft.platform}`}
         value={text}
@@ -181,23 +191,28 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
         style={styles.input}
         placeholder="Write your post"
         placeholderTextColor={colors.textFaint}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
       />
+        <View style={styles.cardFoot}>
+          <Text style={[studioText.footnote, styles.count, over && { color: colors.danger }]} testID="studio-char-count">{m.label} · {text.length} / {m.limit}</Text>
+        </View>
+      </View>
       <View style={styles.metaRow}>
-        <Text style={[type.caption, over && { color: colors.danger }]} testID="studio-char-count">{text.length} / {m.limit}</Text>
-        {dirty ? <Text style={[type.caption, { color: colors.warning }]}>Unsaved changes</Text> : note ? <Text style={[type.caption, { color: colors.success }]} testID="studio-note">{note}</Text> : null}
+        {dirty ? <Text style={styles.unsaved}>Unsaved changes</Text> : note ? <Text style={[studioText.footnote, { color: colors.text }]} testID="studio-note">{note}</Text> : null}
       </View>
       {error ? <Text style={styles.error} testID="studio-error">{error}</Text> : null}
 
       <View style={styles.actions}>
-        <Button testID="studio-save" title={dirty ? "Save edit" : "Saved"} icon="checkmark" loading={busy === "save"} disabled={!dirty} onPress={save} style={{ flex: 1 }} />
-        <Button testID="studio-share" title="Share" icon="share-outline" variant="secondary" loading={busy === "share"} disabled={!text.trim()} onPress={share} style={{ flex: 1 }} />
+        <Button testID="studio-share" title="Share" icon="share-outline" loading={busy === "share"} disabled={!text.trim()} onPress={share} style={{ flex: 1 }} />
+        <Button testID="studio-save" title={dirty ? "Save edit" : "Saved"} icon="checkmark" variant="secondary" loading={busy === "save"} disabled={!dirty} onPress={save} style={{ flex: 1 }} />
       </View>
       <View style={styles.smallActions}>
         <Small testID="studio-copy" icon="copy-outline" label="Copy" onPress={copy} />
         <Small testID="studio-preview" icon="eye-outline" label="Preview" onPress={() => router.push({ pathname: "/studio/preview", params: { draftId, text: dirty ? text : undefined } })} />
-        <Small testID="studio-regenerate" icon="refresh" label="Rewrite" onPress={askRegenerate} busy={busy === "regen"} />
+        <Small testID="studio-regenerate" icon="refresh-outline" label="Rewrite" onPress={askRegenerate} busy={busy === "regen"} />
       </View>
-      <Text style={type.caption}>Nothing is posted without your confirmation. Without a connected account, Share opens {m.label} or the share sheet and you post it yourself.</Text>
+      <Text style={studioText.footnote}>Nothing is posted without your confirmation. Without a connected account, Share opens {m.label} or the share sheet and you post it yourself.</Text>
       <PublishSheet
         visible={sheetOpen}
         onClose={() => setSheetOpen(false)}
@@ -211,12 +226,12 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
 
       {draft.output?.hashtags?.length ? (
         <Section title="Hashtags">
-          <Text style={[type.body, { color: colors.textMuted }]}>{draft.output.hashtags.map((h) => (h.startsWith("#") ? h : "#" + h)).join(" ")}</Text>
+          <Text style={studioText.body}>{draft.output.hashtags.map((h) => (h.startsWith("#") ? h : "#" + h)).join(" ")}</Text>
         </Section>
       ) : null}
       {draft.output?.mediaSuggestions?.length ? (
         <Section title="Media ideas">
-          {draft.output.mediaSuggestions.map((s, i) => <Text key={i} style={type.caption}>• {s}</Text>)}
+          {draft.output.mediaSuggestions.map((s, i) => <Text key={i} style={studioText.body}>• {s}</Text>)}
         </Section>
       ) : null}
       {draft.provenance.length ? (
@@ -224,9 +239,9 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
           <View style={styles.facts} testID="studio-facts">
             {draft.provenance.map((f, i) => (
               <View key={i} style={styles.fact}>
-                <Text style={type.label}>{f.label}</Text>
-                <Text style={type.body}>{f.value}</Text>
-                <Text style={type.caption} numberOfLines={1}>Source: {f.source}</Text>
+                <Text style={studioText.overline}>{f.label}</Text>
+                <Text style={studioText.callout}>{f.value}</Text>
+                <Text style={studioText.footnote} numberOfLines={1}>Source: {f.source}</Text>
               </View>
             ))}
           </View>
@@ -247,22 +262,28 @@ function Small({ testID, icon, label, onPress, busy }: { testID: string; icon: R
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  pad: { paddingHorizontal: space.lg },
+  pad: { paddingHorizontal: space.xl },
+  header: { gap: space.md, paddingBottom: space.sm },
   tabsWrap: { flexGrow: 0 },
-  tabs: { paddingHorizontal: space.lg, paddingVertical: space.sm, gap: space.sm },
-  tab: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: space.md, height: 38, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  tabOn: { backgroundColor: colors.surfaceRaised, borderColor: colors.text },
-  tabText: { color: colors.textMuted, fontWeight: "700", fontSize: 14 },
-  progress: { flexDirection: "row", alignItems: "center", gap: space.md, marginHorizontal: space.lg, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  content: { padding: space.lg, gap: space.lg, paddingBottom: 120 },
+  tabs: { paddingHorizontal: space.xl, paddingVertical: space.md, gap: space.sm },
+  tab: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: space.lg, minWidth: 44, height: 44, justifyContent: "center", borderRadius: radius.pill, backgroundColor: palette.grey, borderWidth: 2, borderColor: "transparent" },
+  tabOn: { borderColor: colors.text, ...elevation.e2 },
+  tabText: studioText.callout,
+  progress: { flexDirection: "row", alignItems: "center", gap: space.md, marginHorizontal: space.xl, padding: space.md, borderRadius: radius.lg, backgroundColor: palette.butter },
+  content: { paddingHorizontal: space.xl, paddingTop: space.lg, gap: space.xl, paddingBottom: 120 },
   genHead: { flexDirection: "row", alignItems: "center", gap: space.md },
   metaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md },
-  input: { minHeight: 200, color: colors.text, fontSize: 16, lineHeight: 23, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, textAlignVertical: "top" },
+  draftCard: { borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  input: { ...studioText.body, minHeight: 200, padding: space.lg, textAlignVertical: "top" },
+  cardFoot: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: space.lg, paddingVertical: space.md, borderTopWidth: 1, borderTopColor: colors.border },
+  inputFocused: { borderWidth: 1.5, borderColor: colors.text, ...elevation.e1 },
+  count: { fontVariant: ["tabular-nums"] },
+  unsaved: { ...studioText.footnote, fontFamily: studioText.callout.fontFamily, color: colors.text, backgroundColor: palette.butter, paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill, overflow: "hidden" },
   actions: { flexDirection: "row", gap: space.sm },
   smallActions: { flexDirection: "row", gap: space.sm },
-  small: { flex: 1, alignItems: "center", gap: 4, paddingVertical: space.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  smallText: { color: colors.text, fontSize: 13, fontWeight: "600" },
-  error: { color: colors.danger, fontWeight: "600" },
+  small: { flex: 1, height: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.text },
+  smallText: studioText.callout,
+  error: studioText.error,
   facts: { gap: space.sm },
-  fact: { gap: 2, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  fact: { gap: 4, padding: 14, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
 });

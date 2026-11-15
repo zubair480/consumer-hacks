@@ -6,9 +6,10 @@ import { useOwnedQuery } from "../../identity/OwnerProvider";
 import type { SocialDraftView } from "../../shared/socialContracts";
 import { Tap } from "../Pressable";
 import { Section } from "../Section";
-import { colors, radius, space, type } from "../tokens";
+import { colors, radius, space } from "../tokens";
 import { timeAgo } from "../typeMeta";
 import { DraftStatusPill } from "./DraftStatusPill";
+import { studioText } from "./studioStyles";
 import { platformMeta } from "./platforms";
 
 function open(d: SocialDraftView) {
@@ -25,12 +26,12 @@ export function RecentDrafts() {
         const m = platformMeta(d.platform);
         return (
           <Tap key={d._id} testID={`studio-recent-${d._id}`} accessibilityRole="button" accessibilityLabel={`${m.label} draft`} onPress={() => open(d)} style={styles.row}>
-            <View style={[styles.icon, { backgroundColor: m.color }]}><Ionicons name={m.icon} size={18} color={colors.text} /></View>
+            <View style={[styles.icon, { backgroundColor: m.color }]}><Ionicons name={m.icon} size={22} color={m.fg} /></View>
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={type.body} numberOfLines={2}>{d.generationStatus === "generating" ? "Writing…" : d.draftText || "Empty draft"}</Text>
+              <Text style={studioText.callout} numberOfLines={2}>{d.generationStatus === "generating" ? "Writing…" : d.draftText || "Empty draft"}</Text>
               <View style={styles.meta}>
                 <DraftStatusPill status={d.generationStatus === "generating" ? "generating" : d.status} />
-                <Text style={type.caption}>{timeAgo(d.updatedAt)}</Text>
+                <Text style={studioText.footnote}>{timeAgo(d.updatedAt)}</Text>
               </View>
             </View>
           </Tap>
@@ -41,7 +42,7 @@ export function RecentDrafts() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  icon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  row: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 72, padding: space.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  icon: { width: 48, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   meta: { flexDirection: "row", alignItems: "center", gap: space.sm },
 });

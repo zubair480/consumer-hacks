@@ -3,7 +3,7 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, Share, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
@@ -14,11 +14,18 @@ import { Tap } from "../../components/Pressable";
 import { ResultView } from "../../components/ResultView";
 import { ScreenHeader } from "../../components/ScreenHeader";
 import { Skeleton } from "../../components/States";
-import { colors, radius, space, type } from "../../components/tokens";
-import { Button, pastelFor } from "../../components/ui";
-import { colors as theme } from "../../theme";
+import { colors, radius, space } from "../../components/tokens";
+import { BouncingDots, Shimmer, SpinRing } from "../../components/Signature";
+import { Button, Doodle, InkPill, SlideUp, Text, pastelFor } from "../../components/ui";
+import { fonts, palette } from "../../theme";
+
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 import { ACTION_LABELS } from "../../shared/contracts";
+
+const type = {
+  heading: { fontFamily: fonts.extraBold, fontSize: 18, lineHeight: 24, color: palette.ink },
+  caption: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 22, color: palette.ink },
+};
 
 export default function ActionResult() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -72,27 +79,35 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
     <ScrollView contentContainerStyle={doc ? { paddingBottom: 120 } : null} testID="result-screen">
       <View style={[styles.band, { backgroundColor: pastelFor(item?.primaryType), paddingTop: insets.top }]}>
         <ScreenHeader title="" back />
-        <View style={styles.pill}><Text style={styles.pillText}>{label}</Text></View>
-        <Text style={styles.display} numberOfLines={4}>{doc?.title ?? label}</Text>
+        <View pointerEvents="none" style={[styles.doodles, { top: insets.top + 52 }]}>
+          <View style={{ transform: [{ rotate: "-10deg" }] }}><Doodle kind="burst" size={36} /></View>
+          <View style={{ transform: [{ rotate: "8deg" }], marginTop: 20 }}><Doodle kind="star" size={32} fill={palette.white} /></View>
+        </View>
+        <View style={styles.pills}>
+          <InkPill label="Result" />
+          <View style={styles.pill}><Text style={styles.pillText}>{label}</Text></View>
+        </View>
+        <Text style={styles.display} numberOfLines={4} accessibilityRole="header">{doc?.title ?? label}</Text>
         <Text style={styles.stamp} testID="result-timestamp">{new Date(at).toLocaleString()}</Text>
       </View>
       <View style={styles.content}>
 
       {execution.status === "queued" || execution.status === "running" ? (
-        <View style={styles.state} testID="result-running">
-          <ActivityIndicator color={colors.text} />
-          <View style={{ flex: 1 }}>
-            <Text style={type.heading}>{execution.status === "queued" ? "Getting started…" : "Working on it…"}</Text>
-            <Text style={type.caption}>Reading the source and building your result. This usually takes a few seconds; you can leave this screen.</Text>
+        <View style={[styles.state, { overflow: "hidden" }]} testID="result-running">
+          <Shimmer color={pastelFor(item?.primaryType)} width={200} />
+          <View style={styles.ring}><SpinRing size={22} /></View>
+          <View style={{ flex: 1, gap: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Text style={type.heading}>Working…</Text><BouncingDots /></View>
+            <Text style={type.caption}>Your result slides in here when it’s ready.</Text>
           </View>
         </View>
       ) : null}
 
       {execution.status === "failed" || execution.status === "cancelled" ? (
-        <View style={[styles.state, { backgroundColor: theme.dangerSoft, borderWidth: 0 }]} testID="result-failed">
-          <Ionicons name="alert-circle" size={22} color={colors.danger} />
+        <View style={[styles.state, { backgroundColor: palette.peach, borderWidth: 0 }]} testID="result-failed">
+          <View style={styles.redDot} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[type.heading, { color: colors.danger }]}>{execution.status === "failed" ? "This action failed" : "Cancelled"}</Text>
+            <Text style={type.heading}>{execution.status === "failed" ? "This action failed" : "Cancelled"}</Text>
             {execution.error ? <Text style={type.caption}>{execution.error}</Text> : null}
             <Tap testID="result-retry-button" onPress={() => router.replace({ pathname: "/item/[id]/actions", params: { id: execution.itemId } })}>
               <Text style={styles.link}>Back to actions to retry</Text>
@@ -102,20 +117,20 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
       ) : null}
 
       {execution.status === "awaiting_approval" ? (
-        <View style={[styles.state, { backgroundColor: theme.warningSoft, borderWidth: 0 }]} testID="result-awaiting-approval">
-          <Ionicons name="hand-left" size={20} color={colors.text} />
+        <View style={[styles.state, { backgroundColor: palette.butter, borderWidth: 0 }]} testID="result-awaiting-approval">
+          <Ionicons name="hand-left-outline" size={22} color={palette.ink} />
           <Text style={[type.caption, { flex: 1 }]}>Draft ready. Nothing has been sent. Copy or share it yourself when you’re happy with it.</Text>
         </View>
       ) : null}
 
       {doc ? (
-        <>
+        <SlideUp style={{ gap: 28 }}>
           <ResultView doc={doc} resultId={result?._id} accent={pastelFor(item?.primaryType)} />
           <Tap testID="result-open-item-button" onPress={() => router.push({ pathname: "/item/[id]", params: { id: execution.itemId } })} style={styles.itemLink}>
             <Ionicons name="bookmark-outline" size={16} color={colors.text} />
             <Text style={styles.link}>Open the saved item</Text>
           </Tap>
-        </>
+        </SlideUp>
       ) : null}
       </View>
     </ScrollView>
@@ -130,17 +145,21 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  top: { paddingHorizontal: space.xl },
-  content: { padding: space.xl, gap: space.xl },
-  band: { paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.md, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  pill: { alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.6)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
-  pillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase", color: colors.text },
-  display: { fontSize: 40, lineHeight: 40, fontWeight: "900", letterSpacing: -1.5, textTransform: "uppercase", color: colors.text },
-  stamp: { fontSize: 13, fontWeight: "600", color: "rgba(14,14,16,0.6)" },
+  safe: { flex: 1, backgroundColor: palette.white },
+  top: { paddingHorizontal: 20 },
+  content: { padding: 20, paddingTop: 28, gap: 28 },
+  band: { paddingHorizontal: 20, paddingBottom: 32, gap: 12, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, overflow: "hidden" },
+  doodles: { position: "absolute", right: 20, flexDirection: "row", gap: 4 },
+  pills: { flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" },
+  pill: { height: 28, justifyContent: "center", backgroundColor: palette.white, paddingHorizontal: 12, borderRadius: radius.pill },
+  pillText: { fontFamily: fonts.extraBold, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ink },
+  display: { fontFamily: fonts.display, fontSize: 34, lineHeight: 34, letterSpacing: -0.5, textTransform: "uppercase", color: palette.ink, paddingRight: 40 },
+  stamp: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, color: palette.ink },
   gap: { gap: space.sm },
-  state: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  bar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: space.md, paddingHorizontal: space.xl, paddingTop: space.md, paddingBottom: space.xxl, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
-  link: { color: colors.text, fontWeight: "700", textDecorationLine: "underline" },
-  itemLink: { flexDirection: "row", gap: 6, alignItems: "center", alignSelf: "center", padding: space.md },
+  state: { flexDirection: "row", alignItems: "center", gap: space.md, padding: 20, borderRadius: radius.lg, backgroundColor: palette.grey },
+  ring: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.ink, alignItems: "center", justifyContent: "center" },
+  redDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#E5484D" },
+  bar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: space.md, paddingHorizontal: 20, paddingTop: space.md, paddingBottom: 32, backgroundColor: palette.white, borderTopWidth: 1, borderTopColor: colors.border },
+  link: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: palette.ink, textDecorationLine: "underline" },
+  itemLink: { flexDirection: "row", gap: 6, alignItems: "center", alignSelf: "center", minHeight: 44, paddingHorizontal: space.md },
 });
