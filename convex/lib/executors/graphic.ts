@@ -1,6 +1,6 @@
 import { buildDocument, composeDocument, itemBlocks, sourcesFromBlocks } from "./document";
 import { fetchPageText } from "./sources";
-import { ExecutorError, type Executor, type ExecutorInput, type SourceBlock } from "./types";
+import { ExecutorError, type Executor, type ExecutorInput, type ResultSection, type SourceBlock } from "./types";
 
 // OWNER: D+E. Priority 3: graphic design analysis.
 
@@ -51,13 +51,29 @@ Describe the reference honestly; do not claim who made it.`,
 
 const addToMoodboard: Executor = async (input) => {
   const title = input.analysis?.title ?? input.item.title ?? "Saved design";
+  const about = input.analysis?.summary ?? input.item.summary;
+  const facts = (input.analysis?.facts ?? []).slice(0, 6);
+  const sections: ResultSection[] = [
+    {
+      kind: "key_value",
+      heading: "Added",
+      rows: [
+        { label: "Collection", value: "Moodboard" },
+        { label: "Item", value: title },
+        ...(input.item.sourceUrl ? [{ label: "Link", value: input.item.sourceUrl }] : []),
+        ...(input.imageUrl ? [{ label: "Image", value: "Saved screenshot included" }] : []),
+      ],
+    },
+  ];
+  if (about) sections.push({ kind: "text", heading: "Why it's here", body: about });
+  if (facts.length) sections.push({ kind: "key_value", heading: "Noted details", rows: facts.map((f) => ({ label: f.label, value: f.value, evidence: f.evidence })) });
   const result = composeDocument(
     "add_to_moodboard",
     "Added to Moodboard",
-    `"${title}" is now in your Moodboard collection.`,
-    [{ kind: "key_value", heading: "Collection", rows: [{ label: "Moodboard", value: title }] }],
+    `"${title}" is now in your Moodboard collection${about ? `: ${about}` : "."}`,
+    sections,
     sourcesFromBlocks(input, []),
-    [],
+    input.imageUrl ? [] : ["No image was saved with this item, so the moodboard shows its link and text only."],
   );
   return { result, status: "succeeded", collect: { kind: "moodboard", name: "Moodboard" } };
 };
