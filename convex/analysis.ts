@@ -71,7 +71,7 @@ function verifiedFacts(raw: RawAnalysis["facts"], parts: SourcePart[], hasImage:
     const value = str(fact.value);
     const quote = str(fact.quote).slice(0, 300);
     const cited = str(fact.source);
-    if (!key || !value || !quote) continue;
+    if (!key || !value || !quote || /^(navigation|nav|menu|button|call_to_action|cta)(_|$)/.test(key)) continue;
     const needle = normalize(quote).slice(0, 120);
     const match = needle ? corpus.find((part) => part.text.includes(needle)) : undefined;
     let source: string;
@@ -97,7 +97,10 @@ export async function analyzeContent(input: { parts: SourcePart[]; images: strin
     schemaHint: SCHEMA_HINT,
   });
   const listed = Array.isArray(raw.contentTypes) ? raw.contentTypes.filter(isType) : [];
-  const primaryType = isType(raw.primaryType) ? raw.primaryType : (listed[0] ?? "general_content");
+  const modelPrimary = isType(raw.primaryType) ? raw.primaryType : (listed[0] ?? "general_content");
+  const imageOnly = input.images.length > 0 && input.parts.length === 0;
+  const primaryType =
+    imageOnly && listed.includes("graphic") && (modelPrimary === "product" || modelPrimary === "general_content") ? "graphic" : modelPrimary;
   const contentTypes = [primaryType, ...listed.filter((t) => t !== primaryType)];
   return {
     contentTypes: [...new Set(contentTypes)],
