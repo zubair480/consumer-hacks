@@ -106,6 +106,10 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
           </Boundary>
         ) : null}
 
+        {item.extractionStatus === "ready" ? (
+          <GradientButton testID="create-post" label="Create post" icon="sparkles" variant="secondary" onPress={() => router.push({ pathname: "/studio/platforms", params: { itemId } })} />
+        ) : null}
+
         {keyFacts.length > 0 ? (
           <View style={styles.keyFacts}>
             {keyFacts.map(([label, value]) => (
