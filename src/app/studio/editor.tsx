@@ -86,7 +86,7 @@ function DraftPanel({ draft }: { draft: SocialDraftView }) {
   const draftId = draft._id as Id<"socialDrafts">;
   const update = useOwnedMutation(api.social.drafts.update);
   const regenerate = useOwnedMutation(api.social.drafts.regenerate);
-  const publish = useOwnedQuery(api.publishing.statusForDraft, draft.generationStatus === "ready" ? { draftId } : "skip");
+  const publish = useOwnedQuery(api.publishing.jobs.statusForDraft, draft.generationStatus === "ready" ? { draftId } : "skip");
   const sharing = useDraftSharing(draftId);
   const m = platformMeta(draft.platform);
   const [text, setText] = useState(draft.draftText);

@@ -82,6 +82,9 @@ export const socialTables = {
     publishedAt: v.optional(v.number()),
     externalPostId: v.optional(v.string()),
     error: v.optional(v.string()),
+    draftRevision: v.optional(v.number()),
+    attempts: v.optional(v.number()),
+    url: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

@@ -54,8 +54,8 @@ export async function shareDraft(
 
 /** Hook wiring shareDraft to publishing.startShare and confirmUserPosted for one draft. */
 export function useDraftSharing(draftId: Id<"socialDrafts"> | undefined) {
-  const startShare = useOwnedMutation(api.publishing.startShare);
-  const confirm = useOwnedMutation(api.publishing.confirmUserPosted);
+  const startShare = useOwnedMutation(api.publishing.jobs.startShare);
+  const confirm = useOwnedMutation(api.publishing.jobs.confirmUserPosted);
   return {
     copy: copyDraft,
     share: (input: ShareDraftInput) => shareDraft(input, draftId ? () => startShare({ draftId }) : undefined),
