@@ -1,0 +1,13 @@
+# Phase 1 Revyl test 2: Home works
+id: 02-home-works
+name: "Home works"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "On Home, read the header, the save button (`home-save-button` or `home-empty-save-button`), and the Ready for you / recent sections."
+  - "Tap the save button."
+expect:
+  - "Home renders its sections without error."
+  - "The Capture sheet opens (`capture-mode-url` visible). Close it with `capture-close-button`."
+evidence: one screenshot per step, saved as renders/CONS-9/02-home-works-<step>.png

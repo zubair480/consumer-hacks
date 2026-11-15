@@ -1,0 +1,12 @@
+# Phase 1 Revyl test 10: Scholarship actions appear
+id: 10-scholarship-actions-appear
+name: "Scholarship actions appear"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Open the scholarship text item from test 4 and wait for analysis."
+  - "Tap `open-actions-button`."
+expect:
+  - "The item is classified as scholarship and the actions screen lists Check eligibility, Prepare application, Track verified deadline (different from the GitHub actions)."
+evidence: one screenshot per step, saved as renders/CONS-9/10-scholarship-actions-appear-<step>.png

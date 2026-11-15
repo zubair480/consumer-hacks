@@ -1,0 +1,14 @@
+# Phase 1 Revyl test 3: URL saved
+id: 03-url-saved
+name: "URL saved"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Open Capture, keep the Link mode (`capture-mode-url`)."
+  - "Type fixtures.githubUrl into `url-input`."
+  - "Tap `save-button`."
+expect:
+  - "The app navigates to the item detail (`item-detail-screen`) with the URL as source."
+  - "Back on Home/Library the item card appears."
+evidence: one screenshot per step, saved as renders/CONS-9/03-url-saved-<step>.png

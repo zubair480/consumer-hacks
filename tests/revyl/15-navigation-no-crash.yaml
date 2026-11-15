@@ -1,0 +1,12 @@
+# Phase 1 Revyl test 15: Navigation doesn't crash
+id: 15-navigation-no-crash
+name: "Navigation doesn't crash"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Visit every tab (Home, Library, Activity, Profile), open an item, its actions, a result, go back each time, open and close Capture."
+  - "Use Library search and type filters."
+expect:
+  - "No crash, red box or blank screen at any step; back navigation returns to the previous screen."
+evidence: one screenshot per step, saved as renders/CONS-9/15-navigation-no-crash-<step>.png

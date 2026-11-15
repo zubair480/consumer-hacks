@@ -1,0 +1,12 @@
+# Phase 1 Revyl test 13: Outcomes persist
+id: 13-outcomes-persist
+name: "Outcomes persist"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "After 9 and 11, relaunch the app."
+  - "Open Home completed outcomes / Activity, and reopen both results."
+expect:
+  - "Both results reopen from Convex with the same content (`result-screen`, `result-timestamp`)."
+evidence: one screenshot per step, saved as renders/CONS-9/13-outcomes-persist-<step>.png

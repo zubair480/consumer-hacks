@@ -1,0 +1,11 @@
+# Phase 1 Revyl test 12: Design image analyzed
+id: 12-design-image-analyzed
+name: "Design image analyzed"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "Open the image item from test 5 and wait for analysis."
+expect:
+  - "The item has a vision-derived title and summary (not a placeholder) and a content type; extraction status is complete."
+evidence: one screenshot per step, saved as renders/CONS-9/12-design-image-analyzed-<step>.png

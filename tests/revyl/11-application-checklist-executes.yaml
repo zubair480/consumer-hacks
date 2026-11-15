@@ -1,0 +1,12 @@
+# Phase 1 Revyl test 11: Application checklist executes
+id: 11-application-checklist-executes
+name: "Application checklist executes"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+fixtures: tests/revyl/fixtures/fixtures.json
+steps:
+  - "On the scholarship actions screen tap Prepare application (`action-prepare_application` / its `action-button-N`)."
+  - "Fill any required inputs, wait for completion, open the result."
+expect:
+  - "The result shows a checklist (`checklist-*`) with the essay, recommendation letter and transcript, and the Dec 15, 2026 deadline taken from the source, with no invented facts."
+evidence: one screenshot per step, saved as renders/CONS-9/11-application-checklist-executes-<step>.png
