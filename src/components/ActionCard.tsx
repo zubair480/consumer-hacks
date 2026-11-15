@@ -7,10 +7,10 @@ import { useOwnedMutation } from "../identity/OwnerProvider";
 import { api } from "../../convex/_generated/api";
 import type { SuggestionRow } from "./api";
 import { Field } from "./Field";
-import { GradientButton } from "./GradientButton";
 import { errorMessage } from "./media";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
+import { Button } from "./ui";
 
 function prefill(input: RequiredInput, profile: UserProfile | undefined, item: SavedItemView | undefined): string {
   const from = (input as RequiredInput & { prefillFrom?: string }).prefillFrom;
@@ -61,9 +61,9 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
   };
 
   return (
-    <View style={[styles.card, { borderColor: color + "55" }]} testID={`action-${suggestion.actionType}`}>
+    <View style={styles.card} testID={`action-${suggestion.actionType}`}>
       <View style={styles.head}>
-        <View style={[styles.rank, { backgroundColor: color + "26" }]}><Text style={[styles.rankText, { color }]}>{suggestion.rank + 1}</Text></View>
+        <View style={[styles.rank, { backgroundColor: color }]}><Text style={styles.rankText}>{suggestion.rank + 1}</Text></View>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={type.heading}>{suggestion.title}</Text>
           <Text style={type.caption}>{suggestion.description}</Text>
@@ -88,24 +88,25 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
       {error ? <Text style={styles.error} testID={`action-error-${suggestion.rank}`}>{error}</Text> : null}
       {running && latest ? (
         <Tap testID={`action-progress-${suggestion.rank}`} onPress={() => openResult(latest._id)} style={styles.status}>
-          <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[styles.statusText, { color: colors.accent }]}>Working on it…</Text>
+          <ActivityIndicator size="small" color={colors.text} />
+          <Text style={[styles.statusText, { color: colors.text }]}>Working on it…</Text>
         </Tap>
       ) : null}
       {latest?.resultId ? (
         <Tap testID={`action-view-result-${suggestion.rank}`} onPress={() => openResult(latest._id)} style={styles.status}>
           <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-          <Text style={[styles.statusText, { color: colors.success }]}>View result</Text>
+          <Text style={[styles.statusText, { color: colors.text }]}>View result</Text>
         </Tap>
       ) : null}
       {latest?.status === "failed" && latest.error ? <Text style={styles.error}>Last run failed: {latest.error}</Text> : null}
       {suggestion.canExecute ? (
         running ? null : (
-          <GradientButton
+          <Button
             testID={`action-button-${suggestion.rank}`}
-            label={latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run"}
-            icon="flash"
+            title={latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run"}
+            icon={latest?.resultId ? "refresh" : "play"}
             variant={latest?.resultId ? "secondary" : "primary"}
+            fullWidth
             onPress={start}
             loading={busy}
             disabled={missing}
@@ -122,11 +123,11 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
 }
 
 const styles = StyleSheet.create({
-  card: { gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1 },
-  head: { flexDirection: "row", gap: space.md },
-  rank: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  rankText: { fontWeight: "800" },
-  status: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: radius.md, backgroundColor: colors.surfaceRaised },
+  card: { gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  head: { flexDirection: "row", gap: space.md, alignItems: "center" },
+  rank: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  rankText: { fontWeight: "900", fontSize: 18, color: colors.text },
+  status: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
   statusText: { color: colors.textFaint, fontWeight: "700" },
   error: { color: colors.danger, fontWeight: "600" },
 });

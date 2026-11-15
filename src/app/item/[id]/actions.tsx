@@ -11,7 +11,7 @@ import { ScreenHeader } from "../../../components/ScreenHeader";
 import { Section } from "../../../components/Section";
 import { Skeleton } from "../../../components/States";
 import { colors, radius, space, type } from "../../../components/tokens";
-import { TypeChip } from "../../../components/TypeChip";
+import { TypeChip, pastelFor } from "../../../components/ui";
 import { metaFor } from "../../../components/typeMeta";
 import { useOwnedQuery } from "../../../identity/OwnerProvider";
 import { IN_PROGRESS_EXTRACTION_STATUSES, type SavedItemView } from "../../../shared/contracts";
@@ -36,7 +36,7 @@ function Body({ itemId }: { itemId: Id<"savedItems"> }) {
   return (
     <>
       <View style={styles.gap}>
-        <TypeChip type={item.primaryType} />
+        <View style={{ alignSelf: "flex-start" }}><TypeChip type={item.primaryType} label={metaFor(item.primaryType).label} /></View>
         <Text style={type.title} numberOfLines={2}>{itemTitle(item)}</Text>
       </View>
       {IN_PROGRESS_EXTRACTION_STATUSES.includes(item.extractionStatus) ? (
@@ -60,7 +60,7 @@ function ActionList({ item }: { item: SavedItemView }) {
         <View style={styles.pending}><ActivityIndicator color={colors.accent} /><Text style={type.caption}>Picking the best actions for this save…</Text></View>
       ) : (
         <View style={styles.gap}>
-          {[...suggestions].sort((a, b) => a.rank - b.rank).map((s) => <ActionCard key={s._id} suggestion={s} color={metaFor(item.primaryType).color} profile={profile} item={item} />)}
+          {[...suggestions].sort((a, b) => a.rank - b.rank).map((s) => <ActionCard key={s._id} suggestion={s} color={pastelFor(item.primaryType)} profile={profile} item={item} />)}
         </View>
       )}
       {results && results.length > 0 ? (
@@ -77,5 +77,5 @@ const styles = StyleSheet.create({
   top: { paddingHorizontal: space.xl },
   content: { padding: space.xl, gap: space.xl, paddingBottom: 80 },
   gap: { gap: space.md },
-  pending: { flexDirection: "row", gap: space.md, alignItems: "center", padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface },
+  pending: { flexDirection: "row", gap: space.md, alignItems: "center", padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
 });
