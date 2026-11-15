@@ -1,7 +1,15 @@
 import { ConvexError, v } from "convex/values";
 import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
-import { action, internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "../_generated/server";
+import {
+  action,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "../_generated/server";
 import { getUser, requireOwned, requireUser } from "../lib/auth";
 import { vOwnerId } from "../lib/validators";
 import type { SocialDraftStatus } from "../../src/shared/socialContracts";
@@ -151,19 +159,58 @@ export const markFailed = mutation({
 });
 
 type BeginResult =
-  | { kind: "go"; jobId: Id<"publishingJobs">; platform: Doc<"socialDrafts">["platform"]; text: string; sourceUrl?: string }
+  | {
+      kind: "go";
+      jobId: Id<"publishingJobs">;
+      platform: Doc<"socialDrafts">["platform"];
+      text: string;
+      sourceUrl?: string;
+      imageUrl?: string;
+    }
   | { kind: "done" };
 
+const publishArgs = {
+  ownerId: vOwnerId,
+  draftId: v.id("socialDrafts"),
+  revision: v.number(),
+  imageStorageId: v.optional(v.id("_storage")),
+};
+
+/** The image only if this user owns it: the draft's source media, or one of the user's mediaAssets. */
+async function ownedImageUrl(
+  ctx: MutationCtx,
+  user: Doc<"users">,
+  draft: Doc<"socialDrafts">,
+  storageId: Id<"_storage">,
+) {
+  const source = draft.sourceMediaId ? await ctx.db.get("mediaAssets", draft.sourceMediaId) : null;
+  const owned =
+    source?.storageId === storageId ||
+    (
+      await ctx.db
+        .query("mediaAssets")
+        .withIndex("by_userId_and_createdAt", (q) => q.eq("userId", user._id))
+        .order("desc")
+        .take(200)
+    ).some((m) => m.storageId === storageId);
+  if (!owned) throw new ConvexError("Not found");
+  const url = await ctx.storage.getUrl(storageId);
+  if (!url) throw new ConvexError("The image is no longer available");
+  return url;
+}
+
 export const beginPublish = internalMutation({
-  args: { ownerId: vOwnerId, draftId: v.id("socialDrafts"), revision: v.number() },
-  handler: async (ctx, { ownerId, draftId, revision }): Promise<BeginResult> => {
+  args: publishArgs,
+  handler: async (ctx, { ownerId, draftId, revision, imageStorageId }): Promise<BeginResult> => {
     const { user, draft } = await loadReadyDraft(ctx, ownerId, draftId);
-    if (draft.revision !== revision) throw new ConvexError("This draft changed since you reviewed it. Check the text and confirm again.");
+    if (draft.revision !== revision)
+      throw new ConvexError("This draft changed since you reviewed it. Check the text and confirm again.");
     const adapter = ADAPTERS[draft.platform];
     if (!adapter) throw new ConvexError("This platform uses copy and the share sheet for now");
     const item = draft.sourceSavedItemId ? await ctx.db.get("savedItems", draft.sourceSavedItemId) : null;
     const sourceUrl = item?.sourceUrl ?? undefined;
     if (!adapter.isConfigured()) throw new ConvexError("This account is not connected. Use Open in or Copy instead.");
+    const imageUrl = imageStorageId ? await ownedImageUrl(ctx, user, draft, imageStorageId) : undefined;
 
     const jobs = await ctx.db
       .query("publishingJobs")
@@ -198,7 +245,7 @@ export const beginPublish = internalMutation({
       });
     }
     await ctx.db.patch("socialDrafts", draftId, { status: "publishing" });
-    return { kind: "go", jobId, platform: draft.platform, text: draft.draftText, sourceUrl };
+    return { kind: "go", jobId, platform: draft.platform, text: draft.draftText, sourceUrl, imageUrl };
   },
 });
 
@@ -253,13 +300,16 @@ export const loadStatus = internalQuery({
  * Throws when the platform has no adapter or is not configured; the client uses its fallback (Open in / share sheet).
  */
 export const publish = action({
-  args: { ownerId: vOwnerId, draftId: v.id("socialDrafts"), revision: v.number() },
+  args: publishArgs,
   handler: async (ctx, args): Promise<PublishStatusView> => {
     const begin: BeginResult = await ctx.runMutation(internal.publishing.jobs.beginPublish, args);
     if (begin.kind === "go") {
       let result: PublishResult;
       try {
-        result = await ADAPTERS[begin.platform]!.publish(begin.text, { sourceUrl: begin.sourceUrl });
+        result = await ADAPTERS[begin.platform]!.publish(begin.text, {
+          sourceUrl: begin.sourceUrl,
+          imageUrl: begin.imageUrl,
+        });
       } catch (e) {
         console.error("publish adapter threw", e);
         result = { status: "failed", error: "Could not reach the platform. Try again." };
@@ -277,11 +327,14 @@ export const publish = action({
           : {
               jobId: begin.jobId,
               status: "failed",
-              error: result.status === "failed" ? result.error : "The platform is not connected. Use Open in or Copy instead.",
+              error:
+                result.status === "failed"
+                  ? result.error
+                  : "The platform is not connected. Use Open in or Copy instead.",
             },
       );
     }
-    return await ctx.runQuery(internal.publishing.jobs.loadStatus, args);
+    return await ctx.runQuery(internal.publishing.jobs.loadStatus, { ownerId: args.ownerId, draftId: args.draftId });
   },
 });
 

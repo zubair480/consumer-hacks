@@ -7,7 +7,7 @@ export type PublishResult =
   | { status: "awaiting_user_action"; openUrl?: string }
   | { status: "failed"; error: string };
 
-export type PublishOptions = { sourceUrl?: string };
+export type PublishOptions = { sourceUrl?: string; imageUrl?: string };
 
 export type AccountPlatform = SocialPlatform | "youtube";
 
