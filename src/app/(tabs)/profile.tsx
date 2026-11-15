@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
+import { CalendarConnectRow } from "../../components/agents/CalendarAgent";
 import { ConnectedAccounts } from "../../components/publishing/ConnectedAccounts";
 import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
@@ -52,6 +53,7 @@ export default function Profile() {
         <Boundary title="Couldn’t load connected accounts">
           <ConnectedAccounts />
         </Boundary>
+        <Boundary fallback={null}><CalendarConnectRow /></Boundary>
         <Boundary title="Couldn’t load Share to Zapy"><ShareToZapyCard /></Boundary>
         <About />
       </ScrollView>

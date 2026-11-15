@@ -10,6 +10,9 @@
 
 import type * as actions from "../actions.js";
 import type * as activity from "../activity.js";
+import type * as agents_calendar from "../agents/calendar.js";
+import type * as agents_composio from "../agents/composio.js";
+import type * as agents_schema from "../agents/schema.js";
 import type * as analysis from "../analysis.js";
 import type * as collections from "../collections.js";
 import type * as http from "../http.js";
@@ -68,6 +71,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   activity: typeof activity;
+  "agents/calendar": typeof agents_calendar;
+  "agents/composio": typeof agents_composio;
+  "agents/schema": typeof agents_schema;
   analysis: typeof analysis;
   collections: typeof collections;
   http: typeof http;

@@ -18,6 +18,7 @@ import {
 import { importTables } from "./imports/schema";
 import { socialTables } from "./social/schema";
 import { shareTables } from "./shareSchema";
+import { agentTables } from "./agents/schema";
 
 // OWNER: Lead. Other threads add only new OPTIONAL fields or new indexes,
 // coordinated through the Captain. Every row except users carries userId,
@@ -159,4 +160,7 @@ export default defineSchema({
 
   // Share to Zapy (CONS-22).
   ...shareTables,
+
+  // Agent mode 2 (ZUB-36).
+  ...agentTables,
 });

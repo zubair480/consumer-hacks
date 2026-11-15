@@ -4,6 +4,7 @@ import { httpAction } from "./_generated/server";
 import { X_CALLBACK_PATH } from "./imports/xClient";
 import { GOOGLE_CALLBACK_PATH } from "./imports/youtubeClient";
 import { save } from "./share";
+import { GCAL_CALLBACK_PATH, safeReturnUrl } from "./agents/composio";
 
 const http = httpRouter();
 
@@ -51,6 +52,20 @@ http.route({
     back.searchParams.set("youtube", outcome.ok ? "connected" : "error");
     if (outcome.message) back.searchParams.set("message", outcome.message);
     return new Response(null, { status: 302, headers: { Location: back.toString() } });
+  }),
+});
+
+/** Composio Google Calendar connect callback: 302s back to an allow-listed app deep link. */
+http.route({
+  path: GCAL_CALLBACK_PATH,
+  method: "GET",
+  handler: httpAction(async (_ctx, req) => {
+    const params = new URL(req.url).searchParams;
+    const back = safeReturnUrl(params.get("return"));
+    if (!back) return page("This link is invalid. Go back to Zapy and tap Connect again.", 400);
+    const url = new URL(back);
+    url.searchParams.set("gcal", params.get("status") === "success" ? "connected" : "error");
+    return new Response(null, { status: 302, headers: { Location: url.toString() } });
   }),
 });
 
