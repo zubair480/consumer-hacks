@@ -107,7 +107,7 @@ function Body() {
       </View>
 
       <Section title="About you">
-        <Text style={type.caption}>Used to check scholarship eligibility and plan visits. Stays in your AfterScroll account; nothing is shared.</Text>
+        <Text style={type.caption}>Used to check scholarship eligibility and plan visits. Stays in your Zapy account; nothing is shared.</Text>
         {FIELDS.map((f) => (
           <View key={f.key} style={{ gap: 6 }}>
             <Text style={styles.fieldLabel}>{f.label}</Text>
@@ -134,7 +134,7 @@ function About() {
     <Section title="About & limitations">
       <View style={styles.about} testID="about-section">
         {[
-          ["sparkles", "AfterScroll reads what you save and suggests three actions. Results come from the source you saved; when a fact isn’t in the source (a deadline, a price, an address) we say so instead of guessing."],
+          ["sparkles", "Zapy reads what you save and suggests three actions. Results come from the source you saved; when a fact isn’t in the source (a deadline, a price, an address) we say so instead of guessing."],
           ["lock-closed", "Some links are private or block readers (Instagram, logged-in pages). When that happens, add a screenshot or paste the text."],
           ["share-outline", "Nothing is posted or sent for you. Drafts are copied or shared through your phone’s share sheet."],
           ["phone-portrait-outline", `No account needed: your saves belong to this device (${ownerId.slice(0, 8)}). Deleting the app removes access to them.`],

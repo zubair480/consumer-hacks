@@ -31,7 +31,7 @@ afterEach(() => {
 
 describe("testPostText", () => {
   it("builds the exact text", () => {
-    expect(testPostText("09:05:07")).toBe("Testing AfterScroll 09:05:07");
+    expect(testPostText("09:05:07")).toBe("Testing Zapy 09:05:07");
   });
   it.each(["9:05:07", "24:00:00", "12:60:00", "12:00", "12:00:00 https://x.com"])("rejects %s", (t) => {
     expect(() => testPostText(t)).toThrow();
@@ -41,20 +41,20 @@ describe("testPostText", () => {
 describe("runTestPost on X", () => {
   it("returns the post id on 201", async () => {
     const fetch = mockFetch(new Response(JSON.stringify({ data: { id: "1857" } }), { status: 201 }));
-    const r = await runTestPost(xAdapter, "Testing AfterScroll 10:00:00");
+    const r = await runTestPost(xAdapter, "Testing Zapy 10:00:00");
     expect(r).toMatchObject({ status: "published", externalPostId: "1857", url: "https://x.com/i/status/1857" });
-    expect(JSON.parse(String(fetch.mock.calls[0]?.[1].body))).toEqual({ text: "Testing AfterScroll 10:00:00" });
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1].body))).toEqual({ text: "Testing Zapy 10:00:00" });
   });
   it("fails on 401", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch(new Response("{}", { status: 401 }));
-    const r = await runTestPost(xAdapter, "Testing AfterScroll 10:00:00");
+    const r = await runTestPost(xAdapter, "Testing Zapy 10:00:00");
     expect(r.status).toBe("failed");
   });
   it("fails when 201 has no id", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch(new Response("{}", { status: 201 }));
-    const r = await runTestPost(xAdapter, "Testing AfterScroll 10:00:00");
+    const r = await runTestPost(xAdapter, "Testing Zapy 10:00:00");
     expect(r.status).toBe("failed");
   });
   it("fails without posting when not configured", async () => {
@@ -73,7 +73,7 @@ describe("runTestPost on X", () => {
 describe("runTestPost on LinkedIn", () => {
   it("returns the post urn from x-restli-id", async () => {
     mockFetch(new Response(null, { status: 201, headers: { "x-restli-id": "urn:li:share:42" } }));
-    const r = await runTestPost(linkedinAdapter, "Testing AfterScroll 10:00:00");
+    const r = await runTestPost(linkedinAdapter, "Testing Zapy 10:00:00");
     expect(r).toMatchObject({ status: "published", externalPostId: "urn:li:share:42" });
   });
   it("fails on 401", async () => {

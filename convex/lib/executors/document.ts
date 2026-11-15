@@ -191,7 +191,7 @@ export async function buildDocument(opts: BuildOptions): Promise<ActionResultDoc
   const corpus = blocks.map((b) => b.text).join("\n\n");
   const verify = makeVerifier(corpus);
   const label = ACTION_LABELS[input.actionType];
-  const system = `You are AfterScroll's "${label.title}" executor. ${label.description}\n${SECTION_SCHEMA}\n${RULES}`;
+  const system = `You are Zapy's "${label.title}" executor. ${label.description}\n${SECTION_SCHEMA}\n${RULES}`;
   const user = [
     `TASK:\n${opts.instruction}`,
     `TODAY: ${new Date(input.now).toISOString().slice(0, 10)}`,

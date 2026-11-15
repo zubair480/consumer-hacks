@@ -1,6 +1,6 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
-## Project rules (AfterScroll)
+## Project rules (Zapy)
 
 - **Expo Go only.** Use only modules that Expo Go bundles, because the live demo runs on a real iPhone through Expo Go. Add dependencies with `npx expo install <pkg>` and never with npm/yarn/bun add.
 - **Convex deploys replace everything.** `npx convex dev --once` replaces the whole function set on the shared dev deployment (pleasant-lark-678). Deploy only from `origin/main` merged with every in-flight Convex branch. Fetch first, merge into a scratch branch or worktree, and push from that. Never push from a branch that would drop another thread's functions.

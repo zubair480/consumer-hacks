@@ -1,5 +1,5 @@
 /**
- * AfterScroll shared contracts.
+ * Zapy shared contracts.
  *
  * OWNER: Lead thread (Thread 1). This file is the single source of truth for
  * the shapes the app (src/**) and the backend (convex/**) agree on. Convex
@@ -308,7 +308,7 @@ export type ActionSuggestion = {
   requiredInputs: RequiredInput[];
   /** false when an executor is not implemented yet; UI shows "coming soon". */
   canExecute: boolean;
-  /** true when the action reaches outside AfterScroll (share, send, publish). */
+  /** true when the action reaches outside Zapy (share, send, publish). */
   requiresApproval: boolean;
   /** 0-based display order. */
   rank: number;

@@ -29,7 +29,7 @@ export default function Home() {
         <View style={styles.header}>
           <View>
             <Text style={type.caption}>{greeting()}</Text>
-            <Text style={type.display}>AfterScroll</Text>
+            <Text style={type.display}>Zapy</Text>
           </View>
           <Tap testID="home-header-add-button" accessibilityLabel="Save something" haptic="medium" onPress={openCapture} style={styles.add}>
             <Ionicons name="add" size={24} color={colors.text} />
@@ -60,7 +60,7 @@ function Feed() {
   if (items === undefined) return <Skeleton rows={3} />;
   if (items.length === 0) {
     return (
-      <EmptyState icon="bookmark-outline" title="Nothing saved yet" body="Save a GitHub repo, a scholarship, a restaurant, or a design you liked. AfterScroll figures out what you can do with it.">
+      <EmptyState icon="bookmark-outline" title="Nothing saved yet" body="Save a GitHub repo, a scholarship, a restaurant, or a design you liked. Zapy figures out what you can do with it.">
         <GradientButton testID="home-empty-save-button" label="Save your first thing" icon="add" onPress={openCapture} style={{ alignSelf: "stretch", marginTop: space.sm }} />
       </EmptyState>
     );
