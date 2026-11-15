@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
+import { ConnectedAccounts } from "../../components/publishing/ConnectedAccounts";
 import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
 import { errorMessage } from "../../components/media";
@@ -40,6 +41,9 @@ export default function Profile() {
         <ScreenHeader title="Profile" />
         <Boundary title="Couldn’t load your profile">
           <Body />
+        </Boundary>
+        <Boundary title="Couldn’t load connected accounts">
+          <ConnectedAccounts />
         </Boundary>
         <About />
       </ScrollView>
