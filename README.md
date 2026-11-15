@@ -100,3 +100,17 @@ Schema changes by other threads: new optional fields or new indexes only, coordi
 - **UI (A):** `SavedItemView` is what `items.list/get/search` return. Build screens from `src/components/ui` and `src/theme` (dark-first). Put a `testID` on every button and input a test touches.
 - **Activity (F):** `internal.activity.log` records events; `api.activity.list` and `listForItem` read them.
 - **Social Studio (Phase 2):** types in `src/shared/socialContracts.ts`, API in `convex/social/drafts.ts` (`api.social.drafts.*`, all take `ownerId`). Drafts have two separate statuses: `generationStatus` (generating | ready | failed, the composer's progress) and `status` (draft | ready_to_share | awaiting_user_action | publishing | published | failed, owned by J's publishing code). `update` and `regenerate` write a new revision on that draft only, so other platforms and earlier edits are kept.
+
+## Verified on Revyl
+
+End-to-end runs on a Revyl cloud iPhone 16 with Release simulator builds of `main` against the dev Convex deployment, all on 2026-11-15. Scripts and fixtures are in `tests/revyl/`; per-step screenshots are in the Captain drive under `renders/CONS-9/`.
+
+| Flows | Build of `main` | Result | Source |
+| --- | --- | --- | --- |
+| Phase 1 gate, tests 01–15: launch, Home, save URL / text / screenshot, Library after restart, GitHub classification and actions, repo explanation, scholarship actions and checklist, design image analysis, outcomes after restart, invalid URL recovery, navigation | `f9f1db1` (tag `phase-1`) | 15/15 pass | [#27](https://github.com/zubair480/consumer-hacks/pull/27) |
+| Core regression: GitHub link save → Ready → Understand project → reopen result; persistence of items and outcomes across a relaunch | `6d80bec` | pass | CONS-9 |
+| One-tap "Save as text instead" for an invalid link; Prepare application runs on the first tap | `7f327f9` | pass | CONS-9 |
+| Live demo: save a LinkedIn short link → Ready as a scholarship → Track verified deadline result | `7f327f9`, repeated on `ad2202d` | pass | CONS-9 |
+| Social Studio without publishing: LinkedIn + X drafts from a save, edit X then rewrite LinkedIn (X edit kept), preview, drafts persist after relaunch, copy, Instagram + TikTok drafts from a library photo | `ad2202d` | 6/6 pass | CONS-9 |
+
+Not covered by these runs: the restyle and X bookmarks import merged after `ad2202d`, real posting to LinkedIn or X, and Expo Go on a physical iPhone.
