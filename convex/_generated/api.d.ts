@@ -40,6 +40,7 @@ import type * as lib_validators from "../lib/validators.js";
 import type * as media from "../media.js";
 import type * as preferences from "../preferences.js";
 import type * as publishing_index from "../publishing/index.js";
+import type * as publishing_instagram from "../publishing/instagram.js";
 import type * as publishing_jobs from "../publishing/jobs.js";
 import type * as publishing_linkedin from "../publishing/linkedin.js";
 import type * as publishing_testPost from "../publishing/testPost.js";
@@ -98,6 +99,7 @@ declare const fullApi: ApiFromModules<{
   media: typeof media;
   preferences: typeof preferences;
   "publishing/index": typeof publishing_index;
+  "publishing/instagram": typeof publishing_instagram;
   "publishing/jobs": typeof publishing_jobs;
   "publishing/linkedin": typeof publishing_linkedin;
   "publishing/testPost": typeof publishing_testPost;
