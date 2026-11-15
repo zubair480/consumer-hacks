@@ -3,8 +3,9 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../_generated/api";
+import { IMPORT_SYNC_PERIOD_MS } from "../lib/rateLimits";
 import schema from "../schema";
-import { modules } from "../test.setup";
+import { modules, registerComponents } from "../test.setup";
 import { MAX_NEW_PER_SYNC } from "./github";
 import { STARS_PER_PAGE } from "./githubClient";
 import { json, starredRepo } from "./githubClient.test";
@@ -13,7 +14,7 @@ const OWNER_A = "11111111-1111-4111-8111-111111111111";
 const OWNER_B = "22222222-2222-4222-8222-222222222222";
 
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = registerComponents(convexTest(schema, modules));
   await t.mutation(api.users.ensure, { ownerId: OWNER_A });
   await t.mutation(api.users.ensure, { ownerId: OWNER_B });
   return t;
@@ -64,8 +65,10 @@ describe("imports.github.sync", () => {
     mockStars(25);
     await t.action(api.imports.github.sync, { ownerId: OWNER_A, username: "octocat" });
 
+    vi.setSystemTime(Date.now() + IMPORT_SYNC_PERIOD_MS);
     const second = await t.action(api.imports.github.sync, { ownerId: OWNER_A });
     expect(second).toEqual({ created: 5, duplicates: 20, invalid: 0 });
+    vi.setSystemTime(Date.now() + IMPORT_SYNC_PERIOD_MS);
     const third = await t.action(api.imports.github.sync, { ownerId: OWNER_A });
     expect(third).toEqual({ created: 0, duplicates: 25, invalid: 0 });
 
@@ -123,5 +126,17 @@ describe("imports.github.sync", () => {
     expect(await t.query(api.imports.github.status, { ownerId: OWNER_B })).toBeNull();
     await expect(t.action(api.imports.github.sync, { ownerId: OWNER_B })).rejects.toThrow("Enter your GitHub username first.");
     expect(await t.query(api.items.list, { ownerId: OWNER_B })).toHaveLength(0);
+  });
+
+  it("allows one manual sync per owner every 30 s", async () => {
+    const t = await setup();
+    const fetch = mockStars(3);
+    await t.action(api.imports.github.sync, { ownerId: OWNER_A, username: "octocat" });
+    const calls = fetch.mock.calls.length;
+    await expect(t.action(api.imports.github.sync, { ownerId: OWNER_A })).rejects.toThrow(/Synced moments ago\. Try again in \d+ s\./);
+    expect(fetch.mock.calls.length).toBe(calls);
+    await t.action(api.imports.github.sync, { ownerId: OWNER_B, username: "octocat" });
+    vi.setSystemTime(Date.now() + IMPORT_SYNC_PERIOD_MS);
+    expect(await t.action(api.imports.github.sync, { ownerId: OWNER_A })).toEqual({ created: 0, duplicates: 3, invalid: 0 });
   });
 });

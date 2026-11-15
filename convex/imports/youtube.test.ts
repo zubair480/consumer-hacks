@@ -3,8 +3,9 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../_generated/api";
+import { IMPORT_SYNC_PERIOD_MS } from "../lib/rateLimits";
 import schema from "../schema";
-import { modules } from "../test.setup";
+import { modules, registerComponents } from "../test.setup";
 import { likedPage, videoIds } from "./youtubeClient.test";
 
 const OWNER_A = "11111111-1111-4111-8111-111111111111";
@@ -12,7 +13,7 @@ const OWNER_B = "22222222-2222-4222-8222-222222222222";
 const RETURN = "exp://192.168.1.2:8081/--/import";
 
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = registerComponents(convexTest(schema, modules));
   await t.mutation(api.users.ensure, { ownerId: OWNER_A });
   await t.mutation(api.users.ensure, { ownerId: OWNER_B });
   return t;
@@ -189,9 +190,11 @@ describe("imports.youtube.sync", () => {
 
     // Page 1 has 2 known + 18 new, page 2 supplies the last 2 under the cap.
     stubGoogle([likedPage(ids.slice(0, 20), "p2"), likedPage(ids.slice(20))]);
+    vi.setSystemTime(Date.now() + IMPORT_SYNC_PERIOD_MS);
     expect(await t.action(api.imports.youtube.sync, { ownerId: OWNER_A })).toEqual({ created: 20, duplicates: 2, invalid: 0 });
 
     const fetch = stubGoogle([likedPage(ids.slice(0, 20), "p2")]);
+    vi.setSystemTime(Date.now() + IMPORT_SYNC_PERIOD_MS);
     expect(await t.action(api.imports.youtube.sync, { ownerId: OWNER_A })).toEqual({ created: 0, duplicates: 20, invalid: 0 });
     expect(fetch.mock.calls.filter(([u]) => String(u).includes("/videos"))).toHaveLength(1);
     expect(await t.query(api.items.list, { ownerId: OWNER_A })).toHaveLength(23);

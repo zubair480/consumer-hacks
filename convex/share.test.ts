@@ -5,13 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
-import { modules } from "./test.setup";
+import { modules, registerComponents } from "./test.setup";
 
 const OWNER_A = "11111111-1111-4111-8111-111111111111";
 const OWNER_B = "22222222-2222-4222-8222-222222222222";
 
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = registerComponents(convexTest(schema, modules));
   await t.mutation(api.users.ensure, { ownerId: OWNER_A });
   await t.mutation(api.users.ensure, { ownerId: OWNER_B });
   const token = await t.mutation(api.share.getOrCreateShareToken, { ownerId: OWNER_A });

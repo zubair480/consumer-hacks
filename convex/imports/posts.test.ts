@@ -3,8 +3,9 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../_generated/api";
+import { IMPORT_SYNC_PERIOD_MS } from "../lib/rateLimits";
 import schema from "../schema";
-import { modules } from "../test.setup";
+import { modules, registerComponents } from "../test.setup";
 import { BOOKMARKS_PAGE } from "./xClient.test";
 
 const OWNER_A = "11111111-1111-4111-8111-111111111111";
@@ -19,7 +20,7 @@ const post = (id: string, extra: Partial<{ text: string; url: string; author: st
 });
 
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = registerComponents(convexTest(schema, modules));
   await t.mutation(api.users.ensure, { ownerId: OWNER_A });
   await t.mutation(api.users.ensure, { ownerId: OWNER_B });
   return t;
@@ -190,6 +191,7 @@ describe("imports.connections", () => {
     expect(bookmarkCalls).toHaveLength(2);
     expect(new URL(String(bookmarkCalls[1]![0])).searchParams.get("pagination_token")).toBe("next-1");
 
+    vi.setSystemTime(Date.now() + IMPORT_SYNC_PERIOD_MS);
     const second = await t.action(api.imports.connections.syncX, { ownerId: OWNER_A });
     expect(second).toEqual({ created: 0, duplicates: 3, invalid: 0 });
     const conn = await t.run((ctx) => ctx.db.query("importConnections").unique());
