@@ -3,7 +3,7 @@ import { Platform, Share } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useOwnedMutation } from "../identity/OwnerProvider";
-import type { SocialDraftStatus } from "../shared/socialContracts";
+import { SOCIAL_PLATFORM_LABELS, type SocialDraftStatus, type SocialPlatform } from "../shared/socialContracts";
 
 // OWNER: Thread J (CONS-11). Copy + native share sheet only; no platform publishing APIs.
 
@@ -54,11 +54,44 @@ export async function shareDraft(
 
 /** Hook wiring shareDraft to publishing.startShare and confirmUserPosted for one draft. */
 export function useDraftSharing(draftId: Id<"socialDrafts"> | undefined) {
-  const startShare = useOwnedMutation(api.publishing.startShare);
-  const confirm = useOwnedMutation(api.publishing.confirmUserPosted);
+  const startShare = useOwnedMutation(api.publishing.jobs.startShare);
+  const confirm = useOwnedMutation(api.publishing.jobs.confirmUserPosted);
   return {
     copy: copyDraft,
     share: (input: ShareDraftInput) => shareDraft(input, draftId ? () => startShare({ draftId }) : undefined),
     confirmPosted: () => (draftId ? confirm({ draftId }) : Promise.resolve(null)),
   };
 }
+
+export type AccountPlatform = SocialPlatform | "youtube";
+
+export const ACCOUNT_LABELS: Record<AccountPlatform, string> = { ...SOCIAL_PLATFORM_LABELS, youtube: "YouTube" };
+
+/**
+ * How a platform is shared when it can't post directly.
+ * intent_url: open the platform's composer link. share_file: copy the caption and open the share sheet with the image.
+ */
+export type FallbackKind = "intent_url" | "share_file";
+
+/** Composer link for intent_url platforms, or null when it can't be built (LinkedIn needs a source URL). */
+export function fallbackUrl(platform: AccountPlatform, text: string, sourceUrl?: string): string | null {
+  switch (platform) {
+    case "x":
+      return "https://x.com/intent/tweet?text=" + encodeURIComponent(text);
+    case "linkedin":
+      return sourceUrl ? "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(sourceUrl) : null;
+    case "threads":
+      return "https://www.threads.net/intent/post?text=" + encodeURIComponent(text);
+    default:
+      return null;
+  }
+}
+
+export const DEFAULT_FALLBACK: Record<AccountPlatform, FallbackKind> = {
+  x: "intent_url",
+  linkedin: "intent_url",
+  threads: "intent_url",
+  instagram: "share_file",
+  tiktok: "share_file",
+  youtube: "share_file",
+};
