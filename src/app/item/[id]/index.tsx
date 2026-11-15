@@ -8,6 +8,7 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { CalendarAgentCard } from "../../../components/agents/CalendarAgent";
 import { ActionCard } from "../../../components/ActionCard";
 import { Boundary } from "../../../components/Boundary";
 import { FactRow } from "../../../components/FactRow";
@@ -243,6 +244,8 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
             <Actions item={item} />
           </Boundary>
         ) : null}
+
+        {ready ? <Boundary fallback={null}><CalendarAgentCard itemId={itemId} primaryType={item.primaryType} /></Boundary> : null}
 
         {ready ? (
           <Button testID="create-post" title="Create post" icon="create-outline" variant="secondary" fullWidth onPress={() => router.push({ pathname: "/studio/platforms", params: { itemId } })} />
