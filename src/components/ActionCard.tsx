@@ -10,7 +10,7 @@ import { Field } from "./Field";
 import { errorMessage } from "./media";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
-import { Button } from "./ui";
+import { shadows } from "../theme";
 
 function prefill(input: RequiredInput, profile: UserProfile | undefined, item: SavedItemView | undefined): string {
   const from = (input as RequiredInput & { prefillFrom?: string }).prefillFrom;
@@ -60,14 +60,33 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
     );
   };
 
+  const canRun = suggestion.canExecute && !running;
+  const runLabel = latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run";
+
   return (
     <View style={styles.card} testID={`action-${suggestion.actionType}`}>
       <View style={styles.head}>
         <View style={[styles.rank, { backgroundColor: color }]}><Text style={styles.rankText}>{suggestion.rank + 1}</Text></View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={type.heading}>{suggestion.title}</Text>
-          <Text style={type.caption}>{suggestion.description}</Text>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={styles.title} numberOfLines={2}>{suggestion.title}</Text>
+          <Text style={type.caption} numberOfLines={1}>{suggestion.description}</Text>
         </View>
+        {canRun ? (
+          <Tap
+            testID={`action-button-${suggestion.rank}`}
+            accessibilityRole="button"
+            accessibilityLabel={runLabel}
+            accessibilityState={{ disabled: busy || missing, busy }}
+            disabled={busy || missing}
+            haptic="medium"
+            onPress={start}
+            style={[styles.play, latest?.resultId && styles.playAgain, (busy || missing) && { opacity: 0.4 }]}
+          >
+            {busy ? <ActivityIndicator color={latest?.resultId ? colors.text : "#FFFFFF"} /> : <Ionicons name={latest?.resultId ? "refresh" : "play"} size={18} color={latest?.resultId ? colors.text : "#FFFFFF"} />}
+          </Tap>
+        ) : running ? (
+          <View style={[styles.play, styles.playAgain]}><ActivityIndicator color={colors.text} /></View>
+        ) : null}
       </View>
       {fields.length > 0 ? (
         <View style={{ gap: space.sm }}>
@@ -88,46 +107,35 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
       {error ? <Text style={styles.error} testID={`action-error-${suggestion.rank}`}>{error}</Text> : null}
       {running && latest ? (
         <Tap testID={`action-progress-${suggestion.rank}`} onPress={() => openResult(latest._id)} style={styles.status}>
-          <ActivityIndicator size="small" color={colors.text} />
-          <Text style={[styles.statusText, { color: colors.text }]}>Working on it…</Text>
+          <Text style={styles.statusText}>Working on it… tap to watch</Text>
         </Tap>
       ) : null}
       {latest?.resultId ? (
         <Tap testID={`action-view-result-${suggestion.rank}`} onPress={() => openResult(latest._id)} style={styles.status}>
           <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-          <Text style={[styles.statusText, { color: colors.text }]}>View result</Text>
+          <Text style={styles.statusText}>View result</Text>
         </Tap>
       ) : null}
       {latest?.status === "failed" && latest.error ? <Text style={styles.error}>Last run failed: {latest.error}</Text> : null}
-      {suggestion.canExecute ? (
-        running ? null : (
-          <Button
-            testID={`action-button-${suggestion.rank}`}
-            title={latest?.resultId ? "Run again" : suggestion.requiresApproval ? "Prepare draft" : "Run"}
-            icon={latest?.resultId ? "refresh" : "play"}
-            variant={latest?.resultId ? "secondary" : "primary"}
-            fullWidth
-            onPress={start}
-            loading={busy}
-            disabled={missing}
-          />
-        )
-      ) : (
+      {!suggestion.canExecute ? (
         <View style={styles.status} testID={`action-unavailable-${suggestion.rank}`}>
           <Ionicons name="information-circle-outline" size={16} color={colors.textFaint} />
-          <Text style={styles.statusText}>Not available for this save</Text>
+          <Text style={[styles.statusText, { color: colors.textFaint }]}>Not available for this save</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  head: { flexDirection: "row", gap: space.md, alignItems: "center" },
-  rank: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  rankText: { fontWeight: "900", fontSize: 18, color: colors.text },
-  status: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
-  statusText: { color: colors.textFaint, fontWeight: "700" },
+  card: { gap: space.md, padding: space.lg, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, ...shadows.card },
+  head: { flexDirection: "row", gap: space.md, alignItems: "center", minHeight: 44 },
+  rank: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  rankText: { fontWeight: "900", fontSize: 16, color: colors.text },
+  title: { fontSize: 17, lineHeight: 21, fontWeight: "800", color: colors.text },
+  play: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" },
+  playAgain: { backgroundColor: colors.surfaceRaised },
+  status: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
+  statusText: { color: colors.text, fontWeight: "700", fontSize: 14 },
   error: { color: colors.danger, fontWeight: "600" },
 });
