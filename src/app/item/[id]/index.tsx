@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ActionCard } from "../../../components/ActionCard";
@@ -14,7 +14,6 @@ import { Field } from "../../../components/Field";
 import { itemTitle } from "../../../components/ItemCard";
 import { EmptyState } from "../../../components/EmptyState";
 import { errorMessage, pickImages, uploadImage } from "../../../components/media";
-import { OutcomeRow } from "../../../components/OutcomeRow";
 import { Tap } from "../../../components/Pressable";
 import { ScreenHeader } from "../../../components/ScreenHeader";
 import { Section } from "../../../components/Section";
@@ -22,7 +21,7 @@ import { Skeleton } from "../../../components/States";
 import { StatusPill } from "../../../components/StatusPill";
 import { colors, radius, space, type } from "../../../components/tokens";
 import { colors as theme } from "../../../theme";
-import { Button, TypeChip, pastelFor } from "../../../components/ui";
+import { Button, ItemRow, pastelFor, typeIconFor } from "../../../components/ui";
 import { metaFor, timeAgo } from "../../../components/typeMeta";
 import { useOwnedMutation, useOwnedQuery } from "../../../identity/OwnerProvider";
 import { IN_PROGRESS_EXTRACTION_STATUSES, type SavedItemView } from "../../../shared/contracts";
@@ -30,7 +29,7 @@ import { IN_PROGRESS_EXTRACTION_STATUSES, type SavedItemView } from "../../../sh
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <Boundary title="Couldn’t load this save">
         <Detail itemId={id as Id<"savedItems">} />
       </Boundary>
@@ -39,6 +38,7 @@ export default function ItemDetail() {
 }
 
 function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
+  const insets = useSafeAreaInsets();
   const item = useOwnedQuery(api.items.get, { itemId });
   const remove = useOwnedMutation(api.items.remove);
 
@@ -60,7 +60,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
     ]);
 
   const header = (
-    <View style={styles.top}>
+    <View style={[styles.top, { paddingTop: insets.top }]}>
       <ScreenHeader
         title=""
         back
@@ -88,6 +88,11 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
   }
 
   const pastel = pastelFor(item.primaryType);
+  const m = metaFor(item.primaryType);
+  let domain = "";
+  try {
+    domain = item.sourceUrl ? new URL(item.sourceUrl).hostname.replace(/^www\./, "") : "";
+  } catch {}
   const inProgress = IN_PROGRESS_EXTRACTION_STATUSES.includes(item.extractionStatus);
   const keyFacts = [
     ["Deadline", item.deadline],
@@ -97,21 +102,34 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
 
   return (
     <>
-      {header}
-      <ScrollView contentContainerStyle={styles.content} testID="item-detail-screen" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" testID="item-image" /> : null}
-        <View style={[styles.hero, { backgroundColor: pastel }]}>
+      <ScrollView contentContainerStyle={styles.scroll} testID="item-detail-screen" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+        <View style={[styles.hero, { backgroundColor: pastel, paddingTop: insets.top }]}>
+          <Ionicons name={(typeIconFor(item.primaryType).startsWith("logo-") ? typeIconFor(item.primaryType) : `${typeIconFor(item.primaryType)}-outline`) as typeof m.icon} size={120} color={colors.text} style={styles.glyph} />
+          <ScreenHeader
+            title=""
+            back
+            right={
+              <Tap testID="delete-item-button" accessibilityLabel="Delete save" onPress={confirmDelete} style={styles.iconBtn}>
+                <Ionicons name="trash-outline" size={18} color={colors.text} />
+              </Tap>
+            }
+          />
           <View style={styles.chips}>
+            <View style={styles.typePill}><Text style={styles.typePillText}>{m.label}</Text></View>
+            {item.contentTypes.filter((t) => t !== item.primaryType).map((t) => (
+              <View key={t} style={styles.typePill}><Text style={styles.typePillText}>{metaFor(t).label}</Text></View>
+            ))}
             <StatusPill status={item.extractionStatus} />
-            {item.contentTypes.map((t) => <TypeChip key={t} type={t} label={metaFor(t).label} color={colors.surface} />)}
           </View>
-          <Text style={styles.heroTitle} testID="item-title">{itemTitle(item)}</Text>
+          <Text style={styles.heroTitle} numberOfLines={3} testID="item-title">{itemTitle(item)}</Text>
           {item.summary ? <Text style={styles.heroSummary} testID="item-summary">{item.summary}</Text> : null}
           <View style={styles.row}>
-            <Ionicons name={item.sourceUrl ? "link" : "time-outline"} size={13} color={colors.text} />
-            <Text style={styles.heroMeta} numberOfLines={1}>Saved {timeAgo(item.createdAt)}{item.sourcePlatform !== "manual" ? ` · ${item.sourcePlatform}` : ""}</Text>
+            <View style={styles.sourceDot}><Ionicons name={item.sourceUrl ? "link" : "bookmark"} size={11} color={colors.text} /></View>
+            <Text style={styles.heroMeta} numberOfLines={1}>{domain || (item.sourcePlatform !== "manual" ? item.sourcePlatform : "Saved")} · {timeAgo(item.createdAt)}</Text>
           </View>
         </View>
+        <View style={styles.content}>
+        {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" testID="item-image" /> : null}
 
         {inProgress ? (
           <View style={styles.progress} testID="item-processing">
@@ -149,13 +167,13 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
 
         {item.extractionStatus === "ready" || item.extractionStatus === "needs_input" ? (
           <Boundary fallback={null}>
-            <Facts itemId={itemId} />
+            <Facts itemId={itemId} color={pastel} />
           </Boundary>
         ) : null}
 
         {item.extractionStatus === "ready" ? (
           <Boundary fallback={null}>
-            <PreviousResults itemId={itemId} />
+            <PreviousResults itemId={itemId} type={item.primaryType} />
           </Boundary>
         ) : null}
 
@@ -170,6 +188,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
           {item.rawText ? <Text style={[type.body, styles.raw]} numberOfLines={12}>{item.rawText}</Text> : null}
           {!item.sourceUrl && !item.rawText && !item.imageUrl ? <Text style={type.caption}>No source content.</Text> : null}
         </Section>
+        </View>
       </ScrollView>
     </>
   );
@@ -177,19 +196,19 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
 
 const FACTS_PREVIEW = 4;
 
-function Facts({ itemId }: { itemId: Id<"savedItems"> }) {
+function Facts({ itemId, color }: { itemId: Id<"savedItems">; color: string }) {
   const analysis = useOwnedQuery(api.analysis.getForItem, { itemId });
   const [showAll, setShowAll] = useState(false);
   if (!analysis || analysis.facts.length === 0) return null;
   const facts = showAll ? analysis.facts : analysis.facts.slice(0, FACTS_PREVIEW);
   return (
     <Section title="Facts">
-      <View testID="facts-list">
-        {facts.map((f, i) => <FactRow key={f.key + i} fact={f} index={i} />)}
+      <View testID="facts-list" style={styles.grid}>
+        {facts.map((f, i) => <FactRow key={f.key + i} fact={f} index={i} color={color} />)}
         {analysis.facts.length > FACTS_PREVIEW ? (
           <Tap testID="facts-show-all" accessibilityRole="button" haptic="none" onPress={() => setShowAll(!showAll)} style={styles.showAll}>
             <Text style={styles.link}>{showAll ? "Show less" : `Show all (${analysis.facts.length})`}</Text>
-            <Ionicons name={showAll ? "chevron-up" : "chevron-down"} size={16} color={colors.accent} />
+            <Ionicons name={showAll ? "chevron-up" : "chevron-down"} size={16} color={colors.text} />
           </Tap>
         ) : null}
       </View>
@@ -218,12 +237,21 @@ function Actions({ item }: { item: SavedItemView }) {
   );
 }
 
-function PreviousResults({ itemId }: { itemId: Id<"savedItems"> }) {
+function PreviousResults({ itemId, type: contentType }: { itemId: Id<"savedItems">; type: SavedItemView["primaryType"] }) {
   const results = useOwnedQuery(api.actions.listResultsForItem, { itemId });
   if (!results || results.length === 0) return null;
   return (
     <Section title="Previous results">
-      {results.map((r) => <OutcomeRow key={r._id} row={r} />)}
+      {results.map((r) => (
+        <ItemRow
+          key={r._id}
+          testID={`outcome-${r._id}`}
+          type={contentType}
+          title={r.result.title}
+          meta={`Result · ${timeAgo(r.createdAt)}`}
+          onPress={() => router.push({ pathname: "/result/[id]", params: { id: r.executionId } })}
+        />
+      ))}
     </Section>
   );
 }
@@ -309,14 +337,20 @@ function Failed({ item }: { item: SavedItemView }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.xl },
-  content: { padding: space.xl, gap: space.xl, paddingBottom: 80 },
+  scroll: { paddingBottom: 80 },
+  content: { padding: space.xl, gap: space.xl },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
+  glyph: { position: "absolute", right: -10, bottom: -14, opacity: 0.1 },
+  typePill: { backgroundColor: "rgba(255,255,255,0.6)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
+  typePillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase", color: colors.text },
+  sourceDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
   chips: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
   iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   image: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.xl, backgroundColor: colors.surfaceRaised },
-  hero: { borderRadius: radius.xl, padding: space.xl, gap: space.md },
-  heroTitle: { fontSize: 26, lineHeight: 30, fontWeight: "800", letterSpacing: -0.5, color: colors.text },
+  hero: { paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.md, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, overflow: "hidden" },
+  heroTitle: { fontSize: 28, lineHeight: 32, fontWeight: "900", letterSpacing: -0.6, color: colors.text },
   heroSummary: { fontSize: 15, lineHeight: 21, color: "rgba(14,14,16,0.7)" },
-  heroMeta: { flex: 1, fontSize: 13, fontWeight: "500", color: colors.text },
+  heroMeta: { flex: 1, fontSize: 13, fontWeight: "600", color: colors.text },
   keyFacts: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
   keyFact: { flexGrow: 1, minWidth: "45%", gap: 4, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   progress: { flexDirection: "row", gap: space.md, alignItems: "center", padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
