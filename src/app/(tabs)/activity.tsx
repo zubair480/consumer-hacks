@@ -53,8 +53,25 @@ function open(e: ActivityRow) {
   else if (e.itemId) router.push({ pathname: "/item/[id]", params: { id: e.itemId } });
 }
 
+const SETTLES_ANALYSIS = new Set<ActivityEventType>(["analysis_completed", "analysis_needs_input", "analysis_failed"]);
+const SETTLES_ACTION = new Set<ActivityEventType>(["action_completed", "action_failed"]);
+
+/** The feed is an append-only log, so an "in progress" row stays after its work finished. Drop analysis_started / action_started rows that a newer settling event for the same item / execution already replaced. Input is newest first. */
+function withoutSettled(events: ActivityRow[]) {
+  const settledItems = new Set<string>();
+  const settledExecutions = new Set<string>();
+  return events.filter((e) => {
+    if (SETTLES_ANALYSIS.has(e.type) && e.itemId) settledItems.add(e.itemId);
+    if (SETTLES_ACTION.has(e.type) && e.executionId) settledExecutions.add(e.executionId);
+    if (e.type === "analysis_started" && e.itemId && settledItems.has(e.itemId)) return false;
+    if (e.type === "action_started" && e.executionId && settledExecutions.has(e.executionId)) return false;
+    return true;
+  });
+}
+
 function Feed() {
-  const { results: events, status, loadMore } = useOwnedPaginatedQuery(api.activity.listPage, {}, { initialNumItems: 20 });
+  const { results: raw, status, loadMore } = useOwnedPaginatedQuery(api.activity.listPage, {}, { initialNumItems: 20 });
+  const events = withoutSettled(raw);
   const scroll = useTabBarScroll();
   if (status === "LoadingFirstPage") return <View style={styles.list}><Skeleton rows={5} height={64} /></View>;
   return (
