@@ -104,6 +104,9 @@ export const createFromShare = internalMutation({
     if (!urlInput && rawText && /^https?:\/\/\S+$/i.test(rawText)) {
       urlInput = rawText;
       rawText = undefined;
+    } else if (!urlInput && rawText) {
+      const links = rawText.match(/https?:\/\/[^\s<>"]+/gi) ?? [];
+      if (links.length === 1) urlInput = links[0]!.replace(/[)\].,;!?'"]+$/, "");
     }
     const sourceUrl = urlInput ? normalizeUrl(urlInput) : undefined;
     if (rawText && rawText.length > LIMITS.rawTextMaxChars) throw new ConvexError("Text is too long");

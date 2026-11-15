@@ -98,6 +98,17 @@ describe("POST /save", () => {
     expect(await t.query(api.items.get, { ownerId: OWNER_A, itemId: c.itemId })).toMatchObject({ sourceKind: "url", sourcePlatform: "tiktok" });
   });
 
+  it("pulls the link out of shared text that has a caption around it", async () => {
+    const { t, token } = await setup();
+    const res = await post(t, token, JSON.stringify({ text: "  Best lasagna ever 🍝\nhttps://www.allrecipes.com/recipe/23600/worlds-best-lasagna/ \n" }));
+    const { itemId } = await res.json();
+    expect(await t.query(api.items.get, { ownerId: OWNER_A, itemId })).toMatchObject({
+      sourceKind: "url",
+      sourceUrl: "https://www.allrecipes.com/recipe/23600/worlds-best-lasagna/",
+      rawText: "Best lasagna ever 🍝\nhttps://www.allrecipes.com/recipe/23600/worlds-best-lasagna/",
+    });
+  });
+
   it("rejects empty or invalid bodies with 400", async () => {
     const { t, token } = await setup();
     expect((await post(t, token, JSON.stringify({}))).status).toBe(400);

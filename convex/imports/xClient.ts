@@ -71,21 +71,30 @@ export class XApiError extends Error {
   }
 }
 
+type XProblem = { title?: string; detail?: string; type?: string; reason?: string; message?: string };
+
+function describeProblem(problem: XProblem): string {
+  return [problem.title, problem.detail ?? problem.message, problem.reason].filter(Boolean).join(": ");
+}
+
 async function failure(res: Response, what: string): Promise<XApiError> {
   const body = await res.text().catch(() => "");
   let detail = body.slice(0, 200);
   try {
-    const json = JSON.parse(body) as { error_description?: string; detail?: string; title?: string; error?: string };
-    detail = json.error_description ?? json.detail ?? json.title ?? json.error ?? detail;
+    const json = JSON.parse(body) as XProblem & { error_description?: string; error?: string; errors?: XProblem[] };
+    const problem = json.title || json.detail ? json : json.errors?.[0];
+    console.error(`${what} failed`, res.status, JSON.stringify({ title: problem?.title, detail: problem?.detail, type: problem?.type, error: json.error }));
+    detail = json.error_description ?? (problem ? describeProblem(problem) : undefined) ?? json.error ?? detail;
   } catch {
-    // keep the raw text
+    console.error(`${what} failed`, res.status, detail);
   }
   if (res.status === 429) {
     const reset = Number(res.headers.get("x-rate-limit-reset"));
     const minutes = reset ? Math.max(1, Math.ceil((reset * 1000 - Date.now()) / 60000)) : null;
     return new XApiError(`X rate limit reached${minutes ? `; try again in ${minutes} min` : ""}.`, 429);
   }
-  if (res.status === 401) return new XApiError("X access expired or was revoked. Reconnect X.", 401);
+  if (res.status === 401) return new XApiError(`X access expired or was revoked. Reconnect X. (${detail})`, 401);
+  if (res.status === 403) return new XApiError(`X refused access to ${what === "X bookmarks" ? "your bookmarks" : "your account"} (403): ${detail}`, 403);
   return new XApiError(`${what} failed (${res.status}): ${detail}`, res.status);
 }
 
@@ -138,6 +147,7 @@ type XUser = { id: string; username: string; name?: string };
 type XMedia = { media_key: string; type: string; url?: string; preview_image_url?: string };
 export type XBookmarksResponse = {
   data?: XTweet[];
+  errors?: XProblem[];
   includes?: { users?: XUser[]; media?: XMedia[] };
   meta?: { next_token?: string; result_count?: number };
 };
@@ -188,5 +198,11 @@ export async function fetchBookmarksPage(
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) throw await failure(res, "X bookmarks");
-  return parseBookmarks((await res.json()) as XBookmarksResponse);
+  const json = (await res.json()) as XBookmarksResponse;
+  if (!json.data?.length && json.errors?.length) {
+    const problem = json.errors[0]!;
+    console.error("X bookmarks returned errors", JSON.stringify(json.errors.map(({ title, detail, type }) => ({ title, detail, type }))));
+    throw new XApiError(`X bookmarks failed: ${describeProblem(problem) || "unknown error"}`, 502);
+  }
+  return parseBookmarks(json);
 }

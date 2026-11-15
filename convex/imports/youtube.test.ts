@@ -102,8 +102,10 @@ describe("imports.youtube connect", () => {
     vi.stubGlobal("fetch", fetch);
 
     const res = await t.fetch(`/oauth/google/callback?state=${state}&code=abc`, { redirect: "manual" });
-    expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe(`${RETURN}?youtube=connected`);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain(`href="${RETURN}?youtube=connected"`);
+    expect(html).toContain("Return to Zapy");
     const conn = await t.run((ctx) => ctx.db.query("importConnections").unique());
     expect(conn).toMatchObject({ platform: "youtube", externalUserId: "UC1", username: "Ali", accessToken: "at", refreshToken: "rt" });
     const status = await t.query(api.imports.youtube.status, { ownerId: OWNER_A });
@@ -137,7 +139,7 @@ describe("imports.youtube connect", () => {
     const { authorizeUrl } = await t.action(api.imports.youtube.startConnect, { ownerId: OWNER_A, returnUrl: RETURN });
     const state = new URL(authorizeUrl).searchParams.get("state")!;
     const res = await t.fetch(`/oauth/google/callback?state=${state}&error=access_denied`, { redirect: "manual" });
-    const back = new URL(res.headers.get("Location")!);
+    const back = new URL(/id="return" href="([^"]+)"/.exec(await res.text())![1]!.replace(/&#38;/g, "&"));
     expect(back.searchParams.get("youtube")).toBe("error");
     expect(back.searchParams.get("message")).toContain("cancelled");
   });

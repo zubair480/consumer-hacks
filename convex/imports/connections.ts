@@ -246,6 +246,9 @@ export const syncX = action({
     const total: ImportResult = { created: 0, duplicates: 0, invalid: 0 };
     let error: string | undefined;
     try {
+      if (connection.scope && !connection.scope.split(" ").includes("bookmark.read")) {
+        throw new XApiError("X didn't grant bookmark access (bookmark.read). Disconnect and connect X again.", 403);
+      }
       let accessToken = connection.accessToken;
       if (connection.expiresAt < Date.now() + 60_000) {
         if (!connection.refreshToken) throw new XApiError("X access expired. Reconnect X.", 401);

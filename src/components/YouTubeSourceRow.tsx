@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useAction } from "convex/react";
+import { useAction, useConvex } from "convex/react";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
@@ -31,6 +31,7 @@ function ago(ms: number): string {
 
 export function YouTubeSourceRow({ onNotice }: { onNotice: (notice: Notice | null) => void }) {
   const ownerId = useOwnerId();
+  const convex = useConvex();
   const status = useOwnedQuery(api.imports.youtube.status, {});
   const startConnect = useAction(api.imports.youtube.startConnect);
   const syncYouTube = useAction(api.imports.youtube.sync);
@@ -60,7 +61,10 @@ export function YouTubeSourceRow({ onNotice }: { onNotice: (notice: Notice | nul
       const { authorizeUrl } = await startConnect({ ownerId, returnUrl });
       const result = await WebBrowser.openAuthSessionAsync(authorizeUrl, returnUrl);
       setBusy(false);
-      if (result.type !== "success") return;
+      if (result.type !== "success") {
+        if ((await convex.query(api.imports.youtube.status, { ownerId })).connected) await sync();
+        return;
+      }
       const { queryParams } = Linking.parse(result.url);
       if (queryParams?.youtube === "connected") await sync();
       else onNotice({ tone: "error", text: typeof queryParams?.message === "string" ? queryParams.message : "Couldn't connect YouTube." });

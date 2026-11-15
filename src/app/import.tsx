@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useAction } from "convex/react";
+import { useAction, useConvex } from "convex/react";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
@@ -32,7 +32,8 @@ const ICONS: Record<Source["platform"], ComponentProps<typeof Ionicons>["name"]>
   linkedin: "logo-linkedin",
 };
 
-function summary(created: number, duplicates: number): string {
+function summary(created: number, duplicates: number, invalid: number): string {
+  if (!created && invalid) return `${invalid} saved ${invalid === 1 ? "post was" : "posts were"} skipped (no valid link).`;
   if (!created) return duplicates ? `You're up to date. ${duplicates} already in Zapy.` : "No saved posts found.";
   return `${created} new ${created === 1 ? "save" : "saves"} imported${duplicates ? `, ${duplicates} already in Zapy` : ""}. Zapy is reading them now.`;
 }
@@ -47,6 +48,7 @@ function ago(ms: number): string {
 
 export default function ImportScreen() {
   const ownerId = useOwnerId();
+  const convex = useConvex();
   const sources = useOwnedQuery(api.imports.connections.sources, {});
   const startXConnect = useAction(api.imports.connections.startXConnect);
   const syncX = useAction(api.imports.connections.syncX);
@@ -63,7 +65,7 @@ export default function ImportScreen() {
     try {
       const r = await syncX({ ownerId });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      setNotice({ tone: "success", text: summary(r.created, r.duplicates) });
+      setNotice({ tone: "success", text: summary(r.created, r.duplicates, r.invalid) });
     } catch (e) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setNotice({ tone: "error", text: errorMessage(e) });
@@ -80,7 +82,11 @@ export default function ImportScreen() {
       const { authorizeUrl } = await startXConnect({ ownerId, returnUrl });
       const result = await WebBrowser.openAuthSessionAsync(authorizeUrl, returnUrl);
       setBusy(null);
-      if (result.type !== "success") return;
+      if (result.type !== "success") {
+        const fresh = await convex.query(api.imports.connections.sources, { ownerId });
+        if (fresh.find((s) => s.platform === "x")?.connected) await sync();
+        return;
+      }
       const { queryParams } = Linking.parse(result.url);
       if (queryParams?.x === "connected") await sync();
       else setNotice({ tone: "error", text: typeof queryParams?.message === "string" ? queryParams.message : "Couldn't connect X." });
