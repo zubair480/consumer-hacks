@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useReducedMotion } from "react-native-reanimated";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
@@ -13,8 +14,11 @@ import { Section } from "../../components/Section";
 import { ShareToZapyCard } from "../../components/share/ShareToZapyCard";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space, type } from "../../components/tokens";
-import { DisplayTitle, HoloBand } from "../../components/ui";
-import { palette } from "../../theme";
+import { HoloBand, InkPill, ScalePressable, Text as ZText } from "../../components/ui";
+import { TAB_BAR_SPACE, useTabBarScroll } from "../../components/ui/InkTabBar";
+import { MarkerTitle } from "../../components/ui/MarkerTitle";
+import { INTERESTS } from "../../lib/useProfile";
+import { fonts, palette } from "../../theme";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../../identity/OwnerProvider";
 import type { UserProfile } from "../../shared/contracts";
 
@@ -28,7 +32,6 @@ const FIELDS: { key: Key; label: string; placeholder: string; numeric?: boolean 
   { key: "citizenship", label: "Citizenship", placeholder: "e.g. U.S. citizen" },
   { key: "gpa", label: "GPA (optional)", placeholder: "e.g. 3.6", numeric: true },
   { key: "city", label: "City", placeholder: "e.g. San Francisco" },
-  { key: "interests", label: "Interests", placeholder: "Comma separated: design, AI, food" },
 ];
 
 function toText(p: UserProfile, key: Key): string {
@@ -37,11 +40,12 @@ function toText(p: UserProfile, key: Key): string {
 }
 
 export default function Profile() {
+  const scroll = useTabBarScroll();
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <HoloBand height={260} />
-      <ScrollView contentContainerStyle={styles.content} testID="profile-screen" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-        <DisplayTitle>Profile</DisplayTitle>
+      <HoloBand height={140} />
+      <ScrollView {...scroll} contentContainerStyle={styles.content} testID="profile-screen" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+        <InkPill label="Profile" />
         <Boundary title="Couldn’t load your profile">
           <Body />
         </Boundary>
@@ -58,6 +62,7 @@ export default function Profile() {
 function Body() {
   const profile = useOwnedQuery(api.preferences.get, {});
   const stats = useOwnedQuery(api.preferences.stats, {});
+  const outcomes = useOwnedQuery(api.actions.recentOutcomes, { limit: 50 });
   const upsert = useOwnedMutation(api.preferences.upsert);
   const [draft, setDraft] = useState<Partial<Record<Key, string>>>({});
   const [saving, setSaving] = useState(false);
@@ -83,7 +88,6 @@ function Body() {
         citizenship: value("citizenship"),
         city: value("city"),
         gpa,
-        interests: value("interests").split(",").map((s) => s.trim()).filter(Boolean),
       });
       setDraft({});
       setStatus("Saved");
@@ -97,17 +101,17 @@ function Body() {
 
   return (
     <>
-      <View style={styles.card}>
-        <View style={styles.avatar}><Text style={styles.avatarText}>{(displayName || "You").charAt(0).toUpperCase()}</Text></View>
-        <View style={{ flex: 1 }}>
-          <Text style={type.title}>{displayName || "You"}</Text>
-          <Text style={type.caption}>{[value("educationLevel"), value("city")].filter(Boolean).join(" · ") || "Add details so actions fit you"}</Text>
-        </View>
+      <View style={{ gap: 8 }}>
+        <MarkerTitle lines={[displayName.split(/\s+/)[0] || "You"]} marker={displayName.split(/\s+/)[0] || "You"} color={palette.peach} size={40} testID="profile-name" />
+        <ZText style={{ fontFamily: fonts.medium, fontSize: 15, lineHeight: 22, color: "#5B5B63" }}>{[value("educationLevel"), value("city")].filter(Boolean).join(" · ") || "Add details so actions fit you"}</ZText>
       </View>
 
+      <Interests current={profile.interests ?? []} onChange={(interests) => upsert({ interests }).catch((e) => setStatus(errorMessage(e)))} />
+
       <View style={styles.stats}>
-        <Stat testID="stat-saves" color={palette.lavender} label="Saves" value={stats ? `${stats.saves}${stats.capped ? "+" : ""}` : "–"} />
-        <Stat testID="stat-outcomes" color={palette.mint} label="Outcomes" value={stats ? `${stats.outcomes}${stats.capped ? "+" : ""}` : "–"} />
+        <Stat testID="stat-saves" color={palette.lavender} label="Saved" value={stats?.saves} capped={stats?.capped} />
+        <Stat testID="stat-acted" color={palette.butter} label="Acted on" value={outcomes ? new Set(outcomes.map((o) => o.itemId as string)).size : undefined} />
+        <Stat testID="stat-outcomes" color={palette.mint} label="Results" value={stats?.outcomes} capped={stats?.capped} />
       </View>
 
       <Section title="About you">
@@ -153,25 +157,66 @@ function About() {
   );
 }
 
-function Stat({ testID, label, value, color }: { testID: string; label: string; value: string; color: string }) {
+function Interests({ current, onChange }: { current: string[]; onChange: (interests: string[]) => void }) {
+  const [picked, setPicked] = useState(current.map((c) => c.toLowerCase()));
+  const toggle = (key: string) => {
+    Haptics.selectionAsync().catch(() => {});
+    const next = picked.includes(key) ? picked.filter((k) => k !== key) : [...picked, key];
+    setPicked(next);
+    onChange(next);
+  };
+  return (
+    <View style={{ gap: 12 }}>
+      <ZText style={{ fontFamily: fonts.extraBold, fontSize: 18, lineHeight: 24, color: colors.text }}>What you save most</ZText>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {INTERESTS.map((i) => {
+          const on = picked.includes(i.key);
+          return (
+            <ScalePressable key={i.key} testID={`profile-interest-${i.key}`} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={i.label} scaleTo={0.95} onPress={() => toggle(i.key)} style={{ height: 44, paddingHorizontal: 16, borderRadius: 999, justifyContent: "center", backgroundColor: on ? colors.text : i.color }}>
+              <ZText style={{ fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: on ? "#FFFFFF" : colors.text }}>{i.label}</ZText>
+            </ScalePressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function CountUp({ to }: { to: number }) {
+  const reduce = useReducedMotion();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (to <= 0 || reduce) return;
+    const start = Date.now();
+    const id = setInterval(() => {
+      const p = Math.min(1, (Date.now() - start) / 600);
+      setN(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p === 1) clearInterval(id);
+    }, 30);
+    return () => clearInterval(id);
+  }, [to, reduce]);
+  return <>{to <= 0 || reduce ? to : n}</>;
+}
+
+function Stat({ testID, label, value, color, capped }: { testID: string; label: string; value?: number; color: string; capped?: boolean }) {
   return (
     <View style={[styles.stat, { backgroundColor: color }]} testID={testID}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label.toUpperCase()}</Text>
+      <ZText style={styles.statValue}>{value === undefined ? "–" : <CountUp to={value} />}{capped ? "+" : ""}</ZText>
+      <ZText style={styles.statLabel}>{label.toUpperCase()}</ZText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.xl, paddingTop: space.md, gap: space.xl, paddingBottom: 120 },
+  content: { padding: space.xl, paddingTop: space.md, gap: 28, paddingBottom: TAB_BAR_SPACE },
   card: { flexDirection: "row", alignItems: "center", gap: space.lg, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 26, fontWeight: "800" },
   stats: { flexDirection: "row", gap: space.md },
-  stat: { flex: 1, alignItems: "flex-start", padding: space.xl, borderRadius: radius.xl, gap: 2 },
-  statValue: { color: colors.text, fontSize: 34, lineHeight: 38, fontWeight: "900" },
-  statLabel: { color: colors.text, fontSize: 12, fontWeight: "800", letterSpacing: 0.4 },
+  stat: { flex: 1, alignItems: "flex-start", padding: 14, borderRadius: 18, gap: 2 },
+  statValue: { color: colors.text, fontSize: 30, lineHeight: 34, fontFamily: fonts.display, fontVariant: ["tabular-nums"] },
+  statLabel: { color: colors.text, fontSize: 11, lineHeight: 14, fontFamily: fonts.extraBold, letterSpacing: 0.9 },
   fieldLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
   error: { color: colors.danger, fontWeight: "600" },
   about: { gap: space.md, padding: space.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },

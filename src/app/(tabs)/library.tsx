@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -14,9 +14,12 @@ import { Tap } from "../../components/Pressable";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space } from "../../components/tokens";
 import { metaFor, timeAgo } from "../../components/typeMeta";
-import { CountChips, DisplayTitle, ItemRow, SearchPill, WaveBlocks, pastelFor } from "../../components/ui";
+import { CountChips, HoloBand, InkPill, ItemRow, SearchPill, SectionTitle, Text as ZText, WaveBlock, WaveBlocks, pastelFor } from "../../components/ui";
+import { TAB_BAR_SPACE, useTabBarScroll } from "../../components/ui/InkTabBar";
+import { MarkerTitle } from "../../components/ui/MarkerTitle";
+import { useProfile } from "../../lib/useProfile";
 import { useOwnedMutation, useOwnedPaginatedQuery, useOwnedQuery } from "../../identity/OwnerProvider";
-import { palette } from "../../theme";
+import { fonts, palette } from "../../theme";
 import { CONTENT_TYPES, type ContentType, type ExtractionStatus } from "../../shared/contracts";
 
 const STATUS_META: Partial<Record<ExtractionStatus, string>> = {
@@ -31,17 +34,21 @@ export default function Library() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ContentType | undefined>();
   const [chipsOpen, setChipsOpen] = useState(true);
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
+  const first = useProfile()?.displayName?.split(/\s+/)[0];
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      <HoloBand height={140} />
       <View style={styles.top}>
-        <View style={styles.titleRow}>
-          <DisplayTitle highlight="LIBRARY" highlightColor={palette.lavender}>YOUR LIBRARY</DisplayTitle>
-          <Tap testID="library-add-button" accessibilityLabel="Save something" onPress={() => router.push("/capture")} style={styles.add}>
-            <Text style={styles.addText}>Save</Text>
-          </Tap>
+        <View style={{ gap: 12 }}>
+          <InkPill label="Library" />
+          <MarkerTitle lines={first ? [`${first}'s`, "library"] : ["Your", "library"]} marker={first ? `${first}'s` : "library"} color={palette.lavender} size={34} testID="library-title" />
         </View>
         <SearchPill
           testID="library-search-input"
+          outlined
+          placeholder="Search your saves"
+          autoFocus={focus === "search"}
           onFilterPress={() => setChipsOpen((o) => !o)}
           filterTestID="library-filter-button"
           value={query}
@@ -70,6 +77,8 @@ function Results({ query, filter, setFilter, chipsOpen }: { query: string; filte
   const items = searching ? searched : paged.status === "LoadingFirstPage" ? undefined : paged.results;
   const filtered = searching || !!filter;
   const toggle = (t: ContentType) => setFilter(filter === t ? undefined : t);
+  const scroll = useTabBarScroll();
+  const tryOne = !filtered && all !== undefined && all.length > 0 && all.length < 3;
 
   return (
     <>
@@ -93,11 +102,18 @@ function Results({ query, filter, setFilter, chipsOpen }: { query: string; filte
           testID="library-list"
           data={items}
           keyExtractor={(i) => i._id}
+          {...scroll}
           contentContainerStyle={styles.list}
           keyboardDismissMode="on-drag"
           onEndReached={() => (!searching && paged.status === "CanLoadMore" ? paged.loadMore(20) : undefined)}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={!searching && paged.status === "LoadingMore" ? <ActivityIndicator testID="library-loading-more" color={colors.text} style={{ padding: space.lg }} /> : undefined}
+          ListFooterComponent={
+            !searching && paged.status === "LoadingMore" ? (
+              <ActivityIndicator testID="library-loading-more" color={colors.text} style={{ padding: space.lg }} />
+            ) : tryOne ? (
+              <TryOne />
+            ) : undefined
+          }
           ListHeaderComponent={
             !searching && !filter && present.length > 0 ? (
               <View style={styles.blocks}>
@@ -117,7 +133,7 @@ function Results({ query, filter, setFilter, chipsOpen }: { query: string; filte
               {filtered ? (
                 <GradientButton testID="library-clear-filters-button" label="Show everything" variant="secondary" onPress={() => setFilter(undefined)} style={{ alignSelf: "stretch" }} />
               ) : (
-                <GradientButton testID="library-empty-save-button" label="Save something" icon="add" onPress={() => router.push("/capture")} style={{ alignSelf: "stretch" }} />
+                <GradientButton testID="library-empty-save-button" label="Save something" onPress={() => router.push("/capture")} style={{ alignSelf: "stretch" }} />
               )}
             </EmptyState>
           }
@@ -139,7 +155,7 @@ function Results({ query, filter, setFilter, chipsOpen }: { query: string; filte
                   style={styles.retry}
                 >
                   <Ionicons name="refresh" size={14} color={colors.surface} />
-                  <Text style={styles.retryText}>Retry</Text>
+                  <ZText style={styles.retryText}>Retry</ZText>
                 </Tap>
               ) : null}
             </View>
@@ -150,15 +166,33 @@ function Results({ query, filter, setFilter, chipsOpen }: { query: string; filte
   );
 }
 
+const STARTERS: { key: string; label: string; eyebrow: string; type: ContentType }[] = [
+  { key: "scholarship", label: "A scholarship", eyebrow: "CHECK IF YOU QUALIFY", type: "scholarship" },
+  { key: "github", label: "A GitHub repo", eyebrow: "GET A SETUP GUIDE", type: "github_repository" },
+  { key: "restaurant", label: "A restaurant", eyebrow: "PLAN THE VISIT", type: "restaurant" },
+];
+
+function TryOne() {
+  return (
+    <View style={{ gap: 12, marginTop: 16 }}>
+      <SectionTitle title="Try one" />
+      <View>
+        {STARTERS.map((s, i) => (
+          <View key={s.key} style={{ marginTop: i === 0 ? 0 : -14, zIndex: i }}>
+            <WaveBlock testID={`library-example-${s.key}`} label={s.label} eyebrow={s.eyebrow} color={pastelFor(s.type)} last={i === STARTERS.length - 1} onPress={() => router.push({ pathname: "/capture", params: { example: s.key } })} />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.xl, paddingTop: space.md, gap: space.lg, paddingBottom: space.md },
-  titleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: space.md },
-  add: { height: 40, paddingHorizontal: space.lg, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  addText: { color: colors.text, fontWeight: "700", fontSize: 14 },
   filters: { paddingHorizontal: space.xl, paddingVertical: 4 },
   blocks: { marginBottom: space.sm },
-  list: { padding: space.xl, paddingTop: space.md, gap: space.md, paddingBottom: 120 },
+  list: { padding: space.xl, paddingTop: space.md, gap: space.md, paddingBottom: TAB_BAR_SPACE },
   retry: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-end", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.text },
-  retryText: { color: colors.surface, fontWeight: "700", fontSize: 13 },
+  retryText: { color: colors.surface, fontFamily: fonts.bold, fontSize: 13, lineHeight: 18 },
 });

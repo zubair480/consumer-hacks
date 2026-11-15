@@ -7,6 +7,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { colors } from "../components/tokens";
+import { ToastHost } from "../components/ui/Toast";
 import { OwnerProvider } from "../identity/OwnerProvider";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -35,6 +36,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="capture" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
           </Stack>
+          <ToastHost />
         </OwnerProvider>
       </ThemeProvider>
     </ConvexProvider>
