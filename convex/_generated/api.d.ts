@@ -30,6 +30,7 @@ import type * as lib_llm from "../lib/llm.js";
 import type * as lib_sources from "../lib/sources.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as preferences from "../preferences.js";
+import type * as publishing from "../publishing.js";
 import type * as social_adapters_index from "../social/adapters/index.js";
 import type * as social_adapters_instagram from "../social/adapters/instagram.js";
 import type * as social_adapters_linkedin from "../social/adapters/linkedin.js";
@@ -71,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   "lib/sources": typeof lib_sources;
   "lib/validators": typeof lib_validators;
   preferences: typeof preferences;
+  publishing: typeof publishing;
   "social/adapters/index": typeof social_adapters_index;
   "social/adapters/instagram": typeof social_adapters_instagram;
   "social/adapters/linkedin": typeof social_adapters_linkedin;
