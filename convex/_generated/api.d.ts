@@ -30,6 +30,7 @@ import type * as lib_llm from "../lib/llm.js";
 import type * as lib_sources from "../lib/sources.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as preferences from "../preferences.js";
+import type * as publishing from "../publishing.js";
 import type * as social_composer from "../social/composer.js";
 import type * as social_drafts from "../social/drafts.js";
 import type * as social_validators from "../social/validators.js";
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   "lib/sources": typeof lib_sources;
   "lib/validators": typeof lib_validators;
   preferences: typeof preferences;
+  publishing: typeof publishing;
   "social/composer": typeof social_composer;
   "social/drafts": typeof social_drafts;
   "social/validators": typeof social_validators;
