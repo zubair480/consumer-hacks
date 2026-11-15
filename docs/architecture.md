@@ -83,7 +83,16 @@ sequenceDiagram
 | `activityEvents` | saved, analyzed, failed, action completed, … |
 | `userPreferences` | Profile fields used by eligibility and visit planning |
 
-Phase 2 (in progress, owned by the H+I thread) adds `socialDrafts` with revisions, `mediaAssets`, `platformConnections`, `publishingJobs` and `publishingResults`.
+Phase 2 tables are on main, defined in `convex/social/schema.ts` and spread into `convex/schema.ts`:
+
+| Table | Holds |
+| --- | --- |
+| `socialDrafts` | latest draft per platform per source: draftText, structured output, provenance (facts used), `generationStatus`, publishing `status`, revision |
+| `socialDraftRevisions` | every revision of a draft (generated, regenerated, user_edit) |
+| `mediaAssets` | uploaded photos/videos with optional context and image analysis |
+| `platformConnections` | per-platform connection state, no tokens (all not_connected today) |
+| `publishingJobs` | a share or publish attempt per draft, with an idempotency key |
+| `publishingResults` | outcome per job: published, failed, not_connected or user_reported_shared |
 
 ## Rules the code follows
 
@@ -105,4 +114,13 @@ flowchart LR
   Share --> State["Awaiting user action<br/>(never Published without provider confirmation)"]
 ```
 
-TODO (Captain): replace this section with the real function names once H+I, J and K merge.
+API on main (`convex/social/drafts.ts`, every function takes `ownerId`):
+
+- `generate({ itemId | mediaId, platforms, context?, tone?, audience? })` inserts one draft per platform with `generationStatus: "generating"` and schedules the composer.
+- `listForSource`, `listRecent`, `get` (with revisions) read drafts.
+- `update` stores a user edit as a new revision; `regenerate` writes a new revision on that one draft only; `restoreRevision` copies an old revision forward.
+- `recommendPlatforms` returns platforms with a reason, recommended first.
+
+Composer progress (`generationStatus`) and publishing state (`status`, owned by J) are separate fields.
+
+TODO (Captain): add J's publishing functions and K's screens once they merge.
