@@ -14,6 +14,7 @@ import { errorMessage } from "../components/media";
 import { Tap } from "../components/Pressable";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { Skeleton } from "../components/States";
+import { YouTubeSourceRow } from "../components/YouTubeSourceRow";
 import { colors, radius, space, type } from "../components/tokens";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
 
@@ -132,6 +133,7 @@ export default function ImportScreen() {
           ))
         )}
         <GitHubStarsRow />
+        <YouTubeSourceRow onNotice={setNotice} />
 
         {x && !x.configured ? (
           <Text style={styles.footnote} testID="import-x-not-configured">
