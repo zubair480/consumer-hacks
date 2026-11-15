@@ -42,7 +42,7 @@ If the source has no method, warn instead of inventing one.`,
 3. "steps" headed "Walkthrough": key parts in order, each title naming the line/construct and detail explaining it.
 4. "list" headed "Watch out for": pitfalls or assumptions in this code.`,
   suggest_test_cases: () => `Suggest test cases for the saved code snippet.
-1. "checklist" headed "Test cases": 5-10 cases (happy path, edge cases, error cases); label = case, detail = input and expected outcome; done=false.
+1. "checklist" headed "Test cases": 5-10 cases (happy path, edge cases, error cases); label = a short name for the case, detail = input and expected outcome; done=false.
 2. "code" headed "Example test": one runnable test in a common framework for the snippet's language, testing behavior that the snippet actually implements.`,
   prepare_reusable_example: () => `Turn the saved code snippet into a clean reusable example.
 1. "code" headed "Reusable version": cleaned-up, parameterized, with clear names; keep the original behavior.

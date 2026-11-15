@@ -34,6 +34,7 @@ async function findAddress(input: ExecutorInput, blocks: SourceBlock[]): Promise
     real.map((b) => b.text).join("\n\n").slice(0, 16000),
   );
   if (!data.address || !data.quote || !verify(data.quote)) return null;
+  data.address = data.address.replace(/\s+/g, " ").trim();
   const block = real.find((b) => makeVerifier(b.text)(data.quote!));
   return {
     name: data.name || name,

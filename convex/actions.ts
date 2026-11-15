@@ -73,8 +73,9 @@ export const listSuggestions = query({
               .withIndex("by_executionId", (q) => q.eq("executionId", latest._id))
               .first()
           : null;
+        const { userId: _userId, ...suggestion } = s;
         return {
-          ...s,
+          ...suggestion,
           latestExecution: latest
             ? { _id: latest._id, status: latest.status, error: latest.error ?? null, resultId: result?._id ?? null, createdAt: latest.createdAt }
             : null,

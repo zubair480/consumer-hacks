@@ -16,6 +16,7 @@ Section is one of:
 {"kind":"list","heading"?:string,"items":string[]}
 {"kind":"links","heading"?:string,"links":[{"label":string,"url":string}]}
 {"kind":"code","heading"?:string,"language"?:string,"code":string}
+"code" fields hold only source code or shell commands, never prose. Step titles have no leading numbers.
 {"kind":"palette","heading"?:string,"colors":[{"hex":"#RRGGBB","name"?:string}]}`;
 
 const RULES = `Rules:
@@ -207,10 +208,11 @@ export async function buildDocument(opts: BuildOptions): Promise<ActionResultDoc
       case "steps": {
         const steps: Extract<ResultSection, { kind: "steps" }>["steps"] = [];
         for (const st of Array.isArray(raw.steps) ? (raw.steps as Record<string, unknown>[]) : []) {
-          const t = str(st.title);
+          const t = str(st.title)?.replace(/^\d+[.)]\s*/, "");
           if (!t) continue;
           const detail = str(st.detail);
           let code = str(st.code);
+          if (code && (code === detail || detail?.includes(code))) code = undefined;
           if (code && opts.verifyCode && !codeAllowed(code)) {
             dropped++;
             code = undefined;
@@ -246,6 +248,7 @@ export async function buildDocument(opts: BuildOptions): Promise<ActionResultDoc
         for (const l of Array.isArray(raw.links) ? (raw.links as Record<string, unknown>[]) : []) {
           const url = str(l.url);
           if (!url) continue;
+          if (links.some((x) => x.url === url)) continue;
           if (!urlAllowed(url)) {
             dropped++;
             continue;
