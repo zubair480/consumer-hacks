@@ -15,6 +15,7 @@ import {
   keyFactFields,
   userProfileFields,
 } from "./lib/validators";
+import { importTables } from "./imports/schema";
 import { socialTables } from "./social/schema";
 
 // OWNER: Lead. Other threads add only new OPTIONAL fields or new indexes,
@@ -51,6 +52,7 @@ export default defineSchema({
     .index("by_userId_and_createdAt", ["userId", "createdAt"])
     .index("by_userId_and_primaryType_and_createdAt", ["userId", "primaryType", "createdAt"])
     .index("by_userId_and_extractionStatus", ["userId", "extractionStatus"])
+    .index("by_userId_and_sourceUrl", ["userId", "sourceUrl"])
     .searchIndex("search_text", { searchField: "searchText", filterFields: ["userId", "primaryType"] }),
 
   contentAnalysis: defineTable({
@@ -146,4 +148,7 @@ export default defineSchema({
 
   // Phase 2 (Social Studio), owned by Thread H+I.
   ...socialTables,
+
+  // One-tap Import (CONS-19).
+  ...importTables,
 });

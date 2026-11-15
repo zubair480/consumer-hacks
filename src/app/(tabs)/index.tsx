@@ -21,6 +21,7 @@ function greeting() {
 }
 
 const openCapture = () => router.push("/capture");
+const openImport = () => router.push("/import");
 
 export default function Home() {
   return (
@@ -35,6 +36,17 @@ export default function Home() {
             <Ionicons name="add" size={24} color={colors.text} />
           </Tap>
         </View>
+
+        <Tap testID="home-import-button" accessibilityRole="button" accessibilityLabel="Import saves" haptic="medium" onPress={openImport}>
+          <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+            <View style={styles.heroIcon}><Ionicons name="cloud-download" size={28} color="#fff" /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroTitle}>Import saves</Text>
+              <Text style={styles.heroBody}>Pull in what you bookmarked on X. Zapy turns each post into something you can do.</Text>
+            </View>
+            <Ionicons name="arrow-forward" size={22} color="#fff" />
+          </LinearGradient>
+        </Tap>
 
         <Tap testID="home-save-button" accessibilityRole="button" accessibilityLabel="Save something" haptic="medium" onPress={openCapture}>
           <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
@@ -61,6 +73,7 @@ function Feed() {
   if (items.length === 0) {
     return (
       <EmptyState icon="bookmark-outline" title="Nothing saved yet" body="Save a GitHub repo, a scholarship, a restaurant, or a design you liked. Zapy figures out what you can do with it.">
+        <GradientButton testID="home-empty-import-button" label="Import your bookmarks" icon="cloud-download" onPress={openImport} style={{ alignSelf: "stretch", marginTop: space.sm }} />
         <GradientButton testID="home-empty-save-button" label="Save your first thing" icon="add" onPress={openCapture} style={{ alignSelf: "stretch", marginTop: space.sm }} />
       </EmptyState>
     );
