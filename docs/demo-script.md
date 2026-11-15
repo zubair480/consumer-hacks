@@ -1,6 +1,6 @@
 # Live demo script (7:00 PM PT)
 
-About 5 minutes on a real iPhone in Expo Go, following the master brief Demo section: Part 1 (three saves, different actions, two real executions, results saved), Part 2 (Social Studio). Every step lists a fallback line if something is slow.
+About 5 minutes on a real iPhone in Expo Go, following the master brief Demo section: Part 1 (three saves, different actions, two real executions, results saved), Part 2 (Social Studio: LinkedIn + X from a save, Instagram + TikTok from a photo, and a live LinkedIn test post). Every step lists a fallback line if something is slow.
 
 ## Before going on stage
 
@@ -54,21 +54,39 @@ Fallback: "The site is slow to respond; here's the copy I saved before" → Libr
 
 Fallback: if Home is slow to update, open Library → item → previous results.
 
-## Part 2: Social Studio (in progress, confirm before the demo)
+## Part 2: Social Studio
 
-TODO (Captain): replace these steps with the real screen and button names once K merges; cut Part 2 to one sentence if it isn't on main by 6 PM.
+Prep: check **Profile → Connected accounts**. LinkedIn should say Connected, and X will say Share-sheet mode unless its four keys were set. The steps below work either way.
 
-1. Open the expo/expo save → **Create post** → select **LinkedIn** and **X** → Generate.
-2. Show that the two drafts are different: a longer LinkedIn post and an X thread under 280 characters each. Point out the wording: about a repo you found, never one you built.
-3. Edit the X draft, then regenerate LinkedIn. The X edit stays.
-4. Tap **Share** on LinkedIn: the native share sheet opens. Close it and point out the status "Awaiting user action". Say: "We never mark something Published without the platform confirming it."
-5. New photo flow: **Create** → pick a photo → add context → **Instagram** + **TikTok** → Generate. Show the Instagram caption and the TikTok storyboard.
+### From a save: GitHub → LinkedIn + X
 
-Fallback: "Generation is slow right now; these drafts were generated earlier" → open the pre-made drafts. If Social Studio isn't merged: "Social Studio is the next step: the same saves become platform-specific drafts you share yourself."
+1. Open the expo/expo save (Library or Home) → tap **Create post**.
+2. **Where to post** opens with the recommended platforms preselected. Make sure **LinkedIn** and **X** are selected, optionally add a line under "Anything to add?", and tap **Write 2 drafts**.
+3. The editor opens with a **LinkedIn** and an **X** tab, and the bar says "Writing your drafts…" until both are ready. Switch tabs to show that they differ: a longer LinkedIn post, and a short X post or thread with each post under 280 characters. Scroll to **Facts used** to show where the facts came from, and point out the wording: a repo you found, never one you built.
+4. On the **X** tab, change a line → **Save edit** ("Saved as a new version."). Switch to **LinkedIn** → **Rewrite** → confirm **Rewrite** ("Other platforms and your saved versions stay as they are."). Back on X, your edit is still there.
+5. On X, tap **Copy**, then **Share**. In share-sheet mode the sheet says X isn't connected and offers **Open in X**, then **I posted it**. The pill shows Awaiting user action, never Published. Tap **Close**. Don't tap **Confirm and publish** on the LinkedIn draft unless you want it on the real profile.
+
+Fallback: "Generation is slow right now; these drafts were written earlier" → **Create** tab → open a recent draft.
+
+### From a new photo: Instagram + TikTok
+
+1. **Create** tab → **New photo** → **Choose from library** (or **Take a photo**) → under "Where or what is this?" type one line, e.g. "Found this cafe on a walk and want to come back".
+2. Under **Platforms**, select **Instagram** and **TikTok** → **Create drafts**. The button steps through "Uploading photo…", "Looking at your photo…" and "Writing drafts…".
+3. Show "What's in the photo · facts" (Source: the photo only), the Instagram caption card, and the TikTok card with Hook, Shots, Voiceover, On-screen text and Caption. **Edit and share drafts** opens the same editor.
+
+Fallback: "The photo is still uploading on conference Wi-Fi; here's one from earlier" → **Create** tab → recent drafts.
+
+### Live posting proof: LinkedIn test post
+
+1. **Profile** tab → **Connected accounts** → LinkedIn shows **Connected** → **Send test post**.
+2. The sheet shows "Testing Zapy <time>" and warns "Posts publicly to your LinkedIn account" → **Confirm**.
+3. It shows "Posted to LinkedIn" with the post id → **View post** opens it. Say: "That's a real post id from LinkedIn. Only that marks something Published; for Instagram, TikTok and Threads you post it yourself through the share sheet."
+
+Fallback: if LinkedIn errors or is slow, show the earlier confirmed post (`urn:li:share:7527842989080018944`) and say "LinkedIn is rate-limiting us; this one went out earlier today."
 
 ## Closing message (15 s)
 
-"Zapy turns what you save into what you do: it reads the source, picks actions that fit, and runs them into results you keep, without making anything up and without posting anything for you. Built in a day with Expo, Convex and OpenAI."
+"Zapy turns what you save into what you do: it reads the source, picks actions that fit, and runs them into results you keep, without making anything up, and it turns saves into posts that only go out when you confirm them. Built in a day with Expo, Convex and OpenAI."
 
 ## If something breaks
 
