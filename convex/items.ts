@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
@@ -106,6 +107,27 @@ export const list = query({
           .order("desc")
           .take(take);
     return await Promise.all(rows.map((row) => toView(ctx, row)));
+  },
+});
+
+/** Paginated newest-first saves, optionally filtered by primary type. Empty (done) page for unknown owners. */
+export const listPage = query({
+  args: { ownerId: vOwnerId, primaryType: v.optional(vContentType), paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { ownerId, primaryType, paginationOpts }) => {
+    const user = await getUser(ctx, ownerId);
+    if (!user) return { page: [], isDone: true, continueCursor: "" };
+    const result = primaryType
+      ? await ctx.db
+          .query("savedItems")
+          .withIndex("by_userId_and_primaryType_and_createdAt", (q) => q.eq("userId", user._id).eq("primaryType", primaryType))
+          .order("desc")
+          .paginate(paginationOpts)
+      : await ctx.db
+          .query("savedItems")
+          .withIndex("by_userId_and_createdAt", (q) => q.eq("userId", user._id))
+          .order("desc")
+          .paginate(paginationOpts);
+    return { ...result, page: await Promise.all(result.page.map((row) => toView(ctx, row))) };
   },
 });
 
