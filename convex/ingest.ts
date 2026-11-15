@@ -28,7 +28,7 @@ export const run = internalAction({
     const { item, imageUrl } = loaded;
 
     try {
-      await ctx.runMutation(internal.items.setExtraction, { itemId, extractionStatus: "extracting" });
+      await ctx.runMutation(internal.analysis.markStarted, { itemId });
 
       const parts: SourcePart[] = [];
       const images: string[] = [];
@@ -48,20 +48,28 @@ export const run = internalAction({
       if (item.rawText) parts.push({ source: "user_text", label: "Text the user pasted", text: item.rawText });
       if (imageUrl) images.push(await imageToDataUrl(imageUrl));
 
-      const hasContent = Boolean(item.rawText || images.length || (item.sourceUrl && !linkProblem));
-      if (!hasContent) {
+      if (!parts.length && !images.length) {
         await ctx.runMutation(internal.analysis.markProblem, {
           itemId,
           extractionStatus: "needs_input",
-          extractionError: linkProblem ?? "There's nothing to analyze yet. Add a link, text, or a screenshot.",
-          title: item.sourceUrl ? hostTitle(item.sourceUrl) : undefined,
+          extractionError: "There's nothing to analyze yet. Add a link, text, or a screenshot.",
         });
         return null;
       }
 
       await ctx.runMutation(internal.items.setExtraction, { itemId, extractionStatus: "analyzing" });
-      const analysis = await analyzeContent({ parts, images, fallbackTitle: fetchedTitle ?? (item.sourceUrl ? hostTitle(item.sourceUrl) : undefined) });
-      await ctx.runMutation(internal.analysis.save, { itemId, ...analysis });
+      const analysis = await analyzeContent({
+        parts,
+        images,
+        sourceAccessible: !linkProblem,
+        fallbackTitle: fetchedTitle ?? (item.sourceUrl ? hostTitle(item.sourceUrl) : undefined),
+      });
+      await ctx.runMutation(internal.analysis.save, {
+        itemId,
+        ...analysis,
+        extractionStatus: linkProblem ? "needs_input" : "ready",
+        extractionError: linkProblem,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("ingest failed", itemId, message);

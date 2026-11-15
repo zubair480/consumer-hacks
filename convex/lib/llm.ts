@@ -15,6 +15,8 @@ export type LLMJsonOptions = {
   schemaHint?: string;
   /** Upper bound on output tokens. Defaults to 4000. */
   maxOutputTokens?: number;
+  /** Abort the request after this many ms. Defaults to 30000. */
+  timeoutMs?: number;
 };
 
 /** The model id ingestion and executors use: OPENAI_MODEL, else a small vision model. */
@@ -42,8 +44,11 @@ export async function callLLMJson<T = Record<string, unknown>>(options: LLMJsonO
         ...options.images.map((url) => ({ type: "image_url", image_url: { url } })),
       ]
     : options.user;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 30000);
   const response = await fetch(OPENAI_URL, {
     method: "POST",
+    signal: controller.signal,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: getLLMModel(),
@@ -54,7 +59,7 @@ export async function callLLMJson<T = Record<string, unknown>>(options: LLMJsonO
         { role: "user", content: user },
       ],
     }),
-  });
+  }).finally(() => clearTimeout(timer));
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`OpenAI request failed (${response.status}): ${body.slice(0, 300)}`);

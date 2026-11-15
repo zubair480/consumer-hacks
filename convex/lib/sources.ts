@@ -10,8 +10,9 @@ export type FetchedSource =
   | { ok: true; title?: string; part: SourcePart }
   | { ok: false; reason: string };
 
-const MAX_TEXT_CHARS = 14000;
-const FETCH_TIMEOUT_MS = 15000;
+const MAX_TEXT_CHARS = 15000;
+const MAX_HTML_BYTES = 1024 * 1024;
+const FETCH_TIMEOUT_MS = 10000;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const USER_AGENT =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -36,6 +37,30 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Re
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Reads at most MAX_HTML_BYTES of a response body as text. */
+async function readCapped(response: Response): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  while (size < MAX_HTML_BYTES) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    size += value.byteLength;
+  }
+  await reader.cancel().catch(() => undefined);
+  const bytes = new Uint8Array(Math.min(size, MAX_HTML_BYTES));
+  let offset = 0;
+  for (const chunk of chunks) {
+    const part = chunk.subarray(0, bytes.length - offset);
+    bytes.set(part, offset);
+    offset += part.length;
+    if (offset >= bytes.length) break;
+  }
+  return new TextDecoder().decode(bytes);
 }
 
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'", mdash: "—", ndash: "–", hellip: "…", rsquo: "'", lsquo: "'", rdquo: '"', ldquo: '"' };
@@ -100,7 +125,7 @@ function looksLikeLoginWall(title: string, text: string): boolean {
 /** Fetches any web page and returns title, meta description, structured data, and readable text. */
 export async function fetchWebPage(url: string): Promise<FetchedSource> {
   const platform = detectSourcePlatform(url);
-  const walled = LOGIN_WALLED[platform];
+  const walled = LOGIN_WALLED[platform] ?? (/^https?:\/\/([^/]+\.)?(facebook\.com|fb\.com|fb\.watch)(\/|$)/i.test(url) ? "Facebook" : undefined);
   if (walled) return { ok: false, reason: askForContent(`${walled} doesn't let us read posts without logging in.`) };
 
   let response: Response;
@@ -123,7 +148,7 @@ export async function fetchWebPage(url: string): Promise<FetchedSource> {
   if (!/html|text\/plain|xml/i.test(contentType)) {
     return { ok: false, reason: askForContent(`That link is a file we can't read yet (${contentType.split(";")[0] || "unknown type"}).`) };
   }
-  const raw = (await response.text()).slice(0, 1_500_000);
+  const raw = await readCapped(response);
   if (/text\/plain/i.test(contentType)) {
     return { ok: true, part: { source: response.url || url, label: "Web page", text: raw.slice(0, MAX_TEXT_CHARS) } };
   }
@@ -177,48 +202,88 @@ type GitHubRepo = {
   pushed_at: string;
 };
 
-/** Repository metadata and README through the GitHub REST API (unauthenticated). */
+function githubPart(owner: string, repo: string, lines: (string | false | null | undefined)[], readme: string): FetchedSource {
+  const text = [...lines, readme ? `\nREADME:\n${readme}` : "\nREADME: (none found)"].filter(Boolean).join("\n").slice(0, MAX_TEXT_CHARS);
+  return { ok: true, title: `${owner}/${repo}`, part: { source: `https://github.com/${owner}/${repo}`, label: "GitHub repository", text } };
+}
+
+/** README from raw.githubusercontent.com, trying the common file names in parallel. */
+async function rawReadme(owner: string, repo: string): Promise<string> {
+  const names = ["README.md", "readme.md", "README.rst", "README"];
+  const results = await Promise.all(
+    names.map(async (name) => {
+      try {
+        const res = await fetchWithTimeout(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${name}`, { headers: { "User-Agent": "AfterScroll" } });
+        return res.ok ? await res.text() : "";
+      } catch {
+        return "";
+      }
+    }),
+  );
+  return results.find(Boolean) ?? "";
+}
+
+/**
+ * Repository metadata and README through the GitHub REST API (GITHUB_TOKEN when set).
+ * When the API is rate-limited or fails, falls back to the raw README and the repo page's og tags.
+ */
 export async function fetchGitHubRepo(owner: string, repo: string): Promise<FetchedSource> {
-  const headers = { Accept: "application/vnd.github+json", "User-Agent": "AfterScroll", "X-GitHub-Api-Version": "2022-11-28" };
-  let meta: Response;
-  try {
-    meta = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}`, { headers });
-  } catch {
+  const token = process.env.GITHUB_TOKEN;
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "AfterScroll",
+    "X-GitHub-Api-Version": "2022-11-28",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const api = `https://api.github.com/repos/${owner}/${repo}`;
+  const [meta, readmeRes] = await Promise.all([
+    fetchWithTimeout(api, { headers }).catch(() => null),
+    fetchWithTimeout(`${api}/readme`, { headers: { ...headers, Accept: "application/vnd.github.raw+json" } }).catch(() => null),
+  ]);
+
+  if (meta?.ok) {
+    const data = (await meta.json()) as GitHubRepo;
+    const [name, project] = data.full_name.split("/");
+    const readme = readmeRes?.ok ? await readmeRes.text() : await rawReadme(name, project);
+    const license = data.license && (data.license.spdx_id && data.license.spdx_id !== "NOASSERTION" ? data.license.spdx_id : data.license.name);
+    return githubPart(
+      name,
+      project,
+      [
+        `Repository: ${data.full_name}`,
+        data.description && `Description: ${data.description}`,
+        `Stars: ${data.stargazers_count}`,
+        `Forks: ${data.forks_count}`,
+        `Open issues: ${data.open_issues_count}`,
+        data.language && `Primary language: ${data.language}`,
+        license && `License: ${license}`,
+        !!data.topics?.length && `Topics: ${data.topics.join(", ")}`,
+        data.homepage && `Homepage: ${data.homepage}`,
+        `Default branch: ${data.default_branch}`,
+        `Last push: ${data.pushed_at}`,
+        data.archived && "Archived: yes",
+      ],
+      readme,
+    );
+  }
+
+  const [readme, page] = await Promise.all([
+    rawReadme(owner, repo),
+    fetchWithTimeout(`https://github.com/${owner}/${repo}`, { headers: { "User-Agent": USER_AGENT, Accept: "text/html" } }).catch(() => null),
+  ]);
+  const html = page?.ok ? await readCapped(page) : "";
+  const ogTitle = metaContent(html, "og:title");
+  const ogDescription = metaContent(html, "og:description");
+  if (!readme && !ogTitle) {
+    if (page?.status === 404 || meta?.status === 404) return { ok: false, reason: askForContent(`GitHub says ${owner}/${repo} doesn't exist or is private.`) };
     return { ok: false, reason: askForContent("We couldn't reach GitHub just now.") };
   }
-  if (meta.status === 404) return { ok: false, reason: askForContent(`GitHub says ${owner}/${repo} doesn't exist or is private.`) };
-  if (!meta.ok) return { ok: false, reason: `GitHub API error (HTTP ${meta.status})` };
-  const data = (await meta.json()) as GitHubRepo;
-
-  let readme = "";
-  try {
-    const res = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/readme`, {
-      headers: { ...headers, Accept: "application/vnd.github.raw+json" },
-    });
-    if (res.ok) readme = await res.text();
-  } catch {
-    readme = "";
-  }
-
-  const text = [
-    `Repository: ${data.full_name}`,
-    data.description && `Description: ${data.description}`,
-    `Stars: ${data.stargazers_count}`,
-    `Forks: ${data.forks_count}`,
-    `Open issues: ${data.open_issues_count}`,
-    data.language && `Primary language: ${data.language}`,
-    data.license && `License: ${data.license.spdx_id && data.license.spdx_id !== "NOASSERTION" ? data.license.spdx_id : data.license.name}`,
-    data.topics?.length ? `Topics: ${data.topics.join(", ")}` : "",
-    data.homepage && `Homepage: ${data.homepage}`,
-    `Default branch: ${data.default_branch}`,
-    `Last push: ${data.pushed_at}`,
-    data.archived ? "Archived: yes" : "",
-    readme ? `\nREADME:\n${readme}` : "\nREADME: (none found)",
-  ]
-    .filter(Boolean)
-    .join("\n")
-    .slice(0, MAX_TEXT_CHARS);
-  return { ok: true, title: data.full_name, part: { source: data.html_url, label: "GitHub repository", text } };
+  return githubPart(
+    owner,
+    repo,
+    [`Repository: ${owner}/${repo}`, ogTitle && `Page title: ${ogTitle}`, ogDescription && `Description: ${ogDescription}`],
+    readme,
+  );
 }
 
 /** Routes a saved URL to the right fetcher. */

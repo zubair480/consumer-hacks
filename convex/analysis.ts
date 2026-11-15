@@ -35,10 +35,13 @@ ${CONTENT_TYPES.map((t) => `- ${t}: ${TYPE_GUIDE[t]}`).join("\n")}
 Rules:
 - primaryType is the single type that best describes what the user will want to do with this save.
 - title: short, specific, human (max 80 chars), e.g. the scholarship name, repo name, restaurant name. No clickbait.
-- summary: 1-3 plain sentences on what this is and why it matters. Only claims the source supports.
+- summary: at most 2 plain sentences on what this is and why it matters. Only claims the source supports.
 - facts: the concrete details a user needs to act. Typical keys: deadline, award_amount, eligibility, requirements, how_to_apply, organization, location, address, hours, price, cuisine, date, time, venue, stars, language, license, install_command, tech_stack, ingredients, servings, cook_time, colors, typography, layout, company, role, salary.
 - NEVER invent or infer deadlines, dates, locations, addresses, prices, availability, eligibility, qualifications, or setup instructions. If the source does not state it, omit the fact.
 - Every fact needs evidence: "quote" is a short verbatim excerpt copied exactly from the source text (max 200 chars) that states the fact; for an image, quote the visible text, or describe the image region when there is no text. "source" must be exactly one of the source ids listed in the input.
+- deadline: "YYYY-MM-DD" only when the source states a specific date for it (and include a "deadline" fact quoting it), else null. location, price, organization: short strings only when the source states them (with a matching fact), else null.
+- missingInfo: short phrases for details a user would need to act that the source does not provide (e.g. "Application deadline", "Address", "Setup instructions").
+- If a source is marked as could-not-be-opened, classify from the URL and any other text, keep facts to what the inputs actually say, and say in missingInfo what is missing.
 - confidence is 0..1. Prefer 6-15 high-value facts over many trivial ones; never list navigation menus, buttons, or boilerplate as facts.
 - Images: a screenshot of a website, app UI, poster, logo, or any visual layout is "graphic" first (primaryType graphic) unless the user clearly saved it for something else in it (a recipe, an event's date, a scholarship's terms, a restaurant). For graphic, extract design facts: dominant colors as hex values (key "color_<n>"), typography (font style/weight/case), layout, visual style, and the brand or product shown; the quote describes the image region.`;
 
@@ -47,7 +50,12 @@ const SCHEMA_HINT = `{
   "primaryType": "scholarship",
   "title": "string",
   "summary": "string",
-  "facts": [{ "key": "deadline", "label": "Deadline", "value": "March 1, 2027", "quote": "Applications are due March 1, 2027", "source": "<source id>", "confidence": 0.95 }]
+  "facts": [{ "key": "deadline", "label": "Deadline", "value": "March 1, 2027", "quote": "Applications are due March 1, 2027", "source": "<source id>", "confidence": 0.95 }],
+  "missingInfo": ["string"],
+  "deadline": "2027-03-01 or null",
+  "location": "string or null",
+  "price": "string or null",
+  "organization": "string or null"
 }`;
 
 type RawAnalysis = {
@@ -56,6 +64,21 @@ type RawAnalysis = {
   title?: unknown;
   summary?: unknown;
   facts?: { key?: unknown; label?: unknown; value?: unknown; quote?: unknown; source?: unknown; confidence?: unknown }[];
+  missingInfo?: unknown;
+  deadline?: unknown;
+  location?: unknown;
+  price?: unknown;
+  organization?: unknown;
+};
+
+/** The understood item: ContentAnalysis plus the top-level fields the UI and executors read directly. */
+export type AnalysisResult = ContentAnalysis & {
+  sourceAccessible: boolean;
+  missingInfo: string[];
+  deadline?: string;
+  location?: string;
+  price?: string;
+  organization?: string;
 };
 
 const isType = (value: unknown): value is ContentType => CONTENT_TYPES.includes(value as ContentType);
@@ -84,31 +107,64 @@ function verifiedFacts(raw: RawAnalysis["facts"], parts: SourcePart[], hasImage:
   return facts.slice(0, 25);
 }
 
-/** Classifies the material and extracts evidence-backed facts. Call from an action. */
-export async function analyzeContent(input: { parts: SourcePart[]; images: string[]; fallbackTitle?: string }): Promise<ContentAnalysis> {
+/** A top-level field is kept only when an evidence-checked fact backs it, so it can't be invented. */
+function backed(value: unknown, facts: ExtractedFact[], keys: RegExp): string | undefined {
+  const text = str(value);
+  if (!text || text.toLowerCase() === "null") return undefined;
+  return facts.some((fact) => keys.test(fact.key)) ? text.slice(0, 200) : undefined;
+}
+
+/** Classifies the material and extracts evidence-backed facts, retrying once on bad output. Call from an action. */
+export async function analyzeContent(input: {
+  parts: SourcePart[];
+  images: string[];
+  fallbackTitle?: string;
+  sourceAccessible: boolean;
+}): Promise<AnalysisResult> {
   const sources = [
     ...input.parts.map((part) => `### Source id: ${part.source} (${part.label})\n${part.text}`),
     ...(input.images.length ? ["### Source id: image\nThe attached image(s) the user saved."] : []),
   ].join("\n\n");
-  const raw = await callLLMJson<RawAnalysis>({
-    system: SYSTEM,
-    user: `Analyze this save.\n\n${sources}`,
-    images: input.images,
-    schemaHint: SCHEMA_HINT,
-  });
+  let raw: RawAnalysis | undefined;
+  let lastError = "";
+  for (let attempt = 0; attempt < 2 && !raw; attempt++) {
+    try {
+      const candidate = await callLLMJson<RawAnalysis>({
+        system: SYSTEM,
+        user: `Analyze this save.\n\n${sources}`,
+        images: input.images,
+        schemaHint: SCHEMA_HINT,
+        timeoutMs: 18000,
+      });
+      const hasTypes = isType(candidate.primaryType) || (Array.isArray(candidate.contentTypes) && candidate.contentTypes.some(isType));
+      if (!hasTypes || !str(candidate.summary)) throw new Error("the model's answer was missing a content type or summary");
+      raw = candidate;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+  }
+  if (!raw) throw new Error(`Analysis failed twice: ${lastError}`);
+
   const listed = Array.isArray(raw.contentTypes) ? raw.contentTypes.filter(isType) : [];
   const modelPrimary = isType(raw.primaryType) ? raw.primaryType : (listed[0] ?? "general_content");
   const imageOnly = input.images.length > 0 && input.parts.length === 0;
   const primaryType =
     imageOnly && listed.includes("graphic") && (modelPrimary === "product" || modelPrimary === "general_content") ? "graphic" : modelPrimary;
-  const contentTypes = [primaryType, ...listed.filter((t) => t !== primaryType)];
+  const facts = verifiedFacts(raw.facts, input.parts, input.images.length > 0);
+  const deadline = backed(raw.deadline, facts, /deadline|due/);
   return {
-    contentTypes: [...new Set(contentTypes)],
+    contentTypes: [...new Set([primaryType, ...listed])],
     primaryType,
     title: (str(raw.title) || input.fallbackTitle || "Untitled save").slice(0, LIMITS.titleMaxChars),
-    summary: str(raw.summary).slice(0, 1000),
-    facts: verifiedFacts(raw.facts, input.parts, input.images.length > 0),
+    summary: str(raw.summary).slice(0, 600),
+    facts,
     model: getLLMModel(),
+    sourceAccessible: input.sourceAccessible,
+    missingInfo: (Array.isArray(raw.missingInfo) ? raw.missingInfo.map(str).filter(Boolean) : []).slice(0, 8),
+    deadline: deadline && /^\d{4}-\d{2}-\d{2}$/.test(deadline) ? deadline : undefined,
+    location: backed(raw.location, facts, /location|address|venue|city|neighborhood/),
+    price: backed(raw.price, facts, /price|cost|fee|tuition|salary/),
+    organization: backed(raw.organization, facts, /organization|company|sponsor|provider|brand|owner|repository|employer|institution/),
   };
 }
 
@@ -116,6 +172,14 @@ export async function analyzeContent(input: { parts: SourcePart[]; images: strin
 export const save = internalMutation({
   args: {
     itemId: v.id("savedItems"),
+    extractionStatus: v.union(v.literal("ready"), v.literal("needs_input")),
+    extractionError: v.optional(v.string()),
+    sourceAccessible: v.boolean(),
+    missingInfo: v.array(v.string()),
+    deadline: v.optional(v.string()),
+    location: v.optional(v.string()),
+    price: v.optional(v.string()),
+    organization: v.optional(v.string()),
     contentTypes: v.array(vContentType),
     primaryType: vContentType,
     title: v.string(),
@@ -123,7 +187,7 @@ export const save = internalMutation({
     facts: v.array(vExtractedFact),
     model: v.optional(v.string()),
   },
-  handler: async (ctx, { itemId, ...analysis }) => {
+  handler: async (ctx, { itemId, extractionStatus, extractionError, ...analysis }) => {
     const item = await ctx.db.get("savedItems", itemId);
     if (!item) return null;
     const previous = await ctx.db.query("contentAnalysis").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(20);
@@ -132,20 +196,34 @@ export const save = internalMutation({
     await ctx.db.insert("contentAnalysis", { userId: item.userId, itemId, ...analysis, createdAt: now });
     await ctx.runMutation(internal.items.setExtraction, {
       itemId,
-      extractionStatus: "ready",
+      extractionStatus,
+      extractionError,
       title: item.title ?? analysis.title,
       summary: analysis.summary,
       contentTypes: analysis.contentTypes,
       primaryType: analysis.primaryType,
     });
+    await ctx.db.patch("savedItems", itemId, { sourceAccessible: analysis.sourceAccessible, missingInfo: analysis.missingInfo });
     await ctx.db.insert("activityEvents", {
       userId: item.userId,
-      type: "analysis_completed",
-      title: "Understood",
+      type: extractionStatus === "ready" ? "analysis_completed" : "analysis_needs_input",
+      title: extractionStatus === "ready" ? "Understood" : "Needs your input",
       detail: analysis.title,
       itemId,
       createdAt: now,
     });
+    return null;
+  },
+});
+
+/** Marks the item extracting and logs that analysis started. */
+export const markStarted = internalMutation({
+  args: { itemId: v.id("savedItems") },
+  handler: async (ctx, { itemId }) => {
+    const item = await ctx.db.get("savedItems", itemId);
+    if (!item) return null;
+    await ctx.runMutation(internal.items.setExtraction, { itemId, extractionStatus: "extracting" });
+    await ctx.db.insert("activityEvents", { userId: item.userId, type: "analysis_started", title: "Understanding…", itemId, createdAt: Date.now() });
     return null;
   },
 });
@@ -169,7 +247,7 @@ export const markProblem = internalMutation({
     });
     await ctx.db.insert("activityEvents", {
       userId: item.userId,
-      type: "analysis_failed",
+      type: extractionStatus === "needs_input" ? "analysis_needs_input" : "analysis_failed",
       title: extractionStatus === "needs_input" ? "Needs your input" : "Analysis failed",
       detail: extractionError,
       itemId,
