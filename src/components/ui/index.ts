@@ -8,4 +8,4 @@ export { ScalePressable, type ScalePressableProps } from "./Pressable";
 export { Screen, type ScreenProps } from "./Screen";
 export { StatusBadge } from "./StatusBadge";
 export { Text, type TextProps, type TextTone, type TextVariant } from "./Text";
-export { CountChips, DisplayTitle, Header, HeroTypeCard, HoloBand, HomeHeader, InkCTA, ItemRow, SearchPill, TabPlus, TypeChip, WaveBlock, WaveBlocks, pastelFor, tabBarTheme, typeIconFor, type CountChip } from "./Zapy";
+export { CountChips, DisplayTitle, Header, HeroTypeCard, HoloBand, HomeHeader, InkCTA, ItemRow, SearchPill, TabPlus, TypeChip, WaveBlock, WaveBlocks, pastelFor, tabBarTheme, typeIconFor, type CountChip, type WaveBlockItem } from "./Zapy";

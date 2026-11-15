@@ -316,10 +316,10 @@ export function WaveBlock({ label, eyebrow, count, color, right, last, onPress, 
   );
 }
 
-export type WaveBlock = { key: string; label: string; count: number; color: string; testID?: string };
+export type WaveBlockItem = { key: string; label: string; count: number; color: string; testID?: string };
 
 /** Stack of WaveBlocks with -18px overlap so the waves layer. Tapping one filters. */
-export function WaveBlocks({ blocks, selected, onPress }: { blocks: WaveBlock[]; selected?: string | null; onPress?: (key: string) => void }) {
+export function WaveBlocks({ blocks, selected, onPress }: { blocks: WaveBlockItem[]; selected?: string | null; onPress?: (key: string) => void }) {
   return (
     <View>
       {blocks.map((b, i) => (
