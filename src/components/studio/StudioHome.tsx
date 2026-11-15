@@ -11,6 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { api } from "../../../convex/_generated/api";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 import { Skeleton } from "../States";
+import { RecentDrafts } from "./RecentDrafts";
 import { SourceRow } from "./SourceRow";
 
 export default function StudioHome() {
@@ -37,6 +38,9 @@ export default function StudioHome() {
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
         </Tap>
+        <Boundary fallback={null}>
+          <RecentDrafts />
+        </Boundary>
         <Boundary title="Couldn’t load your saves">
           <RecentSaves />
         </Boundary>
