@@ -1,5 +1,16 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+## Project rules (AfterScroll)
+
+- **Expo Go only.** Use only modules that Expo Go bundles, because the live demo runs on a real iPhone through Expo Go. Add dependencies with `npx expo install <pkg>` and never with npm/yarn/bun add.
+- **Convex deploys replace everything.** `npx convex dev --once` replaces the whole function set on the shared dev deployment (pleasant-lark-678). Deploy only from `origin/main` merged with every in-flight Convex branch. Fetch first, merge into a scratch branch or worktree, and push from that. Never push from a branch that would drop another thread's functions.
+- **OpenAI is server-side only.** Call OpenAI only from Convex actions, never from the app. The key lives on the deployment (`npx convex env set OPENAI_API_KEY "$OPENAI_API_KEY"`). Read the model from the `OPENAI_MODEL` env var and request JSON output.
+- **Ownership on every public function.** Every public Convex query, mutation, and action takes `ownerId` (the device UUID from `src/identity/OwnerProvider.tsx`) and checks ownership through `convex/lib/auth.ts` (`requireUser`, `requireOwnedItem`, `requireOwned`) before reading or writing data. On the client, use `useOwnedQuery` / `useOwnedMutation`.
+- **Shared types.** Shared shapes live in `src/shared/contracts.ts`, and changes there are additive only. See the file-ownership table in `README.md`.
+- **testIDs.** Every button, input, or control a test touches gets a `testID`.
+- **No secrets in git.** Credentials come from env vars. The only committed env value is the public `EXPO_PUBLIC_CONVEX_URL` in `.env`.
+- **Keep main runnable.** Before a PR, `npx tsc --noEmit` and `npx expo lint` must pass, and every merge leaves the app launching.
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
