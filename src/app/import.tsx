@@ -208,7 +208,7 @@ function SourceRow({
           onPress={onConnect}
           style={[styles.action, styles.connect, !source.configured && { opacity: 0.4 }]}
         >
-          <Text style={[styles.actionText, Platform.OS === "android" && styles.onAccent]}>Connect</Text>
+          <Text style={[styles.actionText, styles.onAccent]}>Connect</Text>
         </Tap>
       )}
     </View>
