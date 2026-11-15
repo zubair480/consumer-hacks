@@ -4,7 +4,10 @@ import { router } from "expo-router";
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
+import { actionsApi } from "../../components/actionsApi";
+import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
+import { OutcomeRow } from "../../components/OutcomeRow";
 import { ItemCard } from "../../components/ItemCard";
 import { Tap } from "../../components/Pressable";
 import { Section } from "../../components/Section";
@@ -68,6 +71,9 @@ export default function Home() {
                 />
               </Section>
             ) : null}
+            <Boundary fallback={null}>
+              <Outcomes />
+            </Boundary>
             <Section
               title="Recent saves"
               right={<Tap testID="home-see-all" onPress={() => router.push("/library")}><Text style={styles.link}>See all</Text></Tap>}
@@ -78,6 +84,16 @@ export default function Home() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Outcomes() {
+  const outcomes = useOwnedQuery(actionsApi.recentOutcomes, { limit: 5 });
+  if (!outcomes || outcomes.length === 0) return null;
+  return (
+    <Section title="Completed outcomes">
+      {outcomes.map((r) => <OutcomeRow key={r._id} row={r} />)}
+    </Section>
   );
 }
 
