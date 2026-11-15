@@ -132,7 +132,7 @@ export default function Capture() {
         </Tap>
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        <DisplayTitle>Save something</DisplayTitle>
+        <DisplayTitle highlight="something">Save something</DisplayTitle>
         <View style={styles.segment}>
           {MODES.map((m) => (
             <Tap key={m.key} testID={`capture-mode-${m.key}`} accessibilityRole="tab" accessibilityLabel={m.label} accessibilityState={{ selected: mode === m.key }} onPress={() => switchMode(m.key)} style={[styles.segmentItem, { backgroundColor: pastelFor(m.tint) }, mode === m.key && styles.segmentActive]}>
