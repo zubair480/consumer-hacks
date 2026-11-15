@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
 import Animated, { FadeIn, FadeInRight, useReducedMotion } from "react-native-reanimated";
 import { api } from "../../convex/_generated/api";
@@ -16,11 +16,24 @@ export function OnboardingSheet({ visible }: { visible: boolean }) {
   const [name, setName] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
   const [closed, setClosed] = useState(false);
+  const [shield, setShield] = useState(false);
+  const done = useRef(false);
+
+  useEffect(() => {
+    if (!shield) return;
+    const timer = setTimeout(() => setShield(false), 400);
+    return () => clearTimeout(timer);
+  }, [shield]);
 
   const finish = (args: { name?: string; interests?: string[] }) => {
+    if (done.current) return;
+    done.current = true;
     setClosed(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    upsert(args).catch(() => {});
+    setShield(true);
+    setTimeout(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      upsert(args).catch(() => {});
+    }, 0);
   };
 
   const toggle = (key: string) => {
@@ -29,13 +42,15 @@ export function OnboardingSheet({ visible }: { visible: boolean }) {
   };
 
   return (
-    <Modal visible={visible && !closed} transparent animationType="slide" onRequestClose={() => finish({})} statusBarTranslucent>
-      <View style={styles.scrim}>
+    <>
+    {shield ? <View testID="onboarding-shield" pointerEvents="auto" onStartShouldSetResponder={() => true} style={StyleSheet.absoluteFill} /> : null}
+    <Modal visible={visible && !closed} transparent animationType={closed ? "none" : "slide"} onRequestClose={() => finish({})} statusBarTranslucent>
+      <View style={styles.scrim} pointerEvents="auto" onStartShouldSetResponder={() => true}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View style={styles.sheet} testID="onboarding-sheet">
             <View style={styles.top}>
               <InkPill label={`Step ${step} of 2`} />
-              <Pressable testID="onboarding-skip" accessibilityRole="button" accessibilityLabel="Skip" hitSlop={8} onPress={() => finish(step === 2 && name.trim() ? { name } : {})} style={styles.skip}>
+              <Pressable testID="onboarding-skip" accessibilityRole="button" accessibilityLabel="Skip" hitSlop={12} unstable_pressDelay={0} onPress={() => finish(step === 2 && name.trim() ? { name } : {})} style={styles.skip}>
                 <Text style={styles.skipText}>Skip</Text>
               </Pressable>
             </View>
@@ -78,6 +93,7 @@ export function OnboardingSheet({ visible }: { visible: boolean }) {
         </KeyboardAvoidingView>
       </View>
     </Modal>
+    </>
   );
 }
 
