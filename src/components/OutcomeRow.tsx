@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import type { ResultRow } from "./actionsApi";
+import type { ResultRow } from "./api";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
 import { timeAgo } from "./typeMeta";

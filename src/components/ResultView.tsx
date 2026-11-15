@@ -1,10 +1,26 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Linking, StyleSheet, Text, View } from "react-native";
-import type { ActionResultDocument, ResultSection } from "../shared/contracts";
+import * as Haptics from "expo-haptics";
+import * as WebBrowser from "expo-web-browser";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { useOwnedMutation } from "../identity/OwnerProvider";
+import type { ActionResultDocument, FactEvidence, RequirementStatus, ResultSection } from "../shared/contracts";
 import { Tap } from "./Pressable";
 import { colors, radius, space, type } from "./tokens";
 
-export function ResultView({ doc }: { doc: ActionResultDocument }) {
+const open = (url: string) => WebBrowser.openBrowserAsync(url).catch(() => {});
+
+type Toggle = (sectionIndex: number, itemIndex: number, checked: boolean) => void;
+
+export function ResultView({ doc, resultId }: { doc: ActionResultDocument; resultId?: Id<"actionResults"> }) {
+  const setChecklistItem = useOwnedMutation(api.items.setChecklistItem);
+  const toggle: Toggle = (sectionIndex, itemIndex, checked) => {
+    if (!resultId) return;
+    Haptics.selectionAsync().catch(() => {});
+    setChecklistItem({ resultId, sectionIndex, itemIndex, checked }).catch(() => {});
+  };
   return (
     <View style={styles.wrap} testID="result-view">
       <Text style={[type.body, styles.summary]}>{doc.summary}</Text>
@@ -12,19 +28,24 @@ export function ResultView({ doc }: { doc: ActionResultDocument }) {
         <View style={styles.warn} testID="result-warnings">
           {doc.warnings.map((w, i) => (
             <View key={i} style={styles.row}>
-              <Ionicons name="warning" size={14} color={colors.warning} />
+              <Ionicons name="warning" size={15} color={colors.warning} />
               <Text style={[type.caption, { color: colors.warning, flex: 1 }]}>{w}</Text>
             </View>
           ))}
         </View>
       ) : null}
-      {doc.sections.map((s, i) => <SectionBlock key={i} section={s} index={i} />)}
+      {doc.sections.map((s, i) => (
+        <View key={i} style={styles.card} testID={`result-section-${i}`}>
+          {s.heading ? <Text style={type.heading}>{s.heading}</Text> : null}
+          <Body section={s} index={i} toggle={toggle} />
+        </View>
+      ))}
       {doc.sources.length > 0 ? (
-        <View style={styles.card}>
+        <View style={styles.card} testID="result-sources">
           <Text style={type.label}>Sources</Text>
           {doc.sources.map((src, i) => (
-            <Tap key={i} testID={`result-source-${i}`} disabled={!src.url} onPress={() => src.url && Linking.openURL(src.url)} style={styles.row}>
-              <Ionicons name={src.url ? "link" : "document-text-outline"} size={14} color={colors.accent} />
+            <Tap key={i} testID={`result-source-${i}`} disabled={!src.url} onPress={() => src.url && open(src.url)} style={styles.row}>
+              <Ionicons name={src.url ? "link" : "document-text-outline"} size={14} color={src.url ? colors.accent : colors.textMuted} />
               <Text style={[type.caption, { flex: 1, color: src.url ? colors.accent : colors.textMuted }]} numberOfLines={1}>{src.label}</Text>
             </Tap>
           ))}
@@ -34,24 +55,43 @@ export function ResultView({ doc }: { doc: ActionResultDocument }) {
   );
 }
 
-function SectionBlock({ section, index }: { section: ResultSection; index: number }) {
+const STATUS: Record<RequirementStatus, { label: string; color: string }> = {
+  met: { label: "Met", color: colors.success },
+  unmet: { label: "Not met", color: colors.danger },
+  unknown: { label: "Unknown", color: colors.textMuted },
+};
+
+function StatusTag({ status }: { status?: RequirementStatus }) {
+  if (!status) return null;
+  const s = STATUS[status];
+  return <Text style={[styles.tag, { color: s.color, backgroundColor: s.color + "1F" }]}>{s.label}</Text>;
+}
+
+function Evidence({ evidence }: { evidence?: FactEvidence }) {
+  if (!evidence?.quote) return null;
+  return <Text style={styles.evidence}>“{evidence.quote}”</Text>;
+}
+
+function CheckRow({ testID, checked, onToggle, children }: { testID: string; checked: boolean; onToggle: (v: boolean) => void; children: React.ReactNode }) {
+  const [local, setLocal] = useState<boolean | null>(null);
+  const value = local ?? checked;
   return (
-    <View style={styles.card} testID={`result-section-${index}`}>
-      {section.heading ? <Text style={type.heading}>{section.heading}</Text> : null}
-      <Body section={section} />
-    </View>
+    <Tap testID={testID} accessibilityRole="checkbox" accessibilityState={{ checked: value }} haptic="none" onPress={() => { setLocal(!value); onToggle(!value); }} style={styles.check}>
+      <Ionicons name={value ? "checkmark-circle" : "ellipse-outline"} size={22} color={value ? colors.success : colors.textFaint} />
+      <View style={{ flex: 1, gap: 3 }}>{children}</View>
+    </Tap>
   );
 }
 
-function Body({ section }: { section: ResultSection }) {
+function Body({ section, index, toggle }: { section: ResultSection; index: number; toggle: Toggle }) {
   switch (section.kind) {
     case "text":
-      return <Text style={type.body}>{section.body}</Text>;
+      return <Text style={type.body} selectable>{section.body}</Text>;
     case "list":
       return (
         <>
           {section.items.map((it, i) => (
-            <View key={i} style={styles.row}><View style={styles.bullet} /><Text style={[type.body, { flex: 1 }]}>{it}</Text></View>
+            <View key={i} style={styles.bulletRow}><View style={styles.bullet} /><Text style={[type.body, { flex: 1 }]}>{it}</Text></View>
           ))}
         </>
       );
@@ -59,14 +99,14 @@ function Body({ section }: { section: ResultSection }) {
       return (
         <>
           {section.items.map((it, i) => (
-            <View key={i} style={styles.check}>
-              <Ionicons name={it.done ? "checkmark-circle" : "ellipse-outline"} size={20} color={it.done ? colors.success : colors.textFaint} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={type.body}>{it.label}</Text>
-                {it.detail ? <Text style={type.caption}>{it.detail}</Text> : null}
-                {it.evidence ? <Text style={styles.evidence}>“{it.evidence.quote}”</Text> : null}
+            <CheckRow key={i} testID={`checklist-${index}-${i}`} checked={it.checked ?? it.done ?? false} onToggle={(v) => toggle(index, i, v)}>
+              <View style={styles.row}>
+                <Text style={[type.body, { flex: 1 }]}>{it.label}</Text>
+                <StatusTag status={it.status} />
               </View>
-            </View>
+              {it.detail ? <Text style={type.caption}>{it.detail}</Text> : null}
+              <Evidence evidence={it.evidence} />
+            </CheckRow>
           ))}
         </>
       );
@@ -74,14 +114,12 @@ function Body({ section }: { section: ResultSection }) {
       return (
         <>
           {section.steps.map((st, i) => (
-            <View key={i} style={styles.check}>
-              <View style={styles.stepNum}><Text style={styles.stepNumText}>{i + 1}</Text></View>
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[type.body, { fontWeight: "700" }]}>{st.title}</Text>
-                {st.detail ? <Text style={type.caption}>{st.detail}</Text> : null}
-                {st.code ? <Text style={styles.code}>{st.code}</Text> : null}
-              </View>
-            </View>
+            <CheckRow key={i} testID={`step-${index}-${i}`} checked={st.checked ?? false} onToggle={(v) => toggle(index, i, v)}>
+              <Text style={[type.body, { fontWeight: "700" }]}>{i + 1}. {st.title}</Text>
+              {st.detail ? <Text style={type.caption}>{st.detail}</Text> : null}
+              {st.code ? <Text style={styles.code} selectable>{st.code}</Text> : null}
+              <Evidence evidence={st.evidence} />
+            </CheckRow>
           ))}
         </>
       );
@@ -91,9 +129,10 @@ function Body({ section }: { section: ResultSection }) {
           {section.rows.map((r, i) => (
             <View key={i} style={styles.kv}>
               <Text style={[type.caption, styles.kvLabel]}>{r.label}</Text>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={type.body}>{r.value}</Text>
-                {r.evidence ? <Text style={styles.evidence}>“{r.evidence.quote}”</Text> : null}
+              <View style={{ flex: 1, gap: 3 }}>
+                <View style={styles.row}><Text style={[type.body, { flex: 1 }]}>{r.value}</Text><StatusTag status={r.status} /></View>
+                {r.detail ? <Text style={type.caption}>{r.detail}</Text> : null}
+                <Evidence evidence={r.evidence} />
               </View>
             </View>
           ))}
@@ -103,7 +142,7 @@ function Body({ section }: { section: ResultSection }) {
       return (
         <>
           {section.links.map((l, i) => (
-            <Tap key={i} testID={`result-link-${i}`} onPress={() => Linking.openURL(l.url)} style={styles.row}>
+            <Tap key={i} testID={`result-link-${index}-${i}`} onPress={() => open(l.url)} style={styles.row}>
               <Ionicons name="open-outline" size={16} color={colors.accent} />
               <Text style={[type.body, { color: colors.accent, flex: 1 }]} numberOfLines={1}>{l.label}</Text>
             </Tap>
@@ -124,6 +163,8 @@ function Body({ section }: { section: ResultSection }) {
           ))}
         </View>
       );
+    default:
+      return null;
   }
 }
 
@@ -133,11 +174,11 @@ const styles = StyleSheet.create({
   card: { gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   warn: { gap: 6, padding: space.md, borderRadius: radius.md, backgroundColor: colors.warning + "12", borderWidth: 1, borderColor: colors.warning + "44" },
   row: { flexDirection: "row", alignItems: "center", gap: 8 },
-  bullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent, alignSelf: "flex-start", marginTop: 8 },
+  bulletRow: { flexDirection: "row", gap: 10 },
+  bullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent, marginTop: 8 },
   check: { flexDirection: "row", gap: space.md, alignItems: "flex-start" },
+  tag: { fontSize: 11, fontWeight: "800", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, overflow: "hidden" },
   evidence: { fontSize: 12, fontStyle: "italic", color: colors.textFaint },
-  stepNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.accent + "33", alignItems: "center", justifyContent: "center" },
-  stepNumText: { color: colors.accent, fontWeight: "800", fontSize: 12 },
   code: { fontFamily: "Menlo", fontSize: 12, color: "#E2E8F0", backgroundColor: "#0A0A0F", padding: space.md, borderRadius: radius.sm, overflow: "hidden" },
   kv: { flexDirection: "row", gap: space.md },
   kvLabel: { width: 110, fontWeight: "700" },

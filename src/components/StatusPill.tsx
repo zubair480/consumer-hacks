@@ -2,19 +2,20 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import type { ExtractionStatus } from "../shared/contracts";
 import { colors, radius } from "./tokens";
 
+const understanding = { label: "Understanding…", color: colors.info, spin: true };
 const config: Record<ExtractionStatus, { label: string; color: string; spin?: boolean }> = {
-  pending: { label: "Queued", color: colors.textMuted, spin: true },
-  extracting: { label: "Reading", color: colors.info, spin: true },
-  analyzing: { label: "Understanding", color: colors.accent, spin: true },
+  pending: understanding,
+  extracting: understanding,
+  analyzing: understanding,
   ready: { label: "Ready", color: colors.success },
-  needs_input: { label: "Needs input", color: colors.warning },
+  needs_input: { label: "Needs info", color: colors.warning },
   failed: { label: "Failed", color: colors.danger },
 };
 
 export function StatusPill({ status }: { status: ExtractionStatus }) {
-  const c = config[status] ?? config.pending;
+  const c = config[status] ?? understanding;
   return (
-    <View style={[styles.pill, { borderColor: c.color + "55", backgroundColor: c.color + "1A" }]}>
+    <View style={[styles.pill, { borderColor: c.color + "55", backgroundColor: c.color + "1A" }]} testID={`status-${status}`}>
       {c.spin ? <ActivityIndicator size="small" color={c.color} style={styles.spin} /> : <View style={[styles.dot, { backgroundColor: c.color }]} />}
       <Text style={[styles.text, { color: c.color }]}>{c.label}</Text>
     </View>
