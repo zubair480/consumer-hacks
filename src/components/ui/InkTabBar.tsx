@@ -118,13 +118,7 @@ export function InkTabBar({ state, descriptors, navigation, saves, latestResultA
     else rise.set(withDelay(150, withSpring(0, BOUNCY)));
   }, [reduce, rise, fade]);
 
-  useEffect(() => {
-    if (active.name === "activity") setSeenAt(Date.now());
-  }, [active.name, latestResultAt]);
-
-  useEffect(() => {
-    setFan(false);
-  }, [active.key, captureOpen]);
+  if (active.name === "activity" && latestResultAt && latestResultAt > seenAt) setSeenAt(latestResultAt);
 
   useEffect(() => {
     scrim.set(withTiming(fan ? 1 : 0, { duration: 200 }));
@@ -158,6 +152,7 @@ export function InkTabBar({ state, descriptors, navigation, saves, latestResultA
   const scrimStyle = useAnimatedStyle(() => ({ opacity: scrim.value }));
 
   const press = (route: Route) => {
+    setFan(false);
     const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
     if (route.key !== active.key && !event.defaultPrevented) navigation.navigate(route.name, route.params);
   };
