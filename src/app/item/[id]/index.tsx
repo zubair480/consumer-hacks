@@ -17,6 +17,7 @@ import { errorMessage, pickImages, uploadImage } from "../../../components/media
 import { Tap } from "../../../components/Pressable";
 import { ScreenHeader } from "../../../components/ScreenHeader";
 import { Section } from "../../../components/Section";
+import { SimilarSaves } from "../../../components/SimilarSaves";
 import { Skeleton } from "../../../components/States";
 import { StatusPill } from "../../../components/StatusPill";
 import { colors, radius, space, type } from "../../../components/tokens";
@@ -176,6 +177,8 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
             <PreviousResults itemId={itemId} type={item.primaryType} />
           </Boundary>
         ) : null}
+
+        {item.extractionStatus === "ready" ? <SimilarSaves itemId={itemId} /> : null}
 
         <Section title="Source">
           {item.sourceUrl ? (
