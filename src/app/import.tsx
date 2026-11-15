@@ -5,7 +5,7 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState, type ComponentProps } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
 import { GitHubStarsRow } from "../components/GitHubStarsRow";
@@ -165,7 +165,9 @@ function SourceRow({
 }) {
   const id = `import-source-${source.platform}`;
   const status = source.comingSoon
-    ? "Share a post → Zapy Shortcut. Set it up once from Profile → Share to Zapy."
+    ? Platform.OS === "android"
+      ? "Share a post → Send to… (HTTP Shortcuts). Set it up once from Profile → Share to Zapy."
+      : "Share a post → Zapy Shortcut. Set it up once from Profile → Share to Zapy."
     : source.connected
       ? [source.username ? `@${source.username}` : "Connected", source.lastSyncedAt ? `synced ${ago(source.lastSyncedAt)}` : null].filter(Boolean).join(" · ")
       : source.configured
