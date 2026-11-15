@@ -77,6 +77,16 @@ export default defineSchema({
     .index("by_itemId", ["itemId"])
     .index("by_userId", ["userId"]),
 
+  itemEmbeddings: defineTable({
+    userId: v.id("users"),
+    itemId: v.id("savedItems"),
+    embedding: v.array(v.float64()),
+    model: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_itemId", ["itemId"])
+    .vectorIndex("by_embedding", { vectorField: "embedding", dimensions: 1536, filterFields: ["userId"] }),
+
   actionSuggestions: defineTable({
     userId: v.id("users"),
     itemId: v.id("savedItems"),
