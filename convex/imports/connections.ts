@@ -3,6 +3,7 @@ import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import { action, internalAction, internalMutation, internalQuery, mutation, query } from "../_generated/server";
 import { getUser, requireUser } from "../lib/auth";
+import { requireSyncSlot } from "../lib/rateLimits";
 import { vOwnerId } from "../lib/validators";
 import { logImport, type ImportResult } from "./posts";
 import { vImportPlatform } from "./schema";
@@ -242,6 +243,7 @@ export const syncX = action({
     if (!connection) throw new ConvexError("Connect X first.");
     const creds = xCredentials();
     if (!creds) throw new ConvexError("X import isn't set up on the server yet (X_CLIENT_ID is missing).");
+    await requireSyncSlot(ctx, connection.userId, "x");
 
     const total: ImportResult = { created: 0, duplicates: 0, invalid: 0 };
     let error: string | undefined;

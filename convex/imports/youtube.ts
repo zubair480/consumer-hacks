@@ -3,6 +3,7 @@ import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import { action, internalAction, internalMutation, internalQuery, query } from "../_generated/server";
 import { getUser, requireUser } from "../lib/auth";
+import { requireSyncSlot } from "../lib/rateLimits";
 import { vOwnerId } from "../lib/validators";
 import { logImport, type ImportResult } from "./posts";
 import { generatePkce } from "./xClient";
@@ -214,6 +215,7 @@ export const sync = action({
     if (!connection) throw new ConvexError("Connect YouTube first.");
     const creds = googleCredentials();
     if (!creds) throw new ConvexError(NOT_CONFIGURED);
+    await requireSyncSlot(ctx, connection.userId, "youtube");
 
     const total: ImportResult = { created: 0, duplicates: 0, invalid: 0 };
     let error: string | undefined;

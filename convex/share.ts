@@ -5,6 +5,7 @@ import { httpAction, internalMutation, mutation, type MutationCtx } from "./_gen
 import { detectSourcePlatform, LIMITS } from "../src/shared/contracts";
 import { logEvent } from "./activity";
 import { requireUser } from "./lib/auth";
+import { rateLimiter } from "./lib/rateLimits";
 import { vOwnerId } from "./lib/validators";
 
 // OWNER: Share to Zapy (CONS-22). POST /save lets an iOS Shortcut save anything from the
@@ -12,8 +13,6 @@ import { vOwnerId } from "./lib/validators";
 // and go through internal.ingest.run, so links, text, and images analyze the same way.
 
 export const MAX_SHARE_IMAGE_BYTES = 8 * 1024 * 1024;
-export const SHARE_RATE_LIMIT = 30;
-export const SHARE_RATE_WINDOW_MS = 60_000;
 
 function newToken(): string {
   const bytes = new Uint8Array(32);
@@ -61,20 +60,8 @@ export const authorize = internalMutation({
       .withIndex("by_shareToken", (q) => q.eq("shareToken", token))
       .unique();
     if (!user) return { status: "unauthorized" as const };
-    const now = Date.now();
-    const bucket = await ctx.db
-      .query("shareRateLimits")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .unique();
-    if (!bucket) {
-      await ctx.db.insert("shareRateLimits", { userId: user._id, windowStart: now, count: 1 });
-    } else if (now - bucket.windowStart >= SHARE_RATE_WINDOW_MS) {
-      await ctx.db.patch("shareRateLimits", bucket._id, { windowStart: now, count: 1 });
-    } else if (bucket.count >= SHARE_RATE_LIMIT) {
-      return { status: "rate_limited" as const };
-    } else {
-      await ctx.db.patch("shareRateLimits", bucket._id, { count: bucket.count + 1 });
-    }
+    const { ok } = await rateLimiter.limit(ctx, "shareSave", { key: user._id });
+    if (!ok) return { status: "rate_limited" as const };
     return { status: "ok" as const, userId: user._id };
   },
 });

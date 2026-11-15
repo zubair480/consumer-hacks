@@ -3,6 +3,7 @@ import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import { action, internalMutation, internalQuery, query } from "../_generated/server";
 import { getUser, requireUser } from "../lib/auth";
+import { requireSyncSlot } from "../lib/rateLimits";
 import { vOwnerId } from "../lib/validators";
 import { fetchStarredPage, GitHubApiError, normalizeUsername } from "./githubClient";
 import { logImport, type ImportResult } from "./posts";
@@ -87,6 +88,7 @@ export const sync = action({
     if (!raw) throw new ConvexError("Enter your GitHub username first.");
     const username = normalizeUsername(raw);
     if (!username) throw new ConvexError(`"${raw.trim()}" isn't a valid GitHub username.`);
+    await requireSyncSlot(ctx, account.userId, "github");
 
     const total: ImportResult = { created: 0, duplicates: 0, invalid: 0 };
     let error: string | undefined;

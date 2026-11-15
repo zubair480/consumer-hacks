@@ -35,6 +35,8 @@ import type * as lib_executors_scholarship from "../lib/executors/scholarship.js
 import type * as lib_executors_sources from "../lib/executors/sources.js";
 import type * as lib_executors_types from "../lib/executors/types.js";
 import type * as lib_llm from "../lib/llm.js";
+import type * as lib_pools from "../lib/pools.js";
+import type * as lib_rateLimits from "../lib/rateLimits.js";
 import type * as lib_sources from "../lib/sources.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as media from "../media.js";
@@ -93,6 +95,8 @@ declare const fullApi: ApiFromModules<{
   "lib/executors/sources": typeof lib_executors_sources;
   "lib/executors/types": typeof lib_executors_types;
   "lib/llm": typeof lib_llm;
+  "lib/pools": typeof lib_pools;
+  "lib/rateLimits": typeof lib_rateLimits;
   "lib/sources": typeof lib_sources;
   "lib/validators": typeof lib_validators;
   media: typeof media;
@@ -144,4 +148,7 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+  backgroundPool: import("@convex-dev/workpool/_generated/component.js").ComponentApi<"backgroundPool">;
+};
