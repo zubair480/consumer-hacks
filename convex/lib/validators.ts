@@ -6,6 +6,7 @@ import {
   CONTENT_TYPES,
   EXECUTION_STATUSES,
   EXTRACTION_STATUSES,
+  REQUIREMENT_STATUSES,
   SOURCE_KINDS,
   SOURCE_PLATFORMS,
 } from "../../src/shared/contracts";
@@ -25,6 +26,29 @@ export const vActionType = literals(ACTION_TYPES);
 export const vExecutionStatus = literals(EXECUTION_STATUSES);
 export const vActivityEventType = literals(ACTIVITY_EVENT_TYPES);
 export const vCollectionKind = literals(COLLECTION_KINDS);
+export const vRequirementStatus = literals(REQUIREMENT_STATUSES);
+
+/** Optional key-fact fields shared by savedItems and contentAnalysis (contracts KeyFacts). */
+export const keyFactFields = {
+  sourceAccessible: v.optional(v.boolean()),
+  missingInfo: v.optional(v.array(v.string())),
+  deadline: v.optional(v.string()),
+  location: v.optional(v.string()),
+  price: v.optional(v.string()),
+  organization: v.optional(v.string()),
+};
+
+/** userPreferences profile fields (contracts UserProfile). */
+export const userProfileFields = {
+  name: v.optional(v.string()),
+  educationLevel: v.optional(v.string()),
+  fieldOfStudy: v.optional(v.string()),
+  country: v.optional(v.string()),
+  citizenship: v.optional(v.string()),
+  gpa: v.optional(v.number()),
+  city: v.optional(v.string()),
+  interests: v.optional(v.array(v.string())),
+};
 
 export const vOwnerId = v.string();
 
@@ -54,18 +78,41 @@ export const vResultSection = v.union(
     kind: v.literal("checklist"),
     heading,
     items: v.array(
-      v.object({ label: v.string(), detail: v.optional(v.string()), done: v.boolean(), evidence: v.optional(vFactEvidence) }),
+      v.object({
+        label: v.string(),
+        detail: v.optional(v.string()),
+        status: v.optional(vRequirementStatus),
+        checked: v.optional(v.boolean()),
+        done: v.optional(v.boolean()),
+        evidence: v.optional(vFactEvidence),
+      }),
     ),
   }),
   v.object({
     kind: v.literal("steps"),
     heading,
-    steps: v.array(v.object({ title: v.string(), detail: v.optional(v.string()), code: v.optional(v.string()) })),
+    steps: v.array(
+      v.object({
+        title: v.string(),
+        detail: v.optional(v.string()),
+        code: v.optional(v.string()),
+        checked: v.optional(v.boolean()),
+        evidence: v.optional(vFactEvidence),
+      }),
+    ),
   }),
   v.object({
     kind: v.literal("key_value"),
     heading,
-    rows: v.array(v.object({ label: v.string(), value: v.string(), evidence: v.optional(vFactEvidence) })),
+    rows: v.array(
+      v.object({
+        label: v.string(),
+        value: v.string(),
+        detail: v.optional(v.string()),
+        status: v.optional(vRequirementStatus),
+        evidence: v.optional(vFactEvidence),
+      }),
+    ),
   }),
   v.object({ kind: v.literal("list"), heading, items: v.array(v.string()) }),
   v.object({ kind: v.literal("links"), heading, links: v.array(v.object({ label: v.string(), url: v.string() })) }),
@@ -86,4 +133,5 @@ export const vActionResultDocument = v.object({
   sources: v.array(v.object({ label: v.string(), url: v.optional(v.string()) })),
   shareText: v.string(),
   warnings: v.array(v.string()),
+  markdown: v.optional(v.string()),
 });

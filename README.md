@@ -33,6 +33,8 @@ Schema changes by other threads: new optional fields or new indexes only, coordi
 ## Integration points
 
 - **Ingestion (B+C):** `items.create` and `items.retry` schedule `internal.ingest.run({ itemId })`. Read with `internal.items.getForProcessing`, write status and understood fields with `internal.items.setExtraction` (keeps Library search text in sync), store the `ContentAnalysis` in `contentAnalysis`, then hand off to D+E to create `actionSuggestions`.
+- **Checklist toggles:** `api.items.setChecklistItem({ resultId, sectionIndex, itemIndex, checked })` (Lead, in `convex/items.ts`) persists `checked` on checklist items and steps; every other `actionResults` write belongs to D+E.
+- **Key facts:** `sourceAccessible`, `missingInfo`, `deadline` (YYYY-MM-DD), `location`, `price`, `organization` exist on both `contentAnalysis` and `savedItems`; B+C set the item copy through `internal.items.setExtraction`.
 - **Actions (D+E):** `actionsForType(primaryType)` from contracts gives the three actions. Executors return an `ActionResultDocument` stored in `actionResults.result`; status lives on `actionExecutions`.
 - **UI (A):** `SavedItemView` is what `items.list/get/search` return. Build screens from `src/components/ui` and `src/theme` (dark-first). Put a `testID` on every button and input a test touches.
 - **Activity (F):** `items.ts` already writes `item_saved`, `item_updated`, `item_deleted` events; F owns reading them and the other event types.

@@ -173,8 +173,24 @@ export type ExtractedFact = {
   confidence?: number;
 };
 
+/**
+ * Key facts promoted to top-level fields on contentAnalysis and savedItems so
+ * the UI can show them without parsing facts[]. All optional; set only when the
+ * source states them (never inferred). deadline is an ISO date "YYYY-MM-DD".
+ */
+export type KeyFacts = {
+  /** false when the source could not be fetched/read (login wall, 404, blocked). */
+  sourceAccessible?: boolean;
+  /** Things the user should supply because the source didn't say (e.g. "deadline", "eligibility"). */
+  missingInfo?: string[];
+  deadline?: string;
+  location?: string;
+  price?: string;
+  organization?: string;
+};
+
 /** Shape of a contentAnalysis row's payload (written by B+C). */
-export type ContentAnalysis = {
+export type ContentAnalysis = KeyFacts & {
   contentTypes: ContentType[];
   primaryType: ContentType;
   title: string;
@@ -315,15 +331,33 @@ export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
 /* Action result document                                              */
 /* ------------------------------------------------------------------ */
 
+/** Eligibility-style verdict for a requirement against the user's profile. */
+export const REQUIREMENT_STATUSES = ["met", "unmet", "unknown"] as const;
+export type RequirementStatus = (typeof REQUIREMENT_STATUSES)[number];
+
+/**
+ * One checklist row. `checked` is the user's toggle state, persisted with
+ * actionResults.setChecklistItem. `done` is kept for compatibility; readers
+ * should use `checked ?? done ?? false`.
+ */
+export type ChecklistItem = {
+  label: string;
+  detail?: string;
+  status?: RequirementStatus;
+  checked?: boolean;
+  done?: boolean;
+  evidence?: FactEvidence;
+};
+
 /**
  * A result is a list of typed sections so every executor renders through
  * one generic Action Results screen (A) and copies/shares as plain text.
  */
 export type ResultSection =
   | { kind: "text"; heading?: string; body: string }
-  | { kind: "checklist"; heading?: string; items: { label: string; detail?: string; done: boolean; evidence?: FactEvidence }[] }
-  | { kind: "steps"; heading?: string; steps: { title: string; detail?: string; code?: string }[] }
-  | { kind: "key_value"; heading?: string; rows: { label: string; value: string; evidence?: FactEvidence }[] }
+  | { kind: "checklist"; heading?: string; items: ChecklistItem[] }
+  | { kind: "steps"; heading?: string; steps: { title: string; detail?: string; code?: string; checked?: boolean; evidence?: FactEvidence }[] }
+  | { kind: "key_value"; heading?: string; rows: { label: string; value: string; detail?: string; status?: RequirementStatus; evidence?: FactEvidence }[] }
   | { kind: "list"; heading?: string; items: string[] }
   | { kind: "links"; heading?: string; links: { label: string; url: string }[] }
   | { kind: "code"; heading?: string; language?: string; code: string }
@@ -350,6 +384,8 @@ export type ActionResultDocument = {
   shareText: string;
   /** Things the user must know: missing data, unverified claims. */
   warnings: string[];
+  /** Optional Markdown rendition for Copy/Share; fall back to shareText. */
+  markdown?: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -368,6 +404,18 @@ export const ACTIVITY_EVENT_TYPES = [
   "collection_updated",
 ] as const;
 export type ActivityEventType = (typeof ACTIVITY_EVENT_TYPES)[number];
+
+/** userPreferences profile used by eligibility checks and planning. All optional. */
+export type UserProfile = {
+  name?: string;
+  educationLevel?: string;
+  fieldOfStudy?: string;
+  country?: string;
+  citizenship?: string;
+  gpa?: number;
+  city?: string;
+  interests?: string[];
+};
 
 export const COLLECTION_KINDS = ["custom", "moodboard", "reading_list"] as const;
 export type CollectionKind = (typeof COLLECTION_KINDS)[number];
@@ -390,6 +438,12 @@ export type SavedItemView = {
   summary?: string;
   contentTypes: ContentType[];
   primaryType?: ContentType;
+  sourceAccessible?: boolean;
+  missingInfo?: string[];
+  deadline?: string;
+  location?: string;
+  price?: string;
+  organization?: string;
   extractionStatus: ExtractionStatus;
   extractionError?: string;
   createdAt: number;
