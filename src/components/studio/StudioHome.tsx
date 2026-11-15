@@ -17,7 +17,7 @@ import { SourceRow } from "./SourceRow";
 export default function StudioHome() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <HoloBand height={260} />
+      <HoloBand height={140} />
       <ScrollView contentContainerStyle={styles.content} testID="studio-home-screen">
         <View style={styles.header}>
           <InkPill label="Create" />

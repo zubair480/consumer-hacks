@@ -296,7 +296,7 @@ export function HeroTypeCard({
       </View>
       <View style={{ width: "60%", gap: 10 }}>
         {typeLabel ? <Text style={t(fonts.bold, 11, colors.text, { letterSpacing: 0.8, textTransform: "uppercase", opacity: 0.7 })}>{typeLabel}</Text> : null}
-        <Text style={t(fonts.extraBold, 26, colors.text, { lineHeight: 30 })} numberOfLines={fullBleed ? 3 : 2}>
+        <Text style={t(fonts.extraBold, 26, colors.text, { lineHeight: 30 })} numberOfLines={2}>
           {title}
         </Text>
         <AvatarStack labels={stack} extra={facts} />
@@ -308,7 +308,7 @@ export function HeroTypeCard({
         {age && fullBleed ? <Text style={t(fonts.medium, 12, "rgba(17,17,17,0.6)")}>{age}</Text> : null}
       </View>
       {actionLabel ? (
-        <View style={{ marginTop: "auto", paddingTop: 16, marginHorizontal: -8 }}>
+        <View style={{ position: "absolute", left: 12, right: 12, bottom: 12 }}>
         <ScalePressable
           testID={runTestID}
           accessibilityRole="button"
@@ -329,7 +329,7 @@ export function HeroTypeCard({
       ) : null}
     </>
   );
-  const style: StyleProp<ViewStyle> = { width, minHeight: fullBleed ? undefined : height, backgroundColor: pastelFor(type), borderRadius: 28, padding: 20, paddingBottom: actionLabel ? 12 : 20, overflow: "hidden" };
+  const style: StyleProp<ViewStyle> = { width, minHeight: fullBleed ? undefined : height, backgroundColor: pastelFor(type), borderRadius: 28, padding: 20, paddingBottom: actionLabel ? 52 + 16 + 12 : 20, overflow: "hidden" };
   if (!onPress) return <View testID={testID} style={style}>{content}</View>;
   return (
     <ScalePressable testID={testID} accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={style}>

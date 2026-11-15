@@ -217,7 +217,7 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
           </View>
           <Statement title={itemTitle(item)} />
           <AvatarStack labels={[domain || item.sourcePlatform, m.label, itemTitle(item)]} />
-          {item.summary ? <Text style={styles.body} testID="item-summary">{item.summary}</Text> : null}
+          {item.summary ? <Text style={styles.body} numberOfLines={3} testID="item-summary">{item.summary}</Text> : null}
           <Text style={styles.meta} numberOfLines={1}>{domain || (item.sourcePlatform !== "manual" ? item.sourcePlatform : "Saved")} · {timeAgo(item.createdAt)}</Text>
         </HeaderCard>
       <View style={styles.content}>
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   keyFact: { width: "48%", flexGrow: 1, minHeight: 72, gap: 4, padding: 14, borderRadius: 18 },
   iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: palette.grey, alignItems: "center", justifyContent: "center" },
-  image: { width: "100%", aspectRatio: 4 / 3, borderRadius: 28, backgroundColor: palette.grey },
+  image: { width: "100%", height: 160, maxHeight: 160, borderRadius: 28, backgroundColor: palette.grey },
   progress: { gap: 8, padding: 20, borderRadius: 20, backgroundColor: palette.grey, overflow: "hidden" },
   attention: { gap: 12, padding: 20, borderRadius: 20, backgroundColor: palette.butter },
   row: { flexDirection: "row", gap: 8, alignItems: "center" },

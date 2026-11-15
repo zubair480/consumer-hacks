@@ -8,6 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { Field } from "../../../components/Field";
+import { fonts } from "../../../theme";
 import { Button } from "../../../components/ui";
 import { errorMessage, pickImages, uploadImage, type PickedImage } from "../../../components/media";
 import { Tap } from "../../../components/Pressable";
@@ -363,23 +364,23 @@ const styles = StyleSheet.create({
   previewWrap: { borderRadius: radius.lg, overflow: "hidden", borderWidth: 1, borderColor: colors.border },
   preview: { width: "100%", backgroundColor: colors.surface },
   change: { position: "absolute", right: space.md, bottom: space.md, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill },
-  changeLabel: { color: colors.text, fontWeight: "700", fontSize: 13 },
+  changeLabel: { color: colors.text, fontFamily: fonts.bold, fontSize: 13 },
   contextField: { minHeight: 90 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   chipOn: { borderColor: colors.text, backgroundColor: colors.surfaceRaised },
-  chipLabel: { color: colors.textMuted, fontWeight: "700", fontSize: 14 },
+  chipLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 14 },
   error: { flexDirection: "row", gap: space.sm, alignItems: "flex-start", padding: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceRaised },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.md },
   cardHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  status: { ...type.caption, fontWeight: "700", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, overflow: "hidden" },
+  status: { ...type.caption, fontFamily: fonts.bold, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, overflow: "hidden" },
   copy: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised },
-  copyLabel: { color: colors.text, fontSize: 13, fontWeight: "700" },
+  copyLabel: { color: colors.text, fontSize: 13, fontFamily: fonts.bold },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: space.xs },
   tag: { ...type.caption, color: colors.text, backgroundColor: colors.surfaceRaised, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: "hidden" },
   shot: { flexDirection: "row", gap: space.md, alignItems: "flex-start" },
-  shotNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.surfaceRaised, color: colors.text, textAlign: "center", lineHeight: 24, fontWeight: "800", fontSize: 13, overflow: "hidden" },
-  hook: { fontSize: 18, fontWeight: "700" },
+  shotNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.surfaceRaised, color: colors.text, textAlign: "center", lineHeight: 24, fontFamily: fonts.extraBold, fontSize: 13, overflow: "hidden" },
+  hook: { fontSize: 18, lineHeight: 24, fontFamily: fonts.bold },
   pending: { flexDirection: "row", alignItems: "center" },
   facts: { gap: space.xs, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space.md },
 });
