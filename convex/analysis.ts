@@ -193,6 +193,7 @@ export const save = internalMutation({
     const item = await ctx.db.get("savedItems", itemId);
     if (!item) return null;
     const previous = await ctx.db.query("contentAnalysis").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(20);
+    const renamedByUser = Boolean(item.title) && previous.length > 0 && previous.every((row) => row.title !== item.title);
     for (const row of previous) await ctx.db.delete("contentAnalysis", row._id);
     const now = Date.now();
     await ctx.db.insert("contentAnalysis", { userId: item.userId, itemId, ...analysis, createdAt: now });
@@ -200,7 +201,7 @@ export const save = internalMutation({
       itemId,
       extractionStatus,
       extractionError,
-      title: item.title ?? analysis.title,
+      title: renamedByUser ? item.title : analysis.title,
       summary: analysis.summary,
       contentTypes: analysis.contentTypes,
       primaryType: analysis.primaryType,

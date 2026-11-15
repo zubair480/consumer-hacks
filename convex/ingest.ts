@@ -67,8 +67,8 @@ export const run = internalAction({
       await ctx.runMutation(internal.analysis.save, {
         itemId,
         ...analysis,
-        extractionStatus: linkProblem ? "needs_input" : "ready",
-        extractionError: linkProblem,
+        extractionStatus: linkProblem && !item.rawText && !images.length ? "needs_input" : "ready",
+        extractionError: linkProblem && !item.rawText && !images.length ? linkProblem : undefined,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
