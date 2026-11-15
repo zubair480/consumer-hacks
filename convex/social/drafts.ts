@@ -125,6 +125,20 @@ export const listForSource = query({
   },
 });
 
+/** The user's drafts across all sources, newest updatedAt first (max 50). */
+export const listRecent = query({
+  args: { ownerId: vOwnerId, limit: v.optional(v.number()) },
+  handler: async (ctx, { ownerId, limit }): Promise<SocialDraftView[]> => {
+    const user = await requireUser(ctx, ownerId);
+    const drafts = await ctx.db
+      .query("socialDrafts")
+      .withIndex("by_userId_and_updatedAt", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .take(Math.max(1, Math.min(Math.floor(limit ?? 20), 50)));
+    return drafts.map(toView);
+  },
+});
+
 /** One draft with its revision history, newest first. */
 export const get = query({
   args: { ownerId: vOwnerId, draftId: v.id("socialDrafts") },
