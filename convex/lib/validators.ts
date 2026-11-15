@@ -68,6 +68,7 @@ export const vRequiredInput = v.object({
   kind: v.union(v.literal("text"), v.literal("number"), v.literal("date"), v.literal("location"), v.literal("choice")),
   required: v.boolean(),
   options: v.optional(v.array(v.string())),
+  prefillFrom: v.optional(v.string()),
 });
 
 const heading = v.optional(v.string());
