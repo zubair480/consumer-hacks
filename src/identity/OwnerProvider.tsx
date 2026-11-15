@@ -99,7 +99,7 @@ export function OwnerProvider({ children, fallback }: { children: ReactNode; fal
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 32, backgroundColor: "#0B0B10" }}>
         <Text testID="owner-error" style={{ color: "#FFFFFF", fontSize: 16, textAlign: "center" }}>
-          Could not connect to AfterScroll. Check your connection and try again.
+          Could not connect to Zapy. Check your connection and try again.
         </Text>
         <Pressable
           testID="owner-retry"
