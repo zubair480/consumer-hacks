@@ -8,16 +8,25 @@
  * @module
  */
 
-import type * as activity from "../activity.js";
+import type * as actions from "../actions.js";
 import type * as analysis from "../analysis.js";
-import type * as collections from "../collections.js";
 import type * as ingest from "../ingest.js";
 import type * as items from "../items.js";
+import type * as lib_actionCatalog from "../lib/actionCatalog.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_executors_document from "../lib/executors/document.js";
+import type * as lib_executors_generic from "../lib/executors/generic.js";
+import type * as lib_executors_github from "../lib/executors/github.js";
+import type * as lib_executors_graphic from "../lib/executors/graphic.js";
+import type * as lib_executors_index from "../lib/executors/index.js";
+import type * as lib_executors_openai from "../lib/executors/openai.js";
+import type * as lib_executors_restaurant from "../lib/executors/restaurant.js";
+import type * as lib_executors_scholarship from "../lib/executors/scholarship.js";
+import type * as lib_executors_sources from "../lib/executors/sources.js";
+import type * as lib_executors_types from "../lib/executors/types.js";
 import type * as lib_llm from "../lib/llm.js";
 import type * as lib_sources from "../lib/sources.js";
 import type * as lib_validators from "../lib/validators.js";
-import type * as preferences from "../preferences.js";
 import type * as users from "../users.js";
 
 import type {
@@ -27,16 +36,25 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  activity: typeof activity;
+  actions: typeof actions;
   analysis: typeof analysis;
-  collections: typeof collections;
   ingest: typeof ingest;
   items: typeof items;
+  "lib/actionCatalog": typeof lib_actionCatalog;
   "lib/auth": typeof lib_auth;
+  "lib/executors/document": typeof lib_executors_document;
+  "lib/executors/generic": typeof lib_executors_generic;
+  "lib/executors/github": typeof lib_executors_github;
+  "lib/executors/graphic": typeof lib_executors_graphic;
+  "lib/executors/index": typeof lib_executors_index;
+  "lib/executors/openai": typeof lib_executors_openai;
+  "lib/executors/restaurant": typeof lib_executors_restaurant;
+  "lib/executors/scholarship": typeof lib_executors_scholarship;
+  "lib/executors/sources": typeof lib_executors_sources;
+  "lib/executors/types": typeof lib_executors_types;
   "lib/llm": typeof lib_llm;
   "lib/sources": typeof lib_sources;
   "lib/validators": typeof lib_validators;
-  preferences: typeof preferences;
   users: typeof users;
 }>;
 
