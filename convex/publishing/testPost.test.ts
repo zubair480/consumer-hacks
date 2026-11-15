@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { linkedinAdapter } from "./linkedin";
 import { runTestPost, testPostText } from "./testPost";
@@ -33,7 +34,7 @@ describe("testPostText", () => {
   it("builds the exact text", () => {
     expect(testPostText("09:05:07")).toBe("Testing Zapy 09:05:07");
   });
-  it.each(["9:05:07", "24:00:00", "12:60:00", "12:00", "12:00:00 https://x.com"])("rejects %s", (t) => {
+  it.each(["9:05:07", "24:00:00", "12:60:00", "12:00", "12:00:00 https://x.com"])("rejects %s", (t: string) => {
     expect(() => testPostText(t)).toThrow();
   });
 });
