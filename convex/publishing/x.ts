@@ -107,14 +107,22 @@ async function postTweet(
     body: JSON.stringify(body),
   });
   const raw = await res.text();
-  let id: string | undefined;
+  let json: { data?: { id?: string }; title?: string; detail?: string; type?: string; errors?: unknown } = {};
   try {
-    id = (JSON.parse(raw) as { data?: { id?: string } }).data?.id;
+    json = JSON.parse(raw);
   } catch {
-    id = undefined;
+    json = {};
   }
+  const id = json.data?.id;
   if (res.status === 201 && id) return { ok: true, id };
-  console.error(`X POST /2/tweets failed: HTTP ${res.status} ${raw.slice(0, 1000)}`);
+  console.error("X POST /2/tweets failed", {
+    status: res.status,
+    title: json.title,
+    detail: json.detail,
+    type: json.type,
+    errors: json.errors,
+    body: raw.slice(0, 1000),
+  });
   if (res.status === 403 && /duplicate/i.test(raw)) return { ok: false, error: "X says this is a duplicate post" };
   if (res.status === 401 || res.status === 403) {
     return { ok: false, error: "X rejected the credentials or the app lacks Read and Write permission" };
