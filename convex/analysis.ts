@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, query } from "./_generated/server";
 import { CONTENT_TYPES, LIMITS, type ContentAnalysis, type ContentType, type ExtractedFact } from "../src/shared/contracts";
+import { logEvent } from "./activity";
 import { requireOwnedItem } from "./lib/auth";
 import { callLLMJson, getLLMModel } from "./lib/llm";
 import type { SourcePart } from "./lib/sources";
@@ -195,8 +196,7 @@ export const save = internalMutation({
     const previous = await ctx.db.query("contentAnalysis").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(20);
     const renamedByUser = Boolean(item.title) && previous.length > 0 && previous.every((row) => row.title !== item.title);
     for (const row of previous) await ctx.db.delete("contentAnalysis", row._id);
-    const now = Date.now();
-    await ctx.db.insert("contentAnalysis", { userId: item.userId, itemId, ...analysis, createdAt: now });
+    await ctx.db.insert("contentAnalysis", { userId: item.userId, itemId, ...analysis, createdAt: Date.now() });
     await ctx.runMutation(internal.items.setExtraction, {
       itemId,
       extractionStatus,
@@ -214,13 +214,11 @@ export const save = internalMutation({
       price: analysis.price,
       organization: analysis.organization,
     });
-    await ctx.db.insert("activityEvents", {
-      userId: item.userId,
+    await logEvent(ctx, item.userId, {
       type: extractionStatus === "ready" ? "analysis_completed" : "analysis_needs_input",
       title: extractionStatus === "ready" ? "Understood" : "Needs your input",
       detail: analysis.title,
       itemId,
-      createdAt: now,
     });
     return null;
   },
@@ -233,7 +231,7 @@ export const markStarted = internalMutation({
     const item = await ctx.db.get("savedItems", itemId);
     if (!item) return null;
     await ctx.runMutation(internal.items.setExtraction, { itemId, extractionStatus: "extracting" });
-    await ctx.db.insert("activityEvents", { userId: item.userId, type: "analysis_started", title: "Understanding…", itemId, createdAt: Date.now() });
+    await logEvent(ctx, item.userId, { type: "analysis_started", title: "Understanding…", itemId });
     return null;
   },
 });
@@ -255,13 +253,11 @@ export const markProblem = internalMutation({
       extractionError,
       ...(title && !item.title ? { title } : {}),
     });
-    await ctx.db.insert("activityEvents", {
-      userId: item.userId,
+    await logEvent(ctx, item.userId, {
       type: extractionStatus === "needs_input" ? "analysis_needs_input" : "analysis_failed",
       title: extractionStatus === "needs_input" ? "Needs your input" : "Analysis failed",
       detail: extractionError,
       itemId,
-      createdAt: Date.now(),
     });
     return null;
   },
