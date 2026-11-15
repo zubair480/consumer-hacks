@@ -207,7 +207,7 @@ export async function fetchGitHubRepo(owner: string, repo: string): Promise<Fetc
     `Forks: ${data.forks_count}`,
     `Open issues: ${data.open_issues_count}`,
     data.language && `Primary language: ${data.language}`,
-    data.license && `License: ${data.license.spdx_id ?? data.license.name}`,
+    data.license && `License: ${data.license.spdx_id && data.license.spdx_id !== "NOASSERTION" ? data.license.spdx_id : data.license.name}`,
     data.topics?.length ? `Topics: ${data.topics.join(", ")}` : "",
     data.homepage && `Homepage: ${data.homepage}`,
     `Default branch: ${data.default_branch}`,

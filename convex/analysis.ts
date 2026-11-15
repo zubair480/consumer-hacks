@@ -39,7 +39,8 @@ Rules:
 - facts: the concrete details a user needs to act. Typical keys: deadline, award_amount, eligibility, requirements, how_to_apply, organization, location, address, hours, price, cuisine, date, time, venue, stars, language, license, install_command, tech_stack, ingredients, servings, cook_time, colors, typography, layout, company, role, salary.
 - NEVER invent or infer deadlines, dates, locations, addresses, prices, availability, eligibility, qualifications, or setup instructions. If the source does not state it, omit the fact.
 - Every fact needs evidence: "quote" is a short verbatim excerpt copied exactly from the source text (max 200 chars) that states the fact; for an image, quote the visible text, or describe the image region when there is no text. "source" must be exactly one of the source ids listed in the input.
-- confidence is 0..1. Prefer 6-15 high-value facts over many trivial ones.`;
+- confidence is 0..1. Prefer 6-15 high-value facts over many trivial ones; never list navigation menus, buttons, or boilerplate as facts.
+- Images: a screenshot of a website, app UI, poster, logo, or any visual layout is "graphic" first (primaryType graphic) unless the user clearly saved it for something else in it (a recipe, an event's date, a scholarship's terms, a restaurant). For graphic, extract design facts: dominant colors as hex values (key "color_<n>"), typography (font style/weight/case), layout, visual style, and the brand or product shown; the quote describes the image region.`;
 
 const SCHEMA_HINT = `{
   "contentTypes": ["scholarship", "application"],
