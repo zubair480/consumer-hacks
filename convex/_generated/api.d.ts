@@ -9,7 +9,9 @@
  */
 
 import type * as actions from "../actions.js";
+import type * as activity from "../activity.js";
 import type * as analysis from "../analysis.js";
+import type * as collections from "../collections.js";
 import type * as ingest from "../ingest.js";
 import type * as items from "../items.js";
 import type * as lib_actionCatalog from "../lib/actionCatalog.js";
@@ -27,6 +29,7 @@ import type * as lib_executors_types from "../lib/executors/types.js";
 import type * as lib_llm from "../lib/llm.js";
 import type * as lib_sources from "../lib/sources.js";
 import type * as lib_validators from "../lib/validators.js";
+import type * as preferences from "../preferences.js";
 import type * as users from "../users.js";
 
 import type {
@@ -37,7 +40,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
+  activity: typeof activity;
   analysis: typeof analysis;
+  collections: typeof collections;
   ingest: typeof ingest;
   items: typeof items;
   "lib/actionCatalog": typeof lib_actionCatalog;
@@ -55,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   "lib/llm": typeof lib_llm;
   "lib/sources": typeof lib_sources;
   "lib/validators": typeof lib_validators;
+  preferences: typeof preferences;
   users: typeof users;
 }>;
 

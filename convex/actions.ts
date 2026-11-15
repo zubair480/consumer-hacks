@@ -5,6 +5,8 @@ import { internalAction, internalMutation, mutation, query, type MutationCtx, ty
 import { ACTION_LABELS } from "../src/shared/contracts";
 import { buildSuggestions, isRoutedAction } from "./lib/actionCatalog";
 import { getUser, requireOwned, requireOwnedItem, requireUser } from "./lib/auth";
+import { logEvent } from "./activity";
+import { addItemToCollection, getOrCreateCollection } from "./collections";
 import { EXECUTORS, ExecutorError, type ExecutorInput } from "./lib/executors";
 import { vActionResultDocument, vActionType, vCollectionKind, vOwnerId } from "./lib/validators";
 
@@ -142,14 +144,12 @@ export const execute = mutation({
       inputs,
       createdAt: now,
     });
-    await ctx.db.insert("activityEvents", {
-      userId: user._id,
+    await logEvent(ctx, user._id, {
       type: "action_started",
       title: ACTION_LABELS[actionType].title,
       detail: item.title ?? item.sourceUrl,
       itemId,
       executionId,
-      createdAt: now,
     });
     await ctx.scheduler.runAfter(0, internal.actions.run, { executionId });
     return executionId;
@@ -235,30 +235,6 @@ export const startRun = internalMutation({
   },
 });
 
-async function addToCollection(ctx: MutationCtx, item: Doc<"savedItems">, kind: Doc<"collections">["kind"], name: string) {
-  const now = Date.now();
-  const collections = await ctx.db
-    .query("collections")
-    .withIndex("by_userId_and_createdAt", (q) => q.eq("userId", item.userId))
-    .take(200);
-  const found = collections.find((c) => c.kind === kind && c.name.toLowerCase() === name.toLowerCase());
-  const collectionId =
-    found?._id ??
-    (await ctx.db.insert("collections", { userId: item.userId, name, kind, coverItemId: item._id, createdAt: now, updatedAt: now }));
-  if (found) await ctx.db.patch("collections", found._id, { updatedAt: now });
-  const ids = item.collectionIds ?? [];
-  if (!ids.includes(collectionId)) await ctx.db.patch("savedItems", item._id, { collectionIds: [...ids, collectionId], updatedAt: now });
-  await ctx.db.insert("activityEvents", {
-    userId: item.userId,
-    type: "collection_updated",
-    title: `Added to ${name}`,
-    detail: item.title ?? item.sourceUrl,
-    itemId: item._id,
-    collectionId,
-    createdAt: now,
-  });
-}
-
 export const completeRun = internalMutation({
   args: {
     executionId: v.id("actionExecutions"),
@@ -275,7 +251,10 @@ export const completeRun = internalMutation({
       return null;
     }
     const now = Date.now();
-    if (collect) await addToCollection(ctx, item, collect.kind, collect.name);
+    if (collect) {
+      const collectionId = await getOrCreateCollection(ctx, item.userId, collect.kind, collect.name);
+      await addItemToCollection(ctx, item, (await ctx.db.get("collections", collectionId))!);
+    }
     await ctx.db.insert("actionResults", {
       userId: execution.userId,
       itemId: execution.itemId,
@@ -286,14 +265,12 @@ export const completeRun = internalMutation({
       updatedAt: now,
     });
     await ctx.db.patch("actionExecutions", executionId, { status, error: undefined, completedAt: now });
-    await ctx.db.insert("activityEvents", {
-      userId: execution.userId,
+    await logEvent(ctx, execution.userId, {
       type: "action_completed",
-      title: status === "awaiting_approval" ? `${result.title} - ready to send` : result.title,
+      title: status === "awaiting_approval" ? `${result.title} - ready to share` : result.title,
       detail: result.summary.slice(0, 200),
       itemId: execution.itemId,
       executionId,
-      createdAt: now,
     });
     return null;
   },
@@ -306,14 +283,12 @@ export const failRun = internalMutation({
     if (!execution) return null;
     const now = Date.now();
     await ctx.db.patch("actionExecutions", executionId, { status: "failed", error, completedAt: now });
-    await ctx.db.insert("activityEvents", {
-      userId: execution.userId,
+    await logEvent(ctx, execution.userId, {
       type: "action_failed",
       title: `${ACTION_LABELS[execution.actionType].title} failed`,
       detail: error,
       itemId: execution.itemId,
       executionId,
-      createdAt: now,
     });
     return null;
   },
