@@ -34,6 +34,7 @@ import type * as preferences from "../preferences.js";
 import type * as publishing_index from "../publishing/index.js";
 import type * as publishing_jobs from "../publishing/jobs.js";
 import type * as publishing_linkedin from "../publishing/linkedin.js";
+import type * as publishing_testPost from "../publishing/testPost.js";
 import type * as publishing_types from "../publishing/types.js";
 import type * as publishing_x from "../publishing/x.js";
 import type * as social_adapters_index from "../social/adapters/index.js";
@@ -81,6 +82,7 @@ declare const fullApi: ApiFromModules<{
   "publishing/index": typeof publishing_index;
   "publishing/jobs": typeof publishing_jobs;
   "publishing/linkedin": typeof publishing_linkedin;
+  "publishing/testPost": typeof publishing_testPost;
   "publishing/types": typeof publishing_types;
   "publishing/x": typeof publishing_x;
   "social/adapters/index": typeof social_adapters_index;
