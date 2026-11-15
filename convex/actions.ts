@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -348,6 +349,32 @@ export const listResultsForItem = query({
 });
 
 /** Completed outcomes for Home, newest first, with the item's title and type. */
+export const recentOutcomesPage = query({
+  args: { ownerId: vOwnerId, paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { ownerId, paginationOpts }) => {
+    const user = await getUser(ctx, ownerId);
+    if (!user) return { page: [], isDone: true, continueCursor: "" };
+    const result = await ctx.db
+      .query("actionResults")
+      .withIndex("by_userId_and_createdAt", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .paginate(paginationOpts);
+    const page = await Promise.all(
+      result.page.map(async (row) => {
+        const [item, execution] = await Promise.all([ctx.db.get("savedItems", row.itemId), ctx.db.get("actionExecutions", row.executionId)]);
+        const { userId: _userId, ...rest } = row;
+        return {
+          ...rest,
+          status: execution?.status ?? "succeeded",
+          itemTitle: item?.title ?? item?.sourceUrl ?? "Saved item",
+          itemPrimaryType: item?.primaryType ?? null,
+        };
+      }),
+    );
+    return { ...result, page };
+  },
+});
+
 export const recentOutcomes = query({
   args: { ownerId: vOwnerId, limit: v.optional(v.number()) },
   handler: async (ctx, { ownerId, limit }) => {

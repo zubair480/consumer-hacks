@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import type { FunctionArgs, FunctionReference, FunctionReturnType } from "convex/server";
 import { randomUUID } from "expo-crypto";
 import { File, Paths } from "expo-file-system";
@@ -140,6 +140,16 @@ export function useOwnedQuery<Q extends FunctionReference<"query">>(
 ): FunctionReturnType<Q> | undefined {
   const ownerId = useOwnerId();
   return useQuery(query, (args === "skip" ? "skip" : { ...args, ownerId }) as FunctionArgs<Q>);
+}
+
+/** usePaginatedQuery that injects ownerId. Pass "skip" to skip. */
+export function useOwnedPaginatedQuery<Q extends FunctionReference<"query">>(
+  query: Q,
+  args: Omit<OwnedArgs<Q>, "paginationOpts"> | "skip",
+  options: { initialNumItems: number },
+) {
+  const ownerId = useOwnerId();
+  return usePaginatedQuery(query, (args === "skip" ? "skip" : { ...args, ownerId }) as never, options);
 }
 
 /** useMutation that injects ownerId. */
