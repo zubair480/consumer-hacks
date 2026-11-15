@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import type { ComponentProps } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { ActivityRow } from "../../components/api";
@@ -13,7 +13,7 @@ import { Skeleton } from "../../components/States";
 import { colors, radius, space } from "../../components/tokens";
 import { timeAgo } from "../../components/typeMeta";
 import { DisplayTitle, Text as UIText } from "../../components/ui";
-import { useOwnedQuery } from "../../identity/OwnerProvider";
+import { useOwnedPaginatedQuery } from "../../identity/OwnerProvider";
 import { colors as themeColors, palette } from "../../theme";
 import type { ActivityEventType } from "../../shared/contracts";
 
@@ -53,14 +53,17 @@ function open(e: ActivityRow) {
 }
 
 function Feed() {
-  const events = useOwnedQuery(api.activity.list, { limit: 100 });
-  if (events === undefined) return <View style={styles.list}><Skeleton rows={5} height={64} /></View>;
+  const { results: events, status, loadMore } = useOwnedPaginatedQuery(api.activity.listPage, {}, { initialNumItems: 20 });
+  if (status === "LoadingFirstPage") return <View style={styles.list}><Skeleton rows={5} height={64} /></View>;
   return (
     <FlatList
       testID="activity-list"
       data={events}
       keyExtractor={(e) => e._id}
       contentContainerStyle={styles.list}
+      onEndReached={() => (status === "CanLoadMore" ? loadMore(20) : undefined)}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={status === "LoadingMore" ? <ActivityIndicator testID="activity-loading-more" color={colors.text} style={{ padding: space.lg }} /> : undefined}
       ListEmptyComponent={
         <EmptyState icon="pulse" title="No activity yet" body="Saves, analysis, and finished actions show up here.">
           <GradientButton testID="activity-empty-save-button" label="Save something" icon="add" onPress={() => router.push("/capture")} style={{ alignSelf: "stretch" }} />

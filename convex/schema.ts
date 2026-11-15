@@ -48,6 +48,8 @@ export default defineSchema({
     ...keyFactFields,
     extractionStatus: vExtractionStatus,
     extractionError: v.optional(v.string()),
+    /** Times the stuck-item cron re-queued ingestion (capped). */
+    ingestRetries: v.optional(v.number()),
     /** Lowercased title + summary + text + url for Library search; maintained by items.ts / ingest. */
     searchText: v.string(),
     collectionIds: v.optional(v.array(v.id("collections"))),
