@@ -2,6 +2,8 @@
 
 About 5 minutes on a real iPhone in Expo Go, following the master brief Demo section: Part 1 (three saves, different actions, two real executions, results saved), Part 2 (Social Studio: LinkedIn + X from a save, Instagram + TikTok from a photo, and a live LinkedIn test post). Every step lists a fallback line if something is slow.
 
+Demoing on an Android phone? Follow the same script with the changes in [Android demo](#android-demo-expo-go) below.
+
 ## Before going on stage
 
 1. Open the app in Expo Go from `npx expo start` and confirm Home loads with your saves.
@@ -87,6 +89,54 @@ Fallback: if LinkedIn errors or is slow, show the earlier confirmed post (`urn:l
 ## Closing message (15 s)
 
 "Zapy turns what you save into what you do: it reads the source, picks actions that fit, and runs them into results you keep, without making anything up, and it turns saves into posts that only go out when you confirm them. Built in a day with Expo, Convex and OpenAI."
+
+## Android demo (Expo Go)
+
+Use this section when the demo phone is Android. Everything above stays the same except the points below; the step numbers refer to the iOS script.
+
+### Before going on stage (Android)
+
+1. Install **Expo Go** and **HTTP Shortcuts** (by Waboodoo) from the Play Store.
+2. Run `npx expo start` on the laptop, open **Expo Go** on the phone and tap **Scan QR code**, then scan the QR code in the terminal. (Android's camera app doesn't open Expo links; scan from inside Expo Go.) The phone and laptop must be on the same Wi-Fi; if conference Wi-Fi blocks it, restart with `npx expo start --tunnel`.
+3. Profile, the scholarship text and the pre-saved fixtures: same as steps 2–5 above. Keep the scholarship text in Google Keep (or any notes app) and the design image in Google Photos or Gallery.
+4. Set up Share to Zapy once by following [android-share.md](android-share.md): copy the token from **Profile → Share to Zapy**, then build the two HTTP Shortcuts (**Save to Zapy** for links and text, **Save image to Zapy** for images). Share one Instagram link to test it; you should see the **Saved to Zapy** toast.
+5. On the **Import** screen, enter your GitHub username in **GitHub stars** and tap **Sync** once, and connect **YouTube liked videos** and **X bookmarks** if their keys are set, so the live taps are only re-syncs.
+6. Mirror the phone (scrcpy or the phone's cast option), turn on **Do Not Disturb**, brightness up.
+
+### Part 1 on Android
+
+- Pasting: long-press the text field → **Paste**. The Capture flow and buttons are the same as on iOS.
+- Photo picks open the Android photo picker instead of the iOS one.
+
+### Share to Zapy (Android share sheet)
+
+1. Open Instagram (or LinkedIn or TikTok) on a post → **Share** → **Send to…** (the HTTP Shortcuts icon; on some apps it's under **More**). If you enabled Direct Share, tap **Save to Zapy** in the top row instead.
+2. The **Saved to Zapy** toast appears. Switch to Expo Go: the post is at the top of Library and already "Understanding…".
+3. For an image: Google Photos → **Share** → **Send to…**, which runs **Save image to Zapy**.
+
+Say: "No app store build: a free open-source Android app posts the share to our Convex endpoint with a personal token."
+
+Fallback: "Conference Wi-Fi is slow, so here's the one I shared earlier" → Library → the pre-shared Instagram post. If the toast says "failed with status code 401", the token was rotated: paste the new one into both shortcuts' **Authentication → Token**.
+
+### Import screen
+
+1. Home → **Import saves** → **Import saves** screen.
+2. **GitHub stars**: tap **Sync**. The result line under the row shows what came in.
+3. **YouTube liked videos** and **X bookmarks**: tap **Connect** (or **Sync** if connected in prep). Sign-in opens in a Chrome Custom Tab and returns to Expo Go.
+4. The Instagram and LinkedIn rows say "Share a post → Send to… (HTTP Shortcuts)"; **Set up** opens Profile → Share to Zapy.
+
+Fallback: "Sign-in is slow on this network; these came in from the sync I ran before the demo" → Library. If YouTube or X shows "Not configured", skip it and say the server keys aren't set in this build.
+
+### Part 2 on Android
+
+- **Copy** and **Share** open the Android share sheet. For X in share-sheet mode, the sheet offers **Open in X**, then **I posted it**, the same as on iOS.
+- **Take a photo** opens the Android camera; **Choose from library** opens the Android photo picker.
+
+### If something breaks (Android)
+
+- App stuck loading: swipe Expo Go away from Recents and scan the QR code again, or shake the phone → **Reload**.
+- "Something went wrong" in Expo Go after the laptop's IP changed: stop `npx expo start`, restart with `--tunnel`, and scan again.
+- HTTP Shortcuts shows a list of shortcuts instead of running one: pick **Save to Zapy**; another shortcut also accepts shared text.
 
 ## If something breaks
 
