@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { Pressable, StyleSheet, View, type LayoutRectangle, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import Animated, { Easing, FadeIn, FadeInLeft, LinearTransition, cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming, type SharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { colors, fonts, gradients, palette } from "../../theme";
 import { Text } from "./Text";
 
@@ -85,19 +86,15 @@ const BUBBLES: { mode: "url" | "text" | "image"; label: string; icon: IconName; 
   { mode: "image", label: "Photo", icon: "image-outline", color: palette.mint, testID: "quick-capture-photo", dx: 92, dy: -64 },
 ];
 
-type Route = { key: string; name: string; params?: object };
-type Descriptor = { options: { tabBarButtonTestID?: string; tabBarAccessibilityLabel?: string } };
-export type InkTabBarProps = {
-  state: { index: number; routes: Route[] };
-  descriptors: Record<string, Descriptor>;
-  navigation: { emit: (e: { type: "tabPress"; target: string; canPreventDefault: true }) => { defaultPrevented: boolean }; navigate: (name: string, params?: object) => void };
+type Route = BottomTabBarProps["state"]["routes"][number];
+export type InkTabBarProps = BottomTabBarProps & {
   saves?: number;
   latestResultAt?: number;
   captureOpen: boolean;
 };
 
 /** Floating ink nav capsule: one shared pastel pill, raised holographic "+" with a quick-capture fan, hides on scroll. */
-export function InkTabBar({ state, descriptors, navigation, saves, latestResultAt, captureOpen }: InkTabBarProps) {
+export function InkTabBar({ state, descriptors, emitter, navigateToTab, saves, latestResultAt, captureOpen }: InkTabBarProps) {
   const insets = useSafeAreaInsets();
   const reduce = useReducedMotion();
   const scroll = useContext(ScrollContext);
@@ -108,6 +105,7 @@ export function InkTabBar({ state, descriptors, navigation, saves, latestResultA
   const x = useSharedValue(0);
   const w = useSharedValue(0);
   const placed = useSharedValue(0);
+  const onTab = useSharedValue(TABS[active.name] ? 1 : 0);
   const rise = useSharedValue(reduce ? 0 : 80);
   const fade = useSharedValue(reduce ? 0 : 1);
   const scrim = useSharedValue(0);
@@ -123,6 +121,10 @@ export function InkTabBar({ state, descriptors, navigation, saves, latestResultA
   useEffect(() => {
     scrim.set(withTiming(fan ? 1 : 0, { duration: 200 }));
   }, [fan, scrim]);
+
+  useEffect(() => {
+    onTab.set(withTiming(TABS[active.name] ? 1 : 0, { duration: 150 }));
+  }, [active.name, onTab]);
 
   const l = layouts[active.key];
   useEffect(() => {
@@ -148,13 +150,13 @@ export function InkTabBar({ state, descriptors, navigation, saves, latestResultA
       transform: [{ translateY: y }, { translateY: rise.value }, { scaleX: scroll?.squeeze.value ?? 1 }],
     };
   });
-  const indicator = useAnimatedStyle(() => ({ left: x.value, width: w.value, opacity: placed.value, backgroundColor: tint.value }));
+  const indicator = useAnimatedStyle(() => ({ left: x.value, width: w.value, opacity: placed.value * onTab.value, backgroundColor: tint.value }));
   const scrimStyle = useAnimatedStyle(() => ({ opacity: scrim.value }));
 
   const press = (route: Route) => {
     setFan(false);
-    const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-    if (route.key !== active.key && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+    const event = emitter?.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+    if (route.key !== active.key && !event?.defaultPrevented) navigateToTab?.(route.key);
   };
 
   const openCapture = (mode: string) => {

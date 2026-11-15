@@ -2,7 +2,7 @@ import * as Haptics from "expo-haptics";
 import { router, usePathname } from "expo-router";
 import { Tabs } from "expo-router/js-tabs";
 import { api } from "../../../convex/_generated/api";
-import { InkTabBar, TabBarScrollProvider, type InkTabBarProps } from "../../components/ui/InkTabBar";
+import { InkTabBar, TabBarScrollProvider } from "../../components/ui/InkTabBar";
 import { colors } from "../../components/tokens";
 import { useOwnedQuery } from "../../identity/OwnerProvider";
 
@@ -15,7 +15,7 @@ export default function TabsLayout() {
   return (
     <TabBarScrollProvider>
       <Tabs
-        tabBar={(props) => <InkTabBar {...(props as unknown as InkTabBarProps)} saves={items?.length} latestResultAt={outcomes?.[0]?.createdAt} captureOpen={captureOpen} />}
+        tabBar={(props) => <InkTabBar {...props} saves={items?.length} latestResultAt={outcomes?.[0]?.createdAt} captureOpen={captureOpen} />}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
         screenListeners={{ tabPress: () => Haptics.selectionAsync().catch(() => {}) }}
       >
