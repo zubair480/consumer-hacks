@@ -21,7 +21,7 @@ export default function ContextualActions() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.top}><ScreenHeader title="Actions" back /></View>
-      <ScrollView contentContainerStyle={styles.content} testID="actions-screen">
+      <ScrollView contentContainerStyle={styles.content} testID="actions-screen" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Boundary title="Couldn’t load actions">
           <Body itemId={id as Id<"savedItems">} />
         </Boundary>

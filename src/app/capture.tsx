@@ -30,7 +30,7 @@ const EXAMPLES: { key: string; label: string; icon: "logo-github" | "school" | "
     icon: "school",
     mode: "text",
     value:
-      "The Coca-Cola Scholars Program awards $20,000 to 150 high school seniors each year. Applicants must be current U.S. high school seniors with a minimum 3.0 unweighted GPA who show leadership and service in their community. Apply online at coca-colascholarsfoundation.org. Applications close October 31.",
+      "The Coca-Cola Scholars Program awards $20,000 to 150 high school seniors each year. Applicants must be current U.S. high school seniors with a minimum 3.0 unweighted GPA who show leadership and service in their community. Apply online at coca-colascholarsfoundation.org. Applications close January 31, 2027.",
   },
   { key: "restaurant", label: "Restaurant", icon: "restaurant", mode: "url", value: "https://www.tartinebakery.com" },
 ];
@@ -59,7 +59,7 @@ export default function Capture() {
   };
 
   const paste = async () => {
-    const value = (await Clipboard.getStringAsync()).trim();
+    const value = (await Clipboard.getStringAsync().catch(() => "")).trim();
     if (!value) return setError("Your clipboard is empty.");
     if (isValidLink(value) && !/\s/.test(value)) {
       switchMode("url");

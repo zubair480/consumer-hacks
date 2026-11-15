@@ -85,8 +85,12 @@ ${describeProfile(input)}`,
   return { result, status: "succeeded" };
 };
 
+function parseDeadline(value: string): number {
+  return /\b\d{4}\b/.test(value) ? Date.parse(value) : NaN;
+}
+
 function timeline(deadline: ExtractedFact, now: number): ResultSection | null {
-  const at = Date.parse(deadline.value);
+  const at = parseDeadline(deadline.value);
   if (Number.isNaN(at) || at <= now) return null;
   const day = 86_400_000;
   const milestones: [number, string][] = [
@@ -158,7 +162,7 @@ const trackDeadline: Executor = async (input) => {
     );
     return { result, status: "succeeded" };
   }
-  const parsed = Date.parse(deadline.value);
+  const parsed = parseDeadline(deadline.value);
   const rows: { label: string; value: string; evidence?: ExtractedFact["evidence"] }[] = [{ label: "Deadline", value: deadline.value, evidence: deadline.evidence }];
   if (!Number.isNaN(parsed)) {
     const days = Math.ceil((parsed - input.now) / 86_400_000);
