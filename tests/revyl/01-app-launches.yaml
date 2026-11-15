@@ -6,6 +6,7 @@ build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleas
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
   - "Install the Release simulator build on a fresh iPhone 16 and launch it."
+  - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible."
 expect:
   - "The app opens past the boot spinner and shows `home-screen` within 20s, with no red box or crash."
 evidence: one screenshot per step, saved as renders/CONS-9/01-app-launches-<step>.png

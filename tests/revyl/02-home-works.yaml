@@ -5,8 +5,9 @@ device: iPhone 16 (Revyl cloud simulator)
 build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
+  - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible."
   - "On Home, read the header, the save button (`home-save-button` or `home-empty-save-button`), and the Ready for you / recent sections."
-  - "Tap the save button."
+  - "Tap the save button (`home-save-button`), then tap `quick-capture-link`."
 expect:
   - "Home renders its sections without error."
   - "The Capture sheet opens (`capture-mode-url` visible). Close it with `capture-close-button`."
