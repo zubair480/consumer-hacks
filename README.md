@@ -1,8 +1,8 @@
-# AfterScroll
+# Zapy
 
 **Turn what you save into what you do.**
 
-AfterScroll is an iOS-first app for the things you save and never come back to: a scholarship post, a GitHub repo, a restaurant link, a design screenshot. You save it, AfterScroll reads the source and works out what it is, then offers three actions that fit that kind of content and runs them into a real, saved result. Phase 2 (Social Studio, in progress) turns a save or a new photo into platform-specific post drafts that you copy or share yourself.
+Zapy is an iOS-first app for the things you save and never come back to: a scholarship post, a GitHub repo, a restaurant link, a design screenshot. You save it, Zapy reads the source and works out what it is, then offers three actions that fit that kind of content and runs them into a real, saved result. Phase 2 (Social Studio, in progress) turns a save or a new photo into platform-specific post drafts that you copy or share yourself.
 
 Built with Expo SDK 58, Expo Router, Convex and OpenAI (server-side only). The live demo runs on a real iPhone through Expo Go.
 

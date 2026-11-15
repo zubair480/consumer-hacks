@@ -86,7 +86,7 @@ test("uses LINKEDIN_PERSON_URN without calling userinfo", async () => {
 test("posts to /rest/posts with the spec headers and body, author from userinfo", async () => {
   assert.equal(linkedinAdapter.isConfigured(), true);
   reset(() => Response.json({ sub: "abc123" }), created("urn:li:share:7000"));
-  const res = await linkedinAdapter.publish("Saved (via AfterScroll) #tools @me", {});
+  const res = await linkedinAdapter.publish("Saved (via Zapy) #tools @me", {});
 
   assert.equal(calls[0].url, "https://api.linkedin.com/v2/userinfo");
   assert.equal(calls[0].headers.Authorization, "Bearer test-token");
@@ -100,7 +100,7 @@ test("posts to /rest/posts with the spec headers and body, author from userinfo"
     "Linkedin-Version": "202610",
     "Content-Type": "application/json",
   });
-  assert.deepEqual(post.body, expectedBody("urn:li:person:abc123", "Saved \\(via AfterScroll\\) \\#tools \\@me"));
+  assert.deepEqual(post.body, expectedBody("urn:li:person:abc123", "Saved \\(via Zapy\\) \\#tools \\@me"));
 
   assert.deepEqual(res, {
     status: "published",

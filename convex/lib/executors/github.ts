@@ -72,7 +72,7 @@ function noSetupGuide(input: ExecutorInput, repo: GithubRepo, blocks: SourceBloc
     "extract_setup_guide",
     `Set up ${repo.fullName}`,
     reason,
-    [{ kind: "text", heading: "No setup steps in the README", body: `${reason} AfterScroll only extracts setup steps the README states, so none are listed. Check the repository's docs or homepage.` }, repoLinks(repo)],
+    [{ kind: "text", heading: "No setup steps in the README", body: `${reason} Zapy only extracts setup steps the README states, so none are listed. Check the repository's docs or homepage.` }, repoLinks(repo)],
     sourcesFromBlocks(input, blocks),
     [reason],
   );
@@ -104,7 +104,7 @@ If the README has no setup instructions, return no steps and say so in warnings.
 const prepareIntegrationPlan: Executor = async (input) => {
   const { repo, blocks, warnings } = await repoContext(input, false);
   const project = input.inputs.your_project?.trim();
-  if (!project) warnings.push("Tell AfterScroll about your project (stack, goal) for a more specific plan.");
+  if (!project) warnings.push("Tell Zapy about your project (stack, goal) for a more specific plan.");
   const result = await buildDocument({
     input,
     blocks,

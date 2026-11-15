@@ -174,7 +174,7 @@ const trackDeadline: Executor = async (input) => {
     `Tracking the deadline stated by the source: ${deadline.value}.`,
     [{ kind: "key_value", heading: "Verified deadline", rows }, ...(plan ? [plan] : [])],
     sourcesFromBlocks(input, blocks),
-    [...warnings, "Tracked inside AfterScroll only; it has not been added to your calendar."],
+    [...warnings, "Tracked inside Zapy only; it has not been added to your calendar."],
   );
   return { result, status: "succeeded" };
 };

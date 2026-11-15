@@ -24,7 +24,7 @@ export function TestPostSheet({ platform, localTime, onClose }: Props) {
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<PublishResult | null>(null);
   const label = ACCOUNT_LABELS[platform];
-  const text = `Testing AfterScroll ${localTime}`;
+  const text = `Testing Zapy ${localTime}`;
 
   async function confirm() {
     if (!ownerId || sending) return;

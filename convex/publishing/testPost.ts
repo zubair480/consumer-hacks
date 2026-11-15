@@ -15,7 +15,7 @@ const LOCAL_TIME = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/;
 /** The exact text the confirm sheet shows and the action posts. */
 export function testPostText(localTime: string): string {
   if (!LOCAL_TIME.test(localTime)) throw new ConvexError("Invalid time");
-  return `Testing AfterScroll ${localTime}`;
+  return `Testing Zapy ${localTime}`;
 }
 
 /** Runs one test post through an adapter. Never reports published without a provider post id. */

@@ -1,6 +1,6 @@
 # Limitations
 
-What AfterScroll does not do today, and why. Phase 2 items are marked **in progress**.
+What Zapy does not do today, and why. Phase 2 items are marked **in progress**.
 
 ## Identity and data
 

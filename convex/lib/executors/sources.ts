@@ -39,7 +39,7 @@ async function fetchRawReadme(owner: string, repo: string): Promise<string | nul
 async function fetchGithubRepoFromPage(owner: string, repo: string): Promise<GithubRepo | null> {
   const url = `https://github.com/${owner}/${repo}`;
   const [page, readme] = await Promise.all([
-    fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; AfterScroll/1.0)" } }).catch(() => null),
+    fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; Zapy/1.0)" } }).catch(() => null),
     fetchRawReadme(owner, repo).catch(() => null),
   ]);
   if (!page?.ok && !readme) return null;
@@ -64,7 +64,7 @@ async function fetchGithubRepoFromPage(owner: string, repo: string): Promise<Git
 export async function fetchGithubRepo(url: string): Promise<GithubRepo | null> {
   const parsed = parseGithubRepo(url);
   if (!parsed) return null;
-  const headers: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "AfterScroll" };
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "Zapy" };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   const api = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}`;
   const metaRes = await fetch(api, { headers });
@@ -122,7 +122,7 @@ function htmlToText(html: string): string {
 export async function fetchPageText(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; AfterScroll/1.0)", Accept: "text/html,text/plain" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; Zapy/1.0)", Accept: "text/html,text/plain" },
       redirect: "follow",
     });
     if (!res.ok) return null;

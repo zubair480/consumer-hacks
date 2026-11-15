@@ -54,7 +54,7 @@ export function ConnectedAccounts() {
         ))
       )}
       <Text variant="caption" tone="muted" style={{ marginTop: spacing.sm }}>
-        Share-sheet mode: you post it yourself from the app. AfterScroll never stores passwords.
+        Share-sheet mode: you post it yourself from the app. Zapy never stores passwords.
       </Text>
       {testPost ? <TestPostSheet {...testPost} onClose={() => setTestPost(null)} /> : null}
     </Card>

@@ -1,6 +1,6 @@
 # Architecture
 
-AfterScroll is one Expo Router app talking to one Convex deployment. All AI work and all third-party fetching happen in Convex actions; the phone only calls Convex queries and mutations.
+Zapy is one Expo Router app talking to one Convex deployment. All AI work and all third-party fetching happen in Convex actions; the phone only calls Convex queries and mutations.
 
 ## Overview
 

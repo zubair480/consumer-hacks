@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "consumer-hacks",
+    "name": "Zapy",
     "slug": "consumer-hacks",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -27,6 +27,6 @@
       "expo-secure-store",
       "expo-web-browser"
     ],
-    "scheme": "consumerhacks"
+    "scheme": "zapy"
   }
 }

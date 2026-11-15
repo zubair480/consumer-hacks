@@ -17,7 +17,7 @@ About 5 minutes on a real iPhone in Expo Go, following the master brief Demo sec
 
 ## Opening (15 s)
 
-Say: "We all save things we never act on: a scholarship, a repo, a restaurant. AfterScroll turns what you save into what you do."
+Say: "We all save things we never act on: a scholarship, a repo, a restaurant. Zapy turns what you save into what you do."
 
 ## Part 1: Save → Understand → Act
 
@@ -68,7 +68,7 @@ Fallback: "Generation is slow right now; these drafts were generated earlier" �
 
 ## Closing message (15 s)
 
-"AfterScroll turns what you save into what you do: it reads the source, picks actions that fit, and runs them into results you keep, without making anything up and without posting anything for you. Built in a day with Expo, Convex and OpenAI."
+"Zapy turns what you save into what you do: it reads the source, picks actions that fit, and runs them into results you keep, without making anything up and without posting anything for you. Built in a day with Expo, Convex and OpenAI."
 
 ## If something breaks
 

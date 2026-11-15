@@ -55,7 +55,7 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
     if (!suggestion.requiresApproval) return run();
     Alert.alert(
       suggestion.title,
-      "AfterScroll will prepare this for you as a draft. Nothing is sent, posted, or booked: you review it, then copy or share it yourself.",
+      "Zapy will prepare this for you as a draft. Nothing is sent, posted, or booked: you review it, then copy or share it yourself.",
       [{ text: "Cancel", style: "cancel" }, { text: "Prepare draft", onPress: run }],
     );
   };
