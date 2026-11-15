@@ -3,13 +3,11 @@ import { Directory, File, Paths } from "expo-file-system";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
-import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useOwnedMutation } from "../identity/OwnerProvider";
 
 // OWNER: Instagram thread (CONS-16). Instagram-ready JPEG + the no-API share-sheet fallback
-// for Instagram, TikTok and YouTube. The fallback never reports Published: the draft moves
-// to Awaiting user action through publishing.startShare.
+// for Instagram, TikTok and YouTube. The fallback never reports Published: PublishSheet calls
+// startShare (Awaiting user action) before it runs the fallback.
 
 export type LocalImage = { uri: string; width: number; height: number };
 
@@ -35,14 +33,17 @@ export async function toInstagramJpeg(image: LocalImage): Promise<LocalImage> {
   return { uri: saved.uri, width: saved.width, height: saved.height };
 }
 
-/** Converts to an Instagram JPEG and uploads it to Convex storage; returns the storageId. */
-export async function uploadInstagramJpeg(image: LocalImage, getUploadUrl: () => Promise<string>): Promise<Id<"_storage">> {
+/** Converts to an Instagram JPEG and uploads it to Convex storage; returns the storageId and the local JPEG. */
+export async function uploadInstagramJpeg(
+  image: LocalImage,
+  getUploadUrl: () => Promise<string>,
+): Promise<{ storageId: Id<"_storage">; uri: string }> {
   const jpeg = await toInstagramJpeg(image);
   const blob = await (await fetch(jpeg.uri)).blob();
   const res = await fetch(await getUploadUrl(), { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
   if (!res.ok) throw new Error("Upload failed. Check your connection and try again.");
   const { storageId } = (await res.json()) as { storageId: Id<"_storage"> };
-  return storageId;
+  return { storageId, uri: jpeg.uri };
 }
 
 async function localJpeg(imageUri: string): Promise<string> {
@@ -73,21 +74,11 @@ export function useMediaShareToast(): string | null {
   return message;
 }
 
-export type MediaShareInput = { caption: string; imageUri: string; onShared?: () => Promise<unknown> };
-
-/** Saves the JPEG locally, copies the caption, shows the toast, opens the share sheet, then onShared. */
-export async function shareMediaFallback({ caption, imageUri, onShared }: MediaShareInput): Promise<void> {
+/** Saves the JPEG locally, copies the caption, shows the toast, then opens the share sheet. */
+export async function shareMediaFallback({ caption, imageUri }: { caption: string; imageUri: string }): Promise<void> {
   const fileUri = await localJpeg(imageUri);
   await Clipboard.setStringAsync(caption);
   showToast(CAPTION_COPIED_TOAST);
   if (!(await Sharing.isAvailableAsync())) throw new Error("Sharing isn't available on this device");
   await Sharing.shareAsync(fileUri, { mimeType: "image/jpeg", UTI: "public.jpeg", dialogTitle: "Share to Instagram, TikTok or YouTube" });
-  if (onShared) await onShared();
-}
-
-/** shareMediaFallback wired to publishing.startShare, so the draft lands on Awaiting user action. */
-export function useMediaShareFallback(draftId: Id<"socialDrafts"> | undefined) {
-  const startShare = useOwnedMutation(api.publishing.startShare);
-  return ({ caption, imageUri }: { caption: string; imageUri: string }) =>
-    shareMediaFallback({ caption, imageUri, onShared: draftId ? () => startShare({ draftId }) : undefined });
 }
