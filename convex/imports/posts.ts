@@ -105,8 +105,9 @@ export async function importPosts(ctx: MutationCtx, user: Doc<"users">, posts: I
           )
           .first()
       : null;
+    const staleImport = alreadyImported && !(await ctx.db.get("savedItems", alreadyImported.itemId)) ? alreadyImported : null;
     let alreadySaved = false;
-    if (!alreadyImported) {
+    if (!alreadyImported || staleImport) {
       for (const candidate of urlVariants(url)) {
         const nearby = await ctx.db
           .query("savedItems")
@@ -118,7 +119,7 @@ export async function importPosts(ctx: MutationCtx, user: Doc<"users">, posts: I
         }
       }
     }
-    if (alreadyImported || alreadySaved) {
+    if ((alreadyImported && !staleImport) || alreadySaved) {
       duplicates++;
       continue;
     }
@@ -137,7 +138,9 @@ export async function importPosts(ctx: MutationCtx, user: Doc<"users">, posts: I
       createdAt: now,
       updatedAt: now,
     });
-    if (externalId) {
+    if (staleImport) {
+      await ctx.db.patch("importedPosts", staleImport._id, { itemId, savedAt: post.savedAt, importedAt: now });
+    } else if (externalId) {
       await ctx.db.insert("importedPosts", { userId: user._id, platform: post.platform, externalId, itemId, savedAt: post.savedAt, importedAt: now });
     }
     if (post.imageUrl && cleanUrl(post.imageUrl)) {
