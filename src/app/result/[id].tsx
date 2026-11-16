@@ -8,6 +8,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
+import { GoneState } from "../../components/GoneState";
 import { EmptyState } from "../../components/EmptyState";
 import { errorMessage, friendlyError } from "../../components/media";
 import { Tap } from "../../components/Pressable";
@@ -32,7 +33,7 @@ export default function ActionResult() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
-      <Boundary title="Couldn’t load this result">
+      <Boundary fallback={<GoneState />}>
         <Body executionId={id as Id<"actionExecutions">} />
       </Boundary>
     </SafeAreaView>
