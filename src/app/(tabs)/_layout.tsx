@@ -19,7 +19,7 @@ export default function TabsLayout() {
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
       >
         <Tabs.Screen name="index" options={tab("Home", "tab-home")} />
-        <Tabs.Screen name="library" options={tab("Library", "tab-library")} />
+        <Tabs.Screen name="library" options={{ ...tab("Library", "tab-library"), href: null }} />
         <Tabs.Screen
           name="create"
           options={tab("Save something", "tab-create")}

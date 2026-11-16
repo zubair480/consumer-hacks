@@ -10,5 +10,5 @@ steps:
   - "Tap `save-button`."
 expect:
   - "Item detail opens for the text item."
-  - "The item appears in Library."
+  - "The item appears on Home under the All tab (`queue-tab-all`)."
 evidence: one screenshot per step, saved as renders/CONS-9/04-text-saved-<step>.png

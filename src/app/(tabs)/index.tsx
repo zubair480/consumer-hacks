@@ -21,7 +21,6 @@ import { interestColor, useProfile } from "../../lib/useProfile";
 import { colors, fonts, gradients, palette } from "../../theme";
 
 const INK2 = "#5B5B63";
-const openSearch = () => router.push({ pathname: "/library", params: { focus: "search" } });
 const openItem = (id: string) => router.push({ pathname: "/item/[id]", params: { id } });
 
 type Items = NonNullable<ReturnType<typeof useOwnedQuery<typeof api.items.list>>>;
@@ -123,6 +122,7 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("review");
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [query, setQuery] = useState("");
   const x = useXAutoSync(items?.length);
   const refresh = async () => {
     setRefreshing(true);
@@ -141,10 +141,13 @@ export default function Home() {
   const tasks: Task[] = (items ?? []).map((i) => ({ ...i, state: doneIds.has(i._id) ? "done" : IN_PROGRESS.has(i.extractionStatus) ? "running" : "review" }));
   const inReview = (t: Task) => t.state === "review" || t.state === "running";
   const counts = { review: tasks.filter(inReview).length, all: tasks.length, done: tasks.filter((t) => t.state === "done").length };
-  const shown =
+  const needle = query.trim().toLowerCase();
+  const matches = (t: Task) => !needle || [itemTitle(t), t.summary, t.sourceUrl, t.rawText].some((s) => s?.toLowerCase().includes(needle));
+  const shown = (
     tab === "review"
       ? tasks.filter(inReview).sort((a, b) => Number(b.state === "running") - Number(a.state === "running") || b.createdAt - a.createdAt)
-      : (tab === "all" ? tasks : tasks.filter((t) => t.state === "done")).sort((a, b) => ORDER[a.state] - ORDER[b.state] || b.createdAt - a.createdAt);
+      : (tab === "all" ? tasks : tasks.filter((t) => t.state === "done")).sort((a, b) => ORDER[a.state] - ORDER[b.state] || b.createdAt - a.createdAt)
+  ).filter(matches);
   const first = me?.displayName?.split(/\s+/)[0];
 
   return (
@@ -219,11 +222,7 @@ export default function Home() {
           </Enter>
           {counts.all >= 3 ? (
             <Enter index={3}>
-              <ScalePressable testID="home-search-pill" accessibilityRole="search" accessibilityLabel="Search your saves" scaleTo={0.97} onPress={openSearch}>
-                <View pointerEvents="none">
-                  <SearchPill editable={false} placeholder="Search your saves" />
-                </View>
-              </ScalePressable>
+              <SearchPill testID="home-search-pill" accessibilityLabel="Search your saves" placeholder="Search your saves" value={query} onChangeText={setQuery} autoCorrect={false} autoCapitalize="none" clearButtonMode="while-editing" />
             </Enter>
           ) : null}
           <Boundary title="Couldn’t load your tasks">
@@ -231,7 +230,7 @@ export default function Home() {
               <Skeleton rows={3} />
             ) : shown.length === 0 ? (
               <Enter index={4} style={styles.empty}>
-                <Text style={styles.emptyTitle}>{tab === "done" ? "Nothing done yet" : "All caught up"}</Text>
+                <Text style={styles.emptyTitle}>{needle ? "No matches" : tab === "done" ? "Nothing done yet" : "All caught up"}</Text>
                 <ScalePressable testID="queue-pull-button" accessibilityRole="button" accessibilityLabel="Pull everything" haptic scaleTo={0.97} onPress={() => router.push("/pull")} style={styles.pull}>
                   <Ionicons name="cloud-download-outline" size={20} color={colors.onPrimary} />
                   <Text style={styles.pullText}>Pull everything</Text>

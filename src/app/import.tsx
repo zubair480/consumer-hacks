@@ -116,7 +116,7 @@ export default function ImportScreen() {
             <Ionicons name={notice.tone === "error" ? "alert-circle" : "checkmark-circle"} size={20} color={notice.tone === "error" ? colors.danger : colors.success} />
             <Text style={styles.noticeText}>{notice.text}</Text>
             {notice.tone === "success" ? (
-              <Tap testID="import-view-library" onPress={() => router.push("/library")}>
+              <Tap testID="import-view-library" onPress={() => router.push("/")}>
                 <Text style={styles.link}>View</Text>
               </Tap>
             ) : null}

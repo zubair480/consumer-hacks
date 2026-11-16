@@ -164,7 +164,7 @@ export default function Capture() {
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showToast("Saved to Zapy");
-      if (images.length > 1 && saveMode === "image") router.replace("/library");
+      if (images.length > 1 && saveMode === "image") router.replace("/");
       else if (firstId) router.replace({ pathname: "/item/[id]", params: { id: firstId } });
     } catch (e) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});

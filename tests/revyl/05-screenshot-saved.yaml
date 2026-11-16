@@ -10,5 +10,5 @@ steps:
   - "Confirm a preview (`capture-image-preview-0`), tap `save-button`."
 expect:
   - "Item detail opens and shows the image (`item-image`)."
-  - "The item appears in Library."
+  - "The item appears on Home under the All tab (`queue-tab-all`)."
 evidence: one screenshot per step, saved as renders/CONS-9/05-screenshot-saved-<step>.png
