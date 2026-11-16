@@ -94,7 +94,7 @@ export function CalendarAgentCard({ itemId, primaryType }: { itemId: Id<"savedIt
       {!active || !p ? (
         <Button testID="calendar-prepare" title="Draft calendar event" icon="calendar-outline" size="sm" variant="secondary" loading={busy} onPress={() => run(() => prepare({ itemId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }))} style={{ marginTop: spacing.md }} />
       ) : active.status === "needs_approval" ? (
-        <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+        <View testID="calendar-proposal" style={{ gap: spacing.sm, marginTop: spacing.md }}>
           <Field testID="calendar-summary" value={edit.summary ?? p.summary} onChangeText={(summary) => setEdit((e) => ({ ...e, summary }))} placeholder="Title" />
           <Field testID="calendar-location" value={edit.location ?? p.location} onChangeText={(location) => setEdit((e) => ({ ...e, location }))} placeholder="Location" />
           <Field testID="calendar-start" value={edit.startDateTime ?? p.startDateTime} onChangeText={(startDateTime) => setEdit((e) => ({ ...e, startDateTime }))} placeholder="YYYY-MM-DDTHH:MM:SS" autoCapitalize="characters" autoCorrect={false} />
@@ -111,8 +111,8 @@ export function CalendarAgentCard({ itemId, primaryType }: { itemId: Id<"savedIt
         </View>
       ) : active.status === "completed" ? (
         <View style={{ marginTop: spacing.md }}>
-          <Text tone="secondary">Added to your calendar.</Text>
-          <Button testID="calendar-open-event" title="Open event" icon="open-outline" size="sm" variant="secondary" onPress={() => active.resultUrl && WebBrowser.openBrowserAsync(active.resultUrl).catch(() => {})} style={{ marginTop: spacing.sm }} />
+          <Text tone="secondary">Added to Google Calendar ✓</Text>
+          <Button testID="calendar-open-event" title="Open in Calendar" icon="open-outline" size="sm" variant="secondary" onPress={() => active.resultUrl && WebBrowser.openBrowserAsync(active.resultUrl).catch(() => {})} style={{ marginTop: spacing.sm }} />
         </View>
       ) : (
         <View style={{ marginTop: spacing.md }}>

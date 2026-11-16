@@ -12,6 +12,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { errorMessage } from "../../components/media";
 import { Tap } from "../../components/Pressable";
 import { ResultView } from "../../components/ResultView";
+import { TerminalCard } from "../../components/agents/TerminalCard";
 import { ScreenHeader } from "../../components/ScreenHeader";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space } from "../../components/tokens";
@@ -125,6 +126,7 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
 
       {doc ? (
         <SlideUp style={{ gap: 28 }}>
+          {doc.actionType === "run_repo" ? <TerminalCard doc={doc} /> : null}
           <ResultView doc={doc} resultId={result?._id} accent={pastelFor(item?.primaryType)} />
           <Tap testID="result-open-item-button" onPress={() => router.push({ pathname: "/item/[id]", params: { id: execution.itemId } })} style={styles.itemLink}>
             <Ionicons name="bookmark-outline" size={16} color={colors.text} />
