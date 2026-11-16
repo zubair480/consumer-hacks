@@ -23,16 +23,18 @@ import { fonts, palette } from "../../theme";
 import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
 import type { UserProfile } from "../../shared/contracts";
 
-type Key = "name" | "educationLevel" | "fieldOfStudy" | "country" | "citizenship" | "gpa" | "city" | "interests";
+type Key = "name" | "educationLevel" | "fieldOfStudy" | "country" | "citizenship" | "gpa" | "city" | "email" | "phone" | "interests";
 
-const FIELDS: { key: Key; label: string; placeholder: string; numeric?: boolean }[] = [
+const FIELDS: { key: Key; label: string; placeholder: string; keyboard?: "decimal-pad" | "email-address" | "phone-pad" }[] = [
   { key: "name", label: "Name", placeholder: "What should we call you?" },
   { key: "educationLevel", label: "Education level", placeholder: "e.g. High school senior, Undergraduate" },
   { key: "fieldOfStudy", label: "Field of study", placeholder: "e.g. Computer Science" },
   { key: "country", label: "Country", placeholder: "e.g. United States" },
   { key: "citizenship", label: "Citizenship", placeholder: "e.g. U.S. citizen" },
-  { key: "gpa", label: "GPA (optional)", placeholder: "e.g. 3.6", numeric: true },
+  { key: "gpa", label: "GPA (optional)", placeholder: "e.g. 3.6", keyboard: "decimal-pad" },
   { key: "city", label: "City", placeholder: "e.g. San Francisco" },
+  { key: "email", label: "Email", placeholder: "you@example.com", keyboard: "email-address" },
+  { key: "phone", label: "Phone number", placeholder: "e.g. +1 415 555 0100", keyboard: "phone-pad" },
 ];
 
 function toText(p: UserProfile, key: Key): string {
@@ -106,6 +108,8 @@ function Body() {
         country: value("country"),
         citizenship: value("citizenship"),
         city: value("city"),
+        email: value("email"),
+        phone: value("phone"),
         gpa,
       });
       setDraft({});
@@ -142,8 +146,8 @@ function Body() {
               testID={`profile-${f.key}-input`}
               placeholder={f.placeholder}
               value={value(f.key)}
-              keyboardType={f.numeric ? "decimal-pad" : "default"}
-              autoCapitalize={f.key === "interests" ? "none" : "words"}
+              keyboardType={f.keyboard ?? "default"}
+              autoCapitalize={f.key === "email" ? "none" : "words"}
               onChangeText={(v) => { setDraft((d) => ({ ...d, [f.key]: v })); setStatus(null); }}
             />
           </View>

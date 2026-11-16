@@ -6,7 +6,7 @@ build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleas
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
   - "After 9 and 11, relaunch the app."
-  - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible."
+  - "Tap `zap-intro-skip`. If `welcome-screen` is visible, walk the first-launch flow exactly as in 01-app-launches."
   - "Open Home (Done tab) and reopen both results."
 expect:
   - "Both results reopen from Convex with the same content (`result-screen`, `result-timestamp`)."
