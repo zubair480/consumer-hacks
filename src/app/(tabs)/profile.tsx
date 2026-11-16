@@ -8,7 +8,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { CalendarConnectRow } from "../../components/agents/CalendarAgent";
-import { ConnectedAccounts } from "../../components/publishing/ConnectedAccounts";
 import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
 import { errorMessage } from "../../components/media";
@@ -57,9 +56,6 @@ export default function Profile() {
         <ConnectedAccountsRow />
         <Boundary title="Couldn’t load your profile">
           <Body />
-        </Boundary>
-        <Boundary title="Couldn’t load connected accounts">
-          <ConnectedAccounts />
         </Boundary>
         <Boundary fallback={null}><CalendarConnectRow /></Boundary>
       </ScrollView>
