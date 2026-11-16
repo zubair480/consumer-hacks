@@ -23,6 +23,8 @@ export default function FillApproval() {
       <ScrollView testID="fill-screen" contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 120 }}>
         {run === undefined ? (
           <ActivityIndicator testID="fill-loading" />
+        ) : run === null ? (
+          <Text variant="heading" testID="fill-gone">This save is gone.</Text>
         ) : (
           <>
             <Text variant="heading" testID="fill-status">{label(run.status)}</Text>

@@ -5,6 +5,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ActionCard } from "../../../components/ActionCard";
 import { Boundary } from "../../../components/Boundary";
+import { GoneState } from "../../../components/GoneState";
 import { itemTitle } from "../../../components/ItemCard";
 import { OutcomeRow } from "../../../components/OutcomeRow";
 import { ScreenHeader } from "../../../components/ScreenHeader";
@@ -33,6 +34,7 @@ export default function ContextualActions() {
 function Body({ itemId }: { itemId: Id<"savedItems"> }) {
   const item = useOwnedQuery(api.items.get, { itemId });
   if (item === undefined) return <Skeleton rows={3} height={120} />;
+  if (item === null) return <GoneState />;
   return (
     <>
       <View style={styles.gap}>

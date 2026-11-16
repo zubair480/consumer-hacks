@@ -3,7 +3,7 @@ import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { AGENT_ACTIONS, ACTION_LABELS } from "../src/shared/contracts";
 import { logEvent } from "./activity";
-import { getUser, requireOwnedItem } from "./lib/auth";
+import { getUser, requireOwnedItem, getOwnedItem } from "./lib/auth";
 import { parseRepo } from "./lib/runRepo";
 import { vOwnerId } from "./lib/validators";
 
@@ -23,7 +23,7 @@ export const runRepoAvailable = query({
 export const latestRunRepo = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    await requireOwnedItem(ctx, ownerId, itemId);
+    if (!(await getOwnedItem(ctx, ownerId, itemId))) return null;
     const recent = await ctx.db
       .query("actionExecutions")
       .withIndex("by_itemId_and_createdAt", (q) => q.eq("itemId", itemId))

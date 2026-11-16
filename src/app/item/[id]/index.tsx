@@ -12,6 +12,7 @@ import { CalendarAgentCard } from "../../../components/agents/CalendarAgent";
 import { ActionCard } from "../../../components/ActionCard";
 import { FillFormCard } from "../../../components/formFill/FillFormCard";
 import { Boundary } from "../../../components/Boundary";
+import { GoneState } from "../../../components/GoneState";
 import { FactRow } from "../../../components/FactRow";
 import { Field } from "../../../components/Field";
 import { itemTitle } from "../../../components/ItemCard";
@@ -34,7 +35,7 @@ export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right"]}>
-      <Boundary title="Couldn’t load this save">
+      <Boundary fallback={<GoneState />}>
         <Detail itemId={id as Id<"savedItems">} />
       </Boundary>
     </SafeAreaView>
@@ -139,9 +140,9 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          router.replace("/");
           try {
             await remove({ itemId });
-            router.back();
           } catch (e) {
             Alert.alert("Couldn’t delete this save", errorMessage(e));
           }

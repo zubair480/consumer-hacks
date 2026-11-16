@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "../_generated/api";
 import type { Doc } from "../_generated/dataModel";
 import { action, internalAction, internalMutation, internalQuery, mutation, query } from "../_generated/server";
-import { requireOwned, requireOwnedItem, requireUser } from "../lib/auth";
+import { requireOwned, requireOwnedItem, requireUser, getOwnedItem } from "../lib/auth";
 import { eventTiming } from "../lib/demo";
 import { vOwnerId } from "../lib/validators";
 import { vCalendarProposal } from "./schema";
@@ -71,7 +71,9 @@ export const configured = query({
 export const latestForItem = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    const { user } = await requireOwnedItem(ctx, ownerId, itemId);
+    const owned = await getOwnedItem(ctx, ownerId, itemId);
+    if (!owned) return null;
+    const { user } = owned;
     const jobs = await ctx.db
       .query("agentJobs")
       .withIndex("by_userId_and_itemId", (q) => q.eq("userId", user._id).eq("itemId", itemId))

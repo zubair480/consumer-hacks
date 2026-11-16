@@ -3,7 +3,7 @@ import { internal } from "./_generated/api";
 import { internalMutation, query } from "./_generated/server";
 import { CONTENT_TYPES, LIMITS, type ContentAnalysis, type ContentType, type ExtractedFact } from "../src/shared/contracts";
 import { logEvent } from "./activity";
-import { requireOwnedItem } from "./lib/auth";
+import { requireOwnedItem, getOwnedItem } from "./lib/auth";
 import { callLLMJson, getLLMModel } from "./lib/llm";
 import type { SourcePart } from "./lib/sources";
 import { demoTypeFor } from "./lib/demo";
@@ -275,7 +275,7 @@ export const markProblem = internalMutation({
 export const getForItem = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    await requireOwnedItem(ctx, ownerId, itemId);
+    if (!(await getOwnedItem(ctx, ownerId, itemId))) return null;
     return await ctx.db
       .query("contentAnalysis")
       .withIndex("by_itemId", (q) => q.eq("itemId", itemId))

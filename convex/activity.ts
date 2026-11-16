@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { LIMITS, type ActivityEventType } from "../src/shared/contracts";
-import { getUser, requireOwnedItem } from "./lib/auth";
+import { getUser, requireOwnedItem, getOwnedItem } from "./lib/auth";
 import { vActivityEventType, vOwnerId } from "./lib/validators";
 
 // OWNER: F. Activity feed. Mutations call logEvent directly; actions call
@@ -112,7 +112,7 @@ export const listPage = query({
 export const listForItem = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    await requireOwnedItem(ctx, ownerId, itemId);
+    if (!(await getOwnedItem(ctx, ownerId, itemId))) return [];
     return await ctx.db
       .query("activityEvents")
       .withIndex("by_itemId", (q) => q.eq("itemId", itemId))

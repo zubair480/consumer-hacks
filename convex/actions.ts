@@ -6,7 +6,7 @@ import { internalAction, internalMutation, mutation, query, type MutationCtx, ty
 import { ACTION_LABELS } from "../src/shared/contracts";
 import { imageToDataUrl } from "./lib/sources";
 import { buildSuggestions, isRoutedAction } from "./lib/actionCatalog";
-import { getUser, requireOwned, requireOwnedItem, requireUser } from "./lib/auth";
+import { getUser, requireOwned, requireOwnedItem, requireUser, getOwned, getOwnedItem } from "./lib/auth";
 import { logEvent } from "./activity";
 import { addItemToCollection, getOrCreateCollection } from "./collections";
 import { EXECUTORS, ExecutorError, type ExecutorInput } from "./lib/executors";
@@ -56,7 +56,7 @@ export const suggestForItem = internalMutation({
 export const listSuggestions = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    await requireOwnedItem(ctx, ownerId, itemId);
+    if (!(await getOwnedItem(ctx, ownerId, itemId))) return [];
     const [suggestions, executions] = await Promise.all([
       ctx.db
         .query("actionSuggestions")
@@ -304,7 +304,8 @@ export const getExecution = query({
   args: { ownerId: vOwnerId, executionId: v.id("actionExecutions") },
   handler: async (ctx, { ownerId, executionId }) => {
     const user = await requireUser(ctx, ownerId);
-    const execution = await requireOwned(ctx, user, executionId);
+    const execution = await getOwned(ctx, user, executionId);
+    if (!execution) return null;
     const result = await ctx.db
       .query("actionResults")
       .withIndex("by_executionId", (q) => q.eq("executionId", executionId))
@@ -320,9 +321,9 @@ export const getResult = query({
   handler: async (ctx, { ownerId, resultId, executionId }) => {
     const user = await requireUser(ctx, ownerId);
     let row: Doc<"actionResults"> | null;
-    if (resultId) row = await requireOwned(ctx, user, resultId);
+    if (resultId) row = await getOwned(ctx, user, resultId);
     else if (executionId) {
-      await requireOwned(ctx, user, executionId);
+      if (!(await getOwned(ctx, user, executionId))) return null;
       row = await ctx.db
         .query("actionResults")
         .withIndex("by_executionId", (q) => q.eq("executionId", executionId))
@@ -338,7 +339,7 @@ export const getResult = query({
 export const listResultsForItem = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    await requireOwnedItem(ctx, ownerId, itemId);
+    if (!(await getOwnedItem(ctx, ownerId, itemId))) return [];
     const rows = await ctx.db
       .query("actionResults")
       .withIndex("by_itemId", (q) => q.eq("itemId", itemId))

@@ -90,7 +90,7 @@ describe("calendar agent", () => {
     const jobId = await t.mutation(api.agents.calendar.prepare, { ownerId: OWNER_A, itemId });
     await expect(t.mutation(api.agents.calendar.prepare, { ownerId: OWNER_B, itemId })).rejects.toThrow();
     await expect(t.mutation(api.agents.calendar.approve, { ownerId: OWNER_B, jobId })).rejects.toThrow();
-    await expect(t.query(api.agents.calendar.latestForItem, { ownerId: OWNER_B, itemId })).rejects.toThrow();
+    expect(await t.query(api.agents.calendar.latestForItem, { ownerId: OWNER_B, itemId })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

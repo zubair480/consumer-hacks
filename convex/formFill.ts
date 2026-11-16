@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { requireOwned, requireOwnedItem, requireUser } from "./lib/auth";
+import { requireOwned, requireOwnedItem, requireUser, getOwned, getOwnedItem } from "./lib/auth";
 import { vFormFillField, vFormFillStatus } from "./formFillSchema";
 import { pickFormLink, xStatusId } from "./lib/formLinks";
 import { vOwnerId } from "./lib/validators";
@@ -66,14 +66,17 @@ export const get = query({
   args: { ownerId: vOwnerId, runId: v.id("formFillRuns") },
   handler: async (ctx, { ownerId, runId }) => {
     const user = await requireUser(ctx, ownerId);
-    return await view(ctx, await requireOwned(ctx, user, runId));
+    const run = await getOwned(ctx, user, runId);
+    return run ? await view(ctx, run) : null;
   },
 });
 
 export const latestForItem = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    const { user } = await requireOwnedItem(ctx, ownerId, itemId);
+    const owned = await getOwnedItem(ctx, ownerId, itemId);
+    if (!owned) return null;
+    const { user } = owned;
     const run = await ctx.db
       .query("formFillRuns")
       .withIndex("by_userId_and_itemId", (q) => q.eq("userId", user._id).eq("itemId", itemId))

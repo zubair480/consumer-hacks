@@ -61,7 +61,7 @@ describe("demo.pullEverything (v2)", () => {
     for (const item of demo) await analyze(t, item._id, "general_content");
     const actions = [];
     for (const item of demo) actions.push(await t.query(api.demo.primaryAction, { ownerId: OWNER, itemId: item._id }));
-    expect(actions.map((a) => a.action?.label)).toEqual(["Run it for me", "Fill it for me", "Fill it for me", "Add to my calendar"]);
+    expect(actions.map((a) => a?.action?.label)).toEqual(["Run it for me", "Fill it for me", "Fill it for me", "Add to my calendar"]);
     const after = await ownerItems(t);
     expect(after.every((i) => i.extractionStatus === "ready")).toBe(true);
     const status = await t.query(api.demo.pullStatus, { ownerId: OWNER });
