@@ -6,8 +6,8 @@ build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleas
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
   - "Tap `zap-intro-skip`. If `welcome-screen` is visible, walk the first-launch flow exactly as in 01-app-launches."
-  - "On Home, read the header, the save button (`home-save-button` or `home-empty-save-button`), and the Ready for you / recent sections."
-  - "Tap the save button (`home-save-button`), then tap `quick-capture-link`."
+  - "On Home, read the header and the task sections. The dock (`ink-tab-bar`) is a plain capsule with two tabs, Home (`tab-home`) and You (`tab-profile`), and has no + / Save sticker."
+  - "Capture has no button in the UI any more, so open it through the deep link: run `xcrun simctl openurl booted \"zapy:///capture?mode=url\"` (Revyl: open URL zapy:///capture?mode=url)."
 expect:
   - "Home renders its sections without error."
   - "The Capture sheet opens (`capture-mode-url` visible). Close it with `capture-close-button`."
