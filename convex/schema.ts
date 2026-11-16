@@ -53,6 +53,8 @@ export default defineSchema({
     /** Lowercased title + summary + text + url for Library search; maintained by items.ts / ingest. */
     searchText: v.string(),
     collectionIds: v.optional(v.array(v.id("collections"))),
+    /** Seeded demo save ("v2:repo", "v2:camp", "v2:scholarship", "v2:summit"); set by demo.pullEverything only. */
+    demoKey: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -173,6 +175,7 @@ export default defineSchema({
     email: v.string(),
     phone: v.string(),
     studying: v.string(),
+    program: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_createdAt", ["createdAt"]),
 });

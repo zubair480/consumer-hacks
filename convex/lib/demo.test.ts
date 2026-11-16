@@ -29,6 +29,9 @@ describe("isDemoFormUrl", () => {
   it("only allows our own /demo/apply", () => {
     expect(isDemoFormUrl(`${SITE}/demo/apply`, SITE)).toBe(true);
     expect(isDemoFormUrl(`${SITE}/demo/apply/`, SITE)).toBe(true);
+    expect(isDemoFormUrl(`${SITE}/demo/apply?program=sunny-camp`, SITE)).toBe(true);
+    expect(isDemoFormUrl(`${SITE}/demo/apply?program=brightpath`, SITE)).toBe(true);
+    expect(isDemoFormUrl(`${SITE}/demo/apply?program=summit`, SITE)).toBe(true);
     expect(isDemoFormUrl(`${SITE}/demo/submissions`, SITE)).toBe(false);
     expect(isDemoFormUrl("https://evil.example.com/demo/apply", SITE)).toBe(false);
     expect(isDemoFormUrl("http://pleasant-lark-678.convex.site/demo/apply", SITE)).toBe(false);

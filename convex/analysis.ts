@@ -6,6 +6,7 @@ import { logEvent } from "./activity";
 import { requireOwnedItem } from "./lib/auth";
 import { callLLMJson, getLLMModel } from "./lib/llm";
 import type { SourcePart } from "./lib/sources";
+import { demoTypeFor } from "./lib/demo";
 import { vContentType, vExtractedFact, vOwnerId } from "./lib/validators";
 
 // OWNER: Thread B+C. Classification + fact extraction, and the
@@ -193,6 +194,13 @@ export const save = internalMutation({
   handler: async (ctx, { itemId, extractionStatus, extractionError, ...analysis }) => {
     const item = await ctx.db.get("savedItems", itemId);
     if (!item) return null;
+    const demoType = demoTypeFor(item.demoKey);
+    if (demoType) {
+      analysis.primaryType = demoType;
+      analysis.contentTypes = [demoType, ...analysis.contentTypes.filter((t) => t !== demoType)];
+      extractionStatus = "ready";
+      extractionError = undefined;
+    }
     const previous = await ctx.db.query("contentAnalysis").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(20);
     const renamedByUser = Boolean(item.title) && previous.length > 0 && previous.every((row) => row.title !== item.title);
     for (const row of previous) await ctx.db.delete("contentAnalysis", row._id);

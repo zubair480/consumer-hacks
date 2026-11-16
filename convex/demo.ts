@@ -1,17 +1,34 @@
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
-import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
 import { detectSourcePlatform, LIMITS } from "../src/shared/contracts";
 import { ensureUser, getUser, requireOwnedItem } from "./lib/auth";
-import { boxFor, demoSaves, emptyBoxes, primaryAgentAction } from "./lib/demo";
+import { boxFor, demoSaves, emptyBoxes, isV1DemoSave, primaryAgentAction } from "./lib/demo";
 import { vOwnerId } from "./lib/validators";
 
 export { DEMO_EVENT_TEXT } from "./lib/demo";
 
 const ANALYZED = ["ready", "needs_input", "failed"];
 
-/** Inserts the 3 demo saves the owner is missing, schedules their normal ingestion, and syncs X bookmarks when X is connected. Idempotent. */
+async function deleteSave(ctx: MutationCtx, item: Doc<"savedItems">) {
+  const itemId = item._id;
+  const derived = await Promise.all([
+    ctx.db.query("contentAnalysis").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(100),
+    ctx.db.query("actionSuggestions").withIndex("by_itemId_and_rank", (q) => q.eq("itemId", itemId)).take(100),
+    ctx.db.query("actionExecutions").withIndex("by_itemId_and_createdAt", (q) => q.eq("itemId", itemId)).take(100),
+    ctx.db.query("actionResults").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(100),
+    ctx.db.query("formFillRuns").withIndex("by_userId_and_itemId", (q) => q.eq("userId", item.userId).eq("itemId", itemId)).take(100),
+    ctx.db.query("agentJobs").withIndex("by_userId_and_itemId", (q) => q.eq("userId", item.userId).eq("itemId", itemId)).take(100),
+  ]);
+  for (const doc of derived.flat()) await ctx.db.delete(doc._id);
+  await ctx.db.delete("savedItems", itemId);
+}
+
+/**
+ * Seeds the 4 v2 demo saves (repo, camp, scholarship, summit; oldest first) the owner is missing, removes v1 demo saves,
+ * and schedules normal ingestion. Idempotent per owner (demoKey). Also syncs X bookmarks when X is connected.
+ */
 export const pullEverything = mutation({
   args: { ownerId: vOwnerId },
   handler: async (ctx, { ownerId }) => {
@@ -21,30 +38,33 @@ export const pullEverything = mutation({
       .withIndex("by_userId_and_createdAt", (q) => q.eq("userId", user._id))
       .order("desc")
       .take(LIMITS.listMax);
+    for (const old of existing.filter((i) => isV1DemoSave(i))) await deleteSave(ctx, old);
     let created = 0;
-    for (const save of demoSaves()) {
-      const has = existing.find((i) => (save.sourceUrl ? i.sourceUrl === save.sourceUrl : i.rawText === save.rawText));
+    const base = Date.now();
+    for (const [index, save] of demoSaves().entries()) {
+      const has = existing.find((i) => i.demoKey === save.key);
       if (has) {
-        if (save.rawText && has.rawText !== save.rawText && (has.extractionStatus === "needs_input" || has.extractionStatus === "failed")) {
+        if (has.extractionStatus === "needs_input" || has.extractionStatus === "failed") {
           await ctx.db.patch(has._id, { rawText: save.rawText, extractionStatus: "pending", extractionError: undefined, updatedAt: Date.now() });
           await ctx.scheduler.runAfter(0, internal.ingest.run, { itemId: has._id });
         }
         continue;
       }
-      const now = Date.now();
+      const now = base + index;
       const itemId = await ctx.db.insert("savedItems", {
         userId: user._id,
-        sourceKind: save.sourceUrl ? "url" : "text",
+        demoKey: save.key,
+        sourceKind: "url",
         sourceUrl: save.sourceUrl,
-        sourcePlatform: save.sourceUrl ? detectSourcePlatform(save.sourceUrl) : "manual",
+        sourcePlatform: detectSourcePlatform(save.sourceUrl),
         rawText: save.rawText,
         contentTypes: [],
         extractionStatus: "pending",
-        searchText: [save.sourceUrl, save.rawText].filter(Boolean).join(" ").toLowerCase(),
+        searchText: `${save.sourceUrl} ${save.rawText}`.toLowerCase(),
         createdAt: now,
         updatedAt: now,
       });
-      await ctx.db.insert("activityEvents", { userId: user._id, createdAt: now, type: "item_saved", title: "Saved", detail: save.sourceUrl ?? save.rawText?.slice(0, 80) ?? "Saved", itemId });
+      await ctx.db.insert("activityEvents", { userId: user._id, createdAt: now, type: "item_saved", title: "Saved", detail: save.sourceUrl, itemId });
       await ctx.scheduler.runAfter(0, internal.ingest.run, { itemId });
       created++;
     }
@@ -85,7 +105,7 @@ export const primaryAction = query({
 });
 
 export const recordSubmission = internalMutation({
-  args: { name: v.string(), email: v.string(), phone: v.string(), studying: v.string() },
+  args: { name: v.string(), email: v.string(), phone: v.string(), studying: v.string(), program: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const createdAt = Date.now();
     await ctx.db.insert("demoFormSubmissions", { ...args, createdAt });

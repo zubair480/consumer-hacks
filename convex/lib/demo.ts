@@ -20,12 +20,81 @@ export const DEMO_FORM_TEXT = [
   "How to apply: fill in the online application form with 4 fields: Full name, Email, Phone number, and What are you studying? Then tap Submit application.",
 ].join("\n");
 
-export type DemoSave = { key: "code" | "forms" | "events"; sourceUrl?: string; rawText?: string };
-export const demoSaves = (site = demoSiteUrl()): DemoSave[] => [
-  { key: "code", sourceUrl: DEMO_REPO_URL },
-  { key: "forms", sourceUrl: demoFormUrl(site), rawText: DEMO_FORM_TEXT },
-  { key: "events", rawText: DEMO_EVENT_TEXT },
+export const SUMMIT_POST_PATH = "/demo/post/nurses-summit";
+
+export const SUMMIT_TEXT =
+  "Night Shift Nurses Summit 2026 · Thursday, December 10, 2026, 9:00 AM–5:00 PM · Oakland Marriott City Center, 1001 Broadway, Oakland, CA · 7 CE contact hours · Early-bird $149 (regular $349), early bird ends Friday, November 20 at 11:59 PM · Register: /demo/apply?program=summit";
+
+type Field = { label: string; name: string; type: string };
+const STANDARD_FIELDS: Field[] = [
+  { label: "Full name", name: "name", type: "text" },
+  { label: "Email", name: "email", type: "email" },
+  { label: "Phone number", name: "phone", type: "tel" },
+  { label: "What are you studying?", name: "studying", type: "text" },
 ];
+
+export type Program = { title: string; paragraphs: string[]; fields: Field[] };
+
+export const PROGRAMS: Record<string, Program> = {
+  brightpath: {
+    title: "Brightpath First-Gen STEM Scholarship: $10,000 · Application (due Nov 21)",
+    paragraphs: [
+      "The Brightpath First-Gen STEM Scholarship awards $10,000 to first-generation college students studying science, technology, engineering or math.",
+      "Eligibility: you are the first in your family to attend college and you are enrolled in, or admitted to, a STEM program.",
+      "Deadline: applications are due November 21. Finalists are contacted by email.",
+      "This application form asks for your full name, email, phone number and what you are studying.",
+    ],
+    fields: STANDARD_FIELDS,
+  },
+  "sunny-camp": {
+    title: "Sunny Days Free Summer Camp · Family sign-up (spots are limited, apply by Friday)",
+    paragraphs: [
+      "Sunny Days is a free summer day camp for kids ages 6 to 12, with outdoor games, art, swimming and lunch every day.",
+      "Spots are limited, so families should apply by Friday. Sign-up is free and takes under a minute.",
+      "This family sign-up application form asks for the parent or guardian name, email, phone number, and how you heard about us.",
+    ],
+    fields: [
+      { label: "Parent or guardian name", name: "name", type: "text" },
+      { label: "Email", name: "email", type: "email" },
+      { label: "Phone number", name: "phone", type: "tel" },
+      { label: "How did you hear about us?", name: "heard", type: "text" },
+    ],
+  },
+  summit: {
+    title: "Night Shift Nurses Summit 2026 · Early-bird registration",
+    paragraphs: [
+      "Register for the Night Shift Nurses Summit 2026 on Thursday, December 10, 2026, 9:00 AM–5:00 PM at the Oakland Marriott City Center, 1001 Broadway, Oakland, CA.",
+      "Earn 7 CE contact hours. Early-bird registration is $149 (regular $349); early bird ends Friday, November 20 at 11:59 PM.",
+      "This registration form asks for your full name, email, phone number and what you are studying.",
+    ],
+    fields: STANDARD_FIELDS,
+  },
+};
+
+export const programFormUrl = (program: string, site = demoSiteUrl()) => `${demoFormUrl(site)}?program=${program}`;
+const programText = (p: Program) => [p.title, ...p.paragraphs].join("\n");
+
+export type DemoKey = "v2:repo" | "v2:camp" | "v2:scholarship" | "v2:summit";
+export type DemoSave = { key: DemoKey; sourceUrl: string; rawText: string; type: ContentType };
+
+/** The v2 demo saves, oldest first. To review (newest first) shows summit, scholarship, camp, repo. */
+export const demoSaves = (site = demoSiteUrl()): DemoSave[] => [
+  { key: "v2:repo", sourceUrl: DEMO_REPO_URL, rawText: "zapy-hello-world: a tiny public Node.js GitHub repository. Running npm start prints Hello World.", type: "github_repository" },
+  { key: "v2:camp", sourceUrl: programFormUrl("sunny-camp", site), rawText: programText(PROGRAMS["sunny-camp"]), type: "application" },
+  { key: "v2:scholarship", sourceUrl: programFormUrl("brightpath", site), rawText: programText(PROGRAMS.brightpath), type: "scholarship" },
+  { key: "v2:summit", sourceUrl: `${site.replace(/\/$/, "")}${SUMMIT_POST_PATH}`, rawText: SUMMIT_TEXT, type: "event" },
+];
+
+/** The content type a demo save always resolves to, so it leads with the right agent action. */
+export function demoTypeFor(demoKey: string | undefined): ContentType | undefined {
+  return demoSaves().find((s) => s.key === demoKey)?.type;
+}
+
+/** v1 demo saves (before demoKey): removed on the next pull. */
+export function isV1DemoSave(item: { demoKey?: string; sourceUrl?: string; rawText?: string }, site = demoSiteUrl()): boolean {
+  if (item.demoKey) return false;
+  return item.sourceUrl === DEMO_REPO_URL || item.sourceUrl === demoFormUrl(site) || item.rawText === DEMO_EVENT_TEXT;
+}
 
 export type Box = "code" | "forms" | "events" | "jobs" | "learn" | "other";
 export const emptyBoxes = (): Record<Box, number> => ({ code: 0, forms: 0, events: 0, jobs: 0, learn: 0, other: 0 });
@@ -116,9 +185,12 @@ function findTime(text: string): { start: number; end?: number } | null {
  * startDateTime is "" when no date was found, so the user fills it in.
  */
 export function eventTiming(texts: string[], dateHint: string | undefined, now = Date.now()): { startDateTime: string; durationMinutes: number } {
+  const year = new Date(now).getUTCFullYear();
+  const candidates = texts.filter(Boolean).map((t) => ({ date: findDate(t, year), time: findTime(t) }));
+  const best = candidates.find((c) => c.date && c.time?.end !== undefined) ?? candidates.find((c) => c.date && c.time);
   const joined = texts.filter(Boolean).join("\n");
-  const date = (dateHint && /^\d{4}-\d{2}-\d{2}/.test(dateHint) ? dateHint.slice(0, 10) : null) ?? findDate(joined, new Date(now).getUTCFullYear());
-  const time = findTime(joined);
+  const date = best?.date ?? (dateHint && /^\d{4}-\d{2}-\d{2}/.test(dateHint) ? dateHint.slice(0, 10) : null) ?? findDate(joined, year);
+  const time = best?.time ?? findTime(joined);
   const start = time?.start ?? 9 * 60;
   const duration = time?.end !== undefined && time.end > start ? time.end - start : 60;
   return { startDateTime: date ? `${date}T${pad(Math.floor(start / 60))}:${pad(start % 60)}:00` : "", durationMinutes: duration };
@@ -143,7 +215,27 @@ th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #ECECEC;vertical-
 th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5B5B63}
 </style></head><body><main>${body}</main></body></html>`;
 
-export function applyFormHtml(): string {
+export function applyFormHtml(program?: string | null): string {
+  const p = program ? PROGRAMS[program] : undefined;
+  if (p) {
+    const fields = p.fields
+      .map((f) => `<label for="${f.name}">${esc(f.label)}</label><input id="${f.name}" name="${f.name}" type="${f.type}" required>`)
+      .join("\n");
+    return shell(
+      p.title,
+      `<h1>${esc(p.title)}</h1>
+<section>${p.paragraphs.map((t) => `<p>${esc(t)}</p>`).join("\n")}
+<h2>What we ask for</h2>
+<ul>${p.fields.map((f) => `<li>${esc(f.label)}</li>`).join("")}</ul>
+</section>
+<form method="POST" action="${DEMO_FORM_PATH}">
+<input type="hidden" name="program" value="${esc(program!)}">
+${fields}
+<button type="submit">Submit application</button>
+</form>`,
+      p.paragraphs.join(" "),
+    );
+  }
   return shell(
     "Zapy Demo Program: quick application",
     `<h1>Zapy Demo Program: quick application</h1>
@@ -168,25 +260,43 @@ export function applyFormHtml(): string {
   );
 }
 
+export function summitPostHtml(): string {
+  const p = PROGRAMS.summit;
+  return shell(
+    "Night Shift Nurses Summit 2026",
+    `<article><h1>Night Shift Nurses Summit 2026</h1>
+<p>Thursday, December 10, 2026, 9:00 AM–5:00 PM</p>
+<p>Oakland Marriott City Center, 1001 Broadway, Oakland, CA</p>
+<p>7 CE contact hours</p>
+<p>Early-bird $149 (regular $349), early bird ends Friday, November 20 at 11:59 PM</p>
+<p>Register: <a href="${DEMO_FORM_PATH}?program=summit">${DEMO_FORM_PATH}?program=summit</a></p>
+<p>A full day for night shift nurses: sleep and recovery science, safe handoffs, and staffing that works after dark. ${esc(p.paragraphs[1])}</p>
+</article>
+<p style="margin-top:40px;font-size:12px;color:#9A9AA3">Zapy demo page</p>`,
+    SUMMIT_TEXT,
+  );
+}
+
 export function thanksHtml(name: string, at: number): string {
   return shell("Application received", `<h1>Thanks, ${esc(name || "there")}! Your application was received.</h1><p>Received ${esc(new Date(at).toISOString())}</p>`);
 }
 
-export type Submission = { name: string; email: string; phone: string; studying: string; createdAt: number };
+export type Submission = { name: string; email: string; phone: string; studying: string; program?: string; createdAt: number };
 
 export function submissionsHtml(rows: Submission[]): string {
   const body = rows.length
-    ? rows.map((r) => `<tr><td>${esc(new Date(r.createdAt).toISOString())}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td>${esc(r.studying)}</td></tr>`).join("")
-    : `<tr><td colspan="5">No submissions yet.</td></tr>`;
+    ? rows.map((r) => `<tr><td>${esc(new Date(r.createdAt).toISOString())}</td><td>${esc(r.program ?? "")}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td>${esc(r.studying)}</td></tr>`).join("")
+    : `<tr><td colspan="6">No submissions yet.</td></tr>`;
   return shell(
     "Zapy Demo Program: submissions",
-    `<h1>Latest applications</h1><p>The 10 most recent, newest first.</p><table><thead><tr><th>When</th><th>Name</th><th>Email</th><th>Phone</th><th>Studying</th></tr></thead><tbody>${body}</tbody></table>`,
+    `<h1>Latest applications</h1><p>The 10 most recent, newest first.</p><table><thead><tr><th>When</th><th>Program</th><th>Name</th><th>Email</th><th>Phone</th><th>Studying</th></tr></thead><tbody>${body}</tbody></table>`,
   );
 }
 
 const FIELD_MAX = 200;
 export function parseSubmission(form: URLSearchParams): Omit<Submission, "createdAt"> | null {
   const get = (k: string) => (form.get(k) ?? "").trim().slice(0, FIELD_MAX);
-  const s = { name: get("name"), email: get("email"), phone: get("phone"), studying: get("studying") };
+  const program = get("program");
+  const s = { name: get("name"), email: get("email"), phone: get("phone"), studying: get("studying") || get("heard"), ...(program && PROGRAMS[program] ? { program } : {}) };
   return s.name && s.email ? s : null;
 }
