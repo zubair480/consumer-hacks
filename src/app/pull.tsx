@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -15,6 +16,8 @@ const BOUNCY = { damping: 12, stiffness: 220 };
 export default function Pull() {
   const pullEverything = useOwnedMutation(api.demo.pullEverything);
   const status = useOwnedQuery(api.demo.pullStatus, {});
+  const sources = useOwnedQuery(api.imports.connections.sources, {});
+  const xConnected = sources === undefined ? undefined : !!sources.find((s) => s.platform === "x")?.connected;
   const [pullFailed, setPullFailed] = useState(false);
   const fired = useRef(false);
 
@@ -37,6 +40,12 @@ export default function Pull() {
           <Text style={styles.sub}>From X bookmarks, your share sheet and saved links</Text>
         </View>
         <Progress value={total ? analyzed / total : 0} />
+        {xConnected === false ? (
+          <ScalePressable testID="pull-connect-x" accessibilityRole="button" accessibilityLabel="Connect X bookmarks" haptic scaleTo={0.97} onPress={() => router.push("/import")} style={styles.connect}>
+            <Ionicons name="logo-x" size={18} color={colors.onPrimary} />
+            <Text style={styles.primaryText}>Connect X bookmarks</Text>
+          </ScalePressable>
+        ) : null}
         <View style={styles.grid}>
           {BOXES.map((b, i) => (
             <Box key={b.key} label={b.label} color={b.color} count={status?.byBox[b.key] ?? 0} index={i} testID={`pull-box-${b.key}`} />
@@ -105,6 +114,7 @@ const styles = StyleSheet.create({
   count: { fontFamily: fonts.display, fontSize: 28, lineHeight: 32, color: colors.text, fontVariant: ["tabular-nums"] },
   boxLabel: { fontFamily: fonts.extraBold, fontSize: 14, lineHeight: 18, color: colors.text },
   bottom: { paddingHorizontal: 20, paddingBottom: 8, minHeight: 64, justifyContent: "center" },
+  connect: { height: 52, borderRadius: 999, backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   primary: { height: 56, borderRadius: 999, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
   primaryText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.onPrimary },
 });
