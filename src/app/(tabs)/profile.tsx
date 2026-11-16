@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { useReducedMotion } from "react-native-reanimated";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -46,7 +47,12 @@ export default function Profile() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <HoloBand height={140} />
       <ScrollView {...scroll} contentContainerStyle={styles.content} testID="profile-screen" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-        <InkPill label="Profile" />
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <InkPill label="Profile" />
+          <ScalePressable testID="profile-replay-welcome" accessibilityRole="button" accessibilityLabel="Replay welcome" scaleTo={0.97} onPress={() => router.push("/welcome")} style={{ height: 44, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: colors.text, justifyContent: "center" }}>
+            <ZText style={{ fontFamily: fonts.bold, fontSize: 13, lineHeight: 18, color: colors.text }}>Replay welcome</ZText>
+          </ScalePressable>
+        </View>
         <Boundary title="Couldn’t load your profile">
           <Body />
         </Boundary>
