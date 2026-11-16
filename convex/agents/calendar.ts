@@ -39,7 +39,7 @@ export const prepare = mutation({
     const facts = analysis?.facts ?? [];
     const timeFirst = [...facts].sort((a, b) => Number(/time|date|when|start/i.test(b.key)) - Number(/time|date|when|start/i.test(a.key)));
     const now = Date.now();
-    const timing = eventTiming([...timeFirst.map((f) => `${f.value} ${f.evidence.quote}`), item.rawText ?? "", item.summary ?? "", item.title ?? ""], item.deadline, now);
+    const timing = eventTiming([item.rawText ?? "", ...timeFirst.map((f) => `${f.value} ${f.evidence.quote}`), item.summary ?? "", item.title ?? ""], item.deadline, now);
     return await ctx.db.insert("agentJobs", {
       userId: user._id,
       itemId,
@@ -50,7 +50,7 @@ export const prepare = mutation({
         description: [item.summary, item.location ? `Location: ${item.location}` : "", item.sourceUrl].filter(Boolean).join("\n\n"),
         location: item.location ?? "",
         startDateTime: timing.startDateTime,
-        timezone: timezone || "UTC",
+        timezone: timezone || "America/Los_Angeles",
         durationMinutes: timing.durationMinutes,
       },
       createdAt: now,

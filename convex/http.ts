@@ -5,7 +5,7 @@ import { X_CALLBACK_PATH } from "./imports/xClient";
 import { GOOGLE_CALLBACK_PATH } from "./imports/youtubeClient";
 import { save } from "./share";
 import { GCAL_CALLBACK_PATH, safeReturnUrl } from "./agents/composio";
-import { DEMO_FORM_PATH, applyFormHtml, parseSubmission, submissionsHtml, thanksHtml } from "./lib/demo";
+import { DEMO_FORM_PATH, SUMMIT_POST_PATH, applyFormHtml, parseSubmission, submissionsHtml, summitPostHtml, thanksHtml } from "./lib/demo";
 
 const http = httpRouter();
 
@@ -93,7 +93,10 @@ http.route({ path: "/save", method: "POST", handler: save });
 const html = (body: string, status = 200) => new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 
 /** Demo flow: the hosted application form the Browserbase agent fills. */
-http.route({ path: DEMO_FORM_PATH, method: "GET", handler: httpAction(async () => html(applyFormHtml())) });
+http.route({ path: DEMO_FORM_PATH, method: "GET", handler: httpAction(async (_ctx, req) => html(applyFormHtml(new URL(req.url).searchParams.get("program")))) });
+
+/** Demo flow: the saved "post" for the calendar task. */
+http.route({ path: SUMMIT_POST_PATH, method: "GET", handler: httpAction(async () => html(summitPostHtml())) });
 
 http.route({
   path: DEMO_FORM_PATH,
