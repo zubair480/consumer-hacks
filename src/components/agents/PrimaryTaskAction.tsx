@@ -5,7 +5,6 @@ import { Modal, Pressable, StyleSheet, Switch, TextInput, View } from "react-nat
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
-import { boxFor } from "../../lib/boxes";
 import type { SavedItemView } from "../../shared/contracts";
 import { colors, fonts, palette } from "../../theme";
 import { errorMessage } from "../media";
@@ -16,11 +15,13 @@ type FillValues = { name: string; email: string; phone: string; studying: string
 
 /** Demo flow A4: the one big agent action on an item (Run it / Fill it / Add to calendar). Renders nothing for other boxes. */
 export function PrimaryTaskAction({ item }: { item: SavedItemView }) {
-  const box = boxFor(item.primaryType);
-  if (box.key === "code") return <RunAction itemId={item._id as Id<"savedItems">} />;
-  if (box.key === "forms") return <FillAction itemId={item._id as Id<"savedItems">} />;
-  if (box.key === "events") return <CalendarAction itemId={item._id as Id<"savedItems">} />;
-  return null;
+  const itemId = item._id as Id<"savedItems">;
+  const primary = useOwnedQuery(api.demo.primaryAction, { itemId });
+  const action = primary?.action;
+  if (!action) return null;
+  if (action.kind === "run_repo") return <RunAction itemId={itemId} label={action.label} />;
+  if (action.kind === "fill_form") return <FillAction itemId={itemId} label={action.label} />;
+  return <CalendarAction itemId={itemId} label={action.label} />;
 }
 
 function BigButton({ label, icon, busy, onPress }: { label: string; icon: "play" | "document-text-outline" | "calendar-outline"; busy?: boolean; onPress: () => void }) {
@@ -36,7 +37,7 @@ function Note({ text }: { text: string | null }) {
   return text ? <Text style={styles.note}>{text}</Text> : null;
 }
 
-function RunAction({ itemId }: { itemId: Id<"savedItems"> }) {
+function RunAction({ itemId, label }: { itemId: Id<"savedItems">; label: string }) {
   const latest = useOwnedQuery(api.agentRuns.latestRunRepo, { itemId });
   const start = useOwnedMutation(api.agentRuns.startRunRepo);
   const [busy, setBusy] = useState(false);
@@ -57,13 +58,13 @@ function RunAction({ itemId }: { itemId: Id<"savedItems"> }) {
   };
   return (
     <View style={{ gap: 8 }}>
-      <BigButton label={running ? "Watch it run" : "Run it for me"} icon="play" busy={busy} onPress={press} />
+      <BigButton label={running ? "Watch it run" : label} icon="play" busy={busy} onPress={press} />
       <Note text={error} />
     </View>
   );
 }
 
-function FillAction({ itemId }: { itemId: Id<"savedItems"> }) {
+function FillAction({ itemId, label }: { itemId: Id<"savedItems">; label: string }) {
   const profile = useOwnedQuery(api.preferences.get, {});
   const upsert = useOwnedMutation(api.preferences.upsert);
   const start = useOwnedMutation(api.formFill.start);
@@ -72,7 +73,7 @@ function FillAction({ itemId }: { itemId: Id<"savedItems"> }) {
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const p = (profile ?? {}) as { name?: string; email?: string; phone?: string; fieldOfStudy?: string };
+  const p = profile ?? {};
   const v: FillValues = values ?? { name: p.name ?? "", email: p.email ?? "", phone: p.phone ?? "", studying: p.fieldOfStudy ?? "" };
   const set = (k: keyof FillValues) => (text: string) => setValues({ ...v, [k]: text });
 
@@ -80,10 +81,7 @@ function FillAction({ itemId }: { itemId: Id<"savedItems"> }) {
     setBusy(true);
     setError(null);
     try {
-      if (remember) {
-        const save = upsert as unknown as (args: Record<string, string>) => Promise<unknown>;
-        await save({ name: v.name, fieldOfStudy: v.studying, email: v.email, phone: v.phone }).catch(() => upsert({ name: v.name, fieldOfStudy: v.studying }));
-      }
+      if (remember) await upsert({ name: v.name, fieldOfStudy: v.studying, email: v.email, phone: v.phone });
       const runId = await start({ itemId });
       setOpen(false);
       router.push({ pathname: "/fill/[runId]", params: { runId } });
@@ -103,7 +101,7 @@ function FillAction({ itemId }: { itemId: Id<"savedItems"> }) {
 
   return (
     <>
-      <BigButton label="Fill it for me" icon="document-text-outline" onPress={() => setOpen(true)} />
+      <BigButton label={label} icon="document-text-outline" onPress={() => setOpen(true)} />
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)} statusBarTranslucent>
         <Pressable style={styles.scrim} onPress={() => setOpen(false)} />
         <View style={styles.sheet} testID="fill-sheet">
@@ -133,7 +131,7 @@ function FillAction({ itemId }: { itemId: Id<"savedItems"> }) {
   );
 }
 
-function CalendarAction({ itemId }: { itemId: Id<"savedItems"> }) {
+function CalendarAction({ itemId, label }: { itemId: Id<"savedItems">; label: string }) {
   const job = useOwnedQuery(api.agents.calendar.latestForItem, { itemId });
   const prepare = useOwnedMutation(api.agents.calendar.prepare);
   const [busy, setBusy] = useState(false);
@@ -154,7 +152,7 @@ function CalendarAction({ itemId }: { itemId: Id<"savedItems"> }) {
   };
   return (
     <View style={{ gap: 8 }}>
-      <BigButton label="Add to my calendar" icon="calendar-outline" busy={busy} onPress={press} />
+      <BigButton label={label} icon="calendar-outline" busy={busy} onPress={press} />
       <Note text={error} />
     </View>
   );
