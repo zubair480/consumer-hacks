@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useAction, useConvex } from "convex/react";
+import { useAction } from "convex/react";
 import * as Haptics from "expo-haptics";
-import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState, type ComponentProps } from "react";
@@ -17,6 +16,7 @@ import { Skeleton } from "../components/States";
 import { colors, radius, space, type } from "../components/tokens";
 import { fonts } from "../theme";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
+import { useXConnect } from "../lib/useXConnect";
 
 // OWNER: Import thread (CONS-19). One-tap Import: connect accounts once, then pull saved posts in.
 
@@ -47,9 +47,8 @@ function ago(ms: number): string {
 
 export default function ImportScreen() {
   const ownerId = useOwnerId();
-  const convex = useConvex();
   const sources = useOwnedQuery(api.imports.connections.sources, {});
-  const startXConnect = useAction(api.imports.connections.startXConnect);
+  const startXConnect = useXConnect("import");
   const syncX = useAction(api.imports.connections.syncX);
   const disconnect = useOwnedMutation(api.imports.connections.disconnect);
   const [busy, setBusy] = useState<"connect" | "sync" | null>(null);
@@ -77,18 +76,10 @@ export default function ImportScreen() {
     setBusy("connect");
     setNotice(null);
     try {
-      const returnUrl = Linking.createURL("import");
-      const { authorizeUrl } = await startXConnect({ ownerId, returnUrl });
-      const result = await WebBrowser.openAuthSessionAsync(authorizeUrl, returnUrl);
+      const r = await startXConnect();
       setBusy(null);
-      if (result.type !== "success") {
-        const fresh = await convex.query(api.imports.connections.sources, { ownerId });
-        if (fresh.find((s) => s.platform === "x")?.connected) await sync();
-        return;
-      }
-      const { queryParams } = Linking.parse(result.url);
-      if (queryParams?.x === "connected") await sync();
-      else setNotice({ tone: "error", text: typeof queryParams?.message === "string" ? queryParams.message : "Couldn't connect X." });
+      if (r.connected) await sync();
+      else if (r.error) setNotice({ tone: "error", text: r.error });
     } catch (e) {
       setNotice({ tone: "error", text: errorMessage(e) });
     } finally {

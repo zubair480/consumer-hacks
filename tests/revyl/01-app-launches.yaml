@@ -14,8 +14,8 @@ steps:
   - "Step 5 of 9: type \"United States\" into `onboarding-input` and tap `onboarding-next`."
   - "Step 6 of 9: type \"3.8\" into `onboarding-input` and tap `onboarding-next`."
   - "Step 7 of 9: tap `onboarding-skip`."
-  - "Step 8 of 9 (Complete your account): type \"revyl@example.com\" into `account-email`, \"+1 415 555 0100\" into `account-phone`, leave `account-connect-x` and `account-github` alone, and tap `account-continue`."
-  - "Step 9 of 9 (Connect your calendar): `calendar-connect` is visible; tap `calendar-skip` (Not now)."
+  - "Step 8 of 9 (Complete your account): type \"revyl@example.com\" into `account-email`, \"+1 415 555 0100\" into `account-phone`, leave `account-connect-x` and the GitHub stars row (`import-source-github`) alone, and tap `account-continue`."
+  - "Step 9 of 9 (Connect your calendar): `calendar-connect-card` is visible when Composio is configured; tap `calendar-skip` (Not now)."
   - "`pull-screen` appears; wait for `pull-see-tasks` and tap it."
   - "Tap the You tab and check `profile-name-input` shows \"Revyl Tester\", `profile-gpa-input` shows 3.8 and `profile-email-input` shows revyl@example.com."
 expect:
