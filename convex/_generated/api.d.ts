@@ -57,6 +57,7 @@ import type * as formFill from "../formFill.js";
 import type * as formFillAgent from "../formFillAgent.js";
 import type * as formFillSchema from "../formFillSchema.js";
 import type * as lib_formGuard from "../lib/formGuard.js";
+import type * as lib_formLinks from "../lib/formLinks.js";
 import type * as share from "../share.js";
 import type * as shareSchema from "../shareSchema.js";
 import type * as social_adapters_index from "../social/adapters/index.js";
@@ -127,6 +128,7 @@ declare const fullApi: ApiFromModules<{
   formFillAgent: typeof formFillAgent;
   formFillSchema: typeof formFillSchema;
   "lib/formGuard": typeof lib_formGuard;
+  "lib/formLinks": typeof lib_formLinks;
   share: typeof share;
   shareSchema: typeof shareSchema;
   "social/adapters/index": typeof social_adapters_index;

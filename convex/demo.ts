@@ -5,6 +5,7 @@ import { internalMutation, internalQuery, mutation, query, type MutationCtx } fr
 import { detectSourcePlatform, LIMITS } from "../src/shared/contracts";
 import { ensureUser, getUser, requireOwnedItem } from "./lib/auth";
 import { boxFor, demoSaves, emptyBoxes, isV1DemoSave, primaryAgentAction } from "./lib/demo";
+import { pickFormLink } from "./lib/formLinks";
 import { vOwnerId } from "./lib/validators";
 
 export { DEMO_EVENT_TEXT } from "./lib/demo";
@@ -100,7 +101,8 @@ export const primaryAction = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
     const { item } = await requireOwnedItem(ctx, ownerId, itemId);
-    return { box: boxFor(item.primaryType), action: primaryAgentAction(item.primaryType) };
+    const action = primaryAgentAction(item.primaryType) ?? (pickFormLink([item.rawText, item.summary]) ? { kind: "fill_form" as const, label: "Fill it for me" } : null);
+    return { box: action?.kind === "fill_form" ? "forms" : boxFor(item.primaryType), action };
   },
 });
 
