@@ -5,6 +5,7 @@ import { internalMutation, internalQuery, mutation, query, type MutationCtx } fr
 import { detectSourcePlatform, LIMITS } from "../src/shared/contracts";
 import { ensureUser, getUser, requireOwnedItem, getOwnedItem } from "./lib/auth";
 import { boxFor, demoSaves, emptyBoxes, isV1DemoSave, primaryAgentAction } from "./lib/demo";
+import { scheduleImportSyncs } from "./imports/sync";
 import { pickFormLink } from "./lib/formLinks";
 import { vOwnerId } from "./lib/validators";
 
@@ -69,17 +70,8 @@ export const pullEverything = mutation({
       await ctx.scheduler.runAfter(0, internal.ingest.run, { itemId });
       created++;
     }
-    const x = await ctx.db
-      .query("importConnections")
-      .withIndex("by_userId_and_platform", (q) => q.eq("userId", user._id).eq("platform", "x"))
-      .unique();
-    if (x) await ctx.scheduler.runAfter(0, api.imports.connections.syncX, { ownerId });
-    const github = await ctx.db
-      .query("githubImportAccounts")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .unique();
-    if (github?.username) await ctx.scheduler.runAfter(0, api.imports.github.sync, { ownerId });
-    return { created, xSync: !!x };
+    const scheduled = await scheduleImportSyncs(ctx, user._id, ownerId);
+    return { created, xSync: scheduled.includes("x") };
   },
 });
 

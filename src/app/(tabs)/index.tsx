@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMutation } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAction } from "convex/react";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AppState, DeviceEventEmitter, Pressable, RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
@@ -35,39 +35,35 @@ let welcomed = false;
 const SYNC_EVERY_MS = 60_000;
 let lastXSync = 0;
 
-/** Pulls new X bookmarks and GitHub stars when Home gains focus or the app returns to the foreground (at most once a minute per device); `sync(true)` skips the throttle, `sync(true, false)` syncs X only. Returns the number of new saves, or -1 when every sync failed. */
+/** Schedules the server-side X and GitHub syncs (imports.sync.syncAll) when Home gains focus or the app returns to the foreground (at most once a minute per device); `sync(true)` skips the throttle. New saves arrive live through items.list; a toast counts them after 5s. */
 function useXAutoSync(itemCount: number | undefined) {
   const ownerId = useOwnerId();
-  const syncX = useAction(api.imports.connections.syncX);
-  const syncGitHub = useAction(api.imports.github.sync);
+  const syncAll = useMutation(api.imports.sync.syncAll);
   const sources = useOwnedQuery(api.imports.connections.sources, {});
-  const github = useOwnedQuery(api.imports.github.status, {});
   const connected = !!sources?.find((s) => s.platform === "x")?.connected;
-  const githubUser = github?.username ?? null;
   const count = useRef(itemCount);
   useEffect(() => {
     count.current = itemCount;
   }, [itemCount]);
   const sync = useCallback(
-    async (force = false, withGitHub = true) => {
-      const jobs: { from: string; run: () => Promise<{ created: number }> }[] = [];
-      if (connected) jobs.push({ from: "X", run: () => syncX({ ownerId }) });
-      if (withGitHub && githubUser) jobs.push({ from: "GitHub", run: () => syncGitHub({ ownerId }) });
-      if (!jobs.length) return;
+    async (force = false) => {
       const now = Date.now();
-      if (!force && now - lastXSync < SYNC_EVERY_MS) return;
+      if (!ownerId || (!force && now - lastXSync < SYNC_EVERY_MS)) return;
       lastXSync = now;
       const before = count.current ?? 0;
-      const results = await Promise.allSettled(jobs.map((j) => j.run()));
-      if (results.every((r) => r.status === "rejected")) return -1;
-      const created = results.reduce((sum, r) => sum + (r.status === "fulfilled" ? r.value.created : 0), 0);
-      const added = created || Math.max(0, (count.current ?? 0) - before);
-      const sourcesWithNew = jobs.filter((_, i) => { const r = results[i]; return r.status === "fulfilled" && r.value.created > 0; });
-      const from = sourcesWithNew.length === 1 ? ` from ${sourcesWithNew[0].from}` : jobs.length === 1 ? ` from ${jobs[0].from}` : "";
-      if (added > 0) showToast(`${added} new ${added === 1 ? "save" : "saves"}${from}`);
-      return added;
+      try {
+        const { scheduled } = await syncAll({ ownerId });
+        if (!scheduled.length) return 0;
+      } catch {
+        return -1;
+      }
+      setTimeout(() => {
+        const added = Math.max(0, (count.current ?? 0) - before);
+        if (added > 0) showToast(`${added} new ${added === 1 ? "save" : "saves"}`);
+      }, 5000);
+      return 0;
     },
-    [connected, githubUser, ownerId, syncX, syncGitHub],
+    [ownerId, syncAll],
   );
   useFocusEffect(
     useCallback(() => {
@@ -125,7 +121,7 @@ export default function Home() {
   const x = useXAutoSync(items?.length);
   const refresh = async () => {
     setRefreshing(true);
-    await x.sync(true);
+    await Promise.all([x.sync(true), new Promise((r) => setTimeout(r, 2000))]);
     setRefreshing(false);
   };
 

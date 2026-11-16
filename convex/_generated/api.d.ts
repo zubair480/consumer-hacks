@@ -23,6 +23,7 @@ import type * as imports_connections from "../imports/connections.js";
 import type * as imports_github from "../imports/github.js";
 import type * as imports_githubClient from "../imports/githubClient.js";
 import type * as imports_posts from "../imports/posts.js";
+import type * as imports_sync from "../imports/sync.js";
 import type * as imports_xClient from "../imports/xClient.js";
 import type * as imports_youtube from "../imports/youtube.js";
 import type * as imports_youtubeClient from "../imports/youtubeClient.js";
@@ -94,6 +95,7 @@ declare const fullApi: ApiFromModules<{
   "imports/github": typeof imports_github;
   "imports/githubClient": typeof imports_githubClient;
   "imports/posts": typeof imports_posts;
+  "imports/sync": typeof imports_sync;
   "imports/xClient": typeof imports_xClient;
   "imports/youtube": typeof imports_youtube;
   "imports/youtubeClient": typeof imports_youtubeClient;
