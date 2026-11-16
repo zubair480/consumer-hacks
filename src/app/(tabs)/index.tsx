@@ -57,8 +57,9 @@ function useXAutoSync(itemCount: number | undefined) {
         const { created } = await syncX({ ownerId });
         const added = created || Math.max(0, (count.current ?? 0) - before);
         if (added > 0) showToast(`${added} new ${added === 1 ? "save" : "saves"} from X`);
+        return added;
       } catch {
-        // The Import screen shows sync errors; Home stays quiet.
+        return -1;
       }
     },
     [connected, ownerId, syncX],
@@ -115,6 +116,7 @@ export default function Home() {
   const revealed = useIntroGate();
   const [tab, setTab] = useState<Tab>("review");
   const [refreshing, setRefreshing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const x = useXAutoSync(items?.length);
   const refresh = async () => {
     setRefreshing(true);
@@ -166,6 +168,32 @@ export default function Home() {
                     <Text style={{ fontFamily: fonts.display, fontSize: 18, lineHeight: 22, color: colors.text }}>{(first ?? "Z").charAt(0).toUpperCase()}</Text>
                   </View>
                 </LinearGradient>
+              </ScalePressable>
+            </View>
+          </Enter>
+          <Enter index={1}>
+            <View style={styles.pills}>
+              <ScalePressable testID="home-save-post-pill" accessibilityRole="button" accessibilityLabel="Save a post" haptic scaleTo={0.97} onPress={() => router.push("/capture")} style={[styles.pillBtn, { backgroundColor: colors.primary }]}>
+                <Text style={[styles.pillBtnText, { color: colors.onPrimary }]}>+ Save a post</Text>
+              </ScalePressable>
+              <ScalePressable
+                testID="home-x-pill"
+                accessibilityRole="button"
+                accessibilityLabel={x.connected ? "Sync X" : "Connect X"}
+                scaleTo={0.97}
+                disabled={syncing}
+                onPress={async () => {
+                  if (!x.connected) return router.push("/import");
+                  setSyncing(true);
+                  const added = await x.sync(true);
+                  setSyncing(false);
+                  if (added === -1) showToast("Couldn’t sync X. Try again");
+                  else if (!added) showToast("X is up to date");
+                }}
+                style={[styles.pillBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.text }]}
+              >
+                <Ionicons name="logo-x" size={16} color={colors.text} />
+                <Text style={styles.pillBtnText}>{!x.connected ? "Connect X" : syncing ? "Syncing…" : "Sync X"}</Text>
               </ScalePressable>
             </View>
           </Enter>
@@ -283,6 +311,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: TAB_BAR_SPACE },
   stack: { gap: 24 },
+  pills: { flexDirection: "row", gap: 8 },
+  pillBtn: { flex: 1, height: 44, borderRadius: 999, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12 },
+  pillBtnText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: colors.text },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   ring: { width: 48, height: 48, borderRadius: 24, padding: 2 },
   avatar: { flex: 1, borderRadius: 22, alignItems: "center", justifyContent: "center" },
