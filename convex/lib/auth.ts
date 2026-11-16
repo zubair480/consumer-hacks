@@ -64,3 +64,20 @@ export async function requireOwnedItem(
   const item = await requireOwned(ctx, user, itemId);
   return { user, item };
 }
+
+/** Like requireOwned, but null when the document is missing or not the user's. For queries a live screen may re-run after a delete. */
+export async function getOwned<T extends UserOwnedTable>(ctx: QueryCtx, user: Doc<"users">, id: Id<T>): Promise<Doc<T> | null> {
+  const doc = (await ctx.db.get(id)) as (Doc<T> & { userId: Id<"users"> }) | null;
+  return doc && doc.userId === user._id ? doc : null;
+}
+
+/** Like requireOwnedItem, but null when the item is missing or not owned. An unknown owner still throws. Queries only. */
+export async function getOwnedItem(
+  ctx: QueryCtx,
+  ownerId: string,
+  itemId: Id<"savedItems">,
+): Promise<{ user: Doc<"users">; item: Doc<"savedItems"> } | null> {
+  const user = await requireUser(ctx, ownerId);
+  const item = await getOwned(ctx, user, itemId);
+  return item ? { user, item } : null;
+}

@@ -125,8 +125,8 @@ describe("POST /save", () => {
     const { itemId } = await res.json();
     const item = await t.query(api.items.get, { ownerId: OWNER_A, itemId });
     expect(item).toMatchObject({ sourceKind: "image", sourcePlatform: "manual", extractionStatus: "pending" });
-    expect(item.imageStorageId).toBeDefined();
-    const stored = await t.run((ctx) => ctx.db.system.get("_storage", item.imageStorageId as Id<"_storage">));
+    expect(item!.imageStorageId).toBeDefined();
+    const stored = await t.run((ctx) => ctx.db.system.get("_storage", item!.imageStorageId as Id<"_storage">));
     expect(stored).toMatchObject({ size: bytes.length, contentType: "image/png" });
   });
 

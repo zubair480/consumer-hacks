@@ -4,7 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { detectSourcePlatform, LIMITS, type SavedItemView } from "../src/shared/contracts";
-import { ensureUser, getUser, requireOwned, requireOwnedItem, requireUser } from "./lib/auth";
+import { ensureUser, getUser, requireOwned, requireOwnedItem, requireUser, getOwnedItem } from "./lib/auth";
 import { keyFactFields, vContentType, vExtractionStatus, vOwnerId } from "./lib/validators";
 
 // OWNER: Lead. Saved item CRUD. Ingestion/analysis (B+C) writes back through
@@ -152,8 +152,8 @@ export const search = query({
 export const get = query({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
-    const { item } = await requireOwnedItem(ctx, ownerId, itemId);
-    return await toView(ctx, item);
+    const owned = await getOwnedItem(ctx, ownerId, itemId);
+    return owned ? await toView(ctx, owned.item) : null;
   },
 });
 
