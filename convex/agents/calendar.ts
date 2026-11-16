@@ -48,7 +48,7 @@ export const prepare = mutation({
       proposal: {
         summary: item.title ?? "Saved item",
         description: [item.summary, item.location ? `Location: ${item.location}` : "", item.sourceUrl].filter(Boolean).join("\n\n"),
-        location: item.location ?? "",
+        location: item.location || "Online",
         startDateTime: timing.startDateTime,
         timezone: timezone || "America/Los_Angeles",
         durationMinutes: timing.durationMinutes,

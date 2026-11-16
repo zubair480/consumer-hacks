@@ -6,7 +6,7 @@ import { logEvent } from "./activity";
 import { requireOwnedItem, getOwnedItem } from "./lib/auth";
 import { callLLMJson, getLLMModel } from "./lib/llm";
 import type { SourcePart } from "./lib/sources";
-import { demoTypeFor } from "./lib/demo";
+import { demoTypeFor, upcomingEventDate } from "./lib/demo";
 import { vContentType, vExtractedFact, vOwnerId } from "./lib/validators";
 
 /** A github.com/owner/repo link (starred repos, pasted repo links) is always a repository, so its primary action is Run it for me. */
@@ -24,7 +24,7 @@ const TYPE_GUIDE: Record<ContentType, string> = {
   application: "anything with an application process: program, accelerator, residency, hackathon, admission",
   graphic: "a visual design: UI screenshot, poster, logo, illustration, layout, typography or color inspiration",
   recipe: "a recipe or cooking instructions",
-  event: "an event with a date: meetup, concert, conference, webinar",
+  event: "anything with a specific upcoming date to attend, watch, buy or not miss: meetup, concert, conference, webinar, game/product release or launch, premiere, livestream, match, sale, drop",
   travel: "a travel destination, hotel, itinerary, or trip idea",
   product: "a product to buy or a software product/app",
   research: "a paper, study, dataset, or in-depth technical article",
@@ -39,6 +39,7 @@ ${CONTENT_TYPES.map((t) => `- ${t}: ${TYPE_GUIDE[t]}`).join("\n")}
 
 Rules:
 - primaryType is the single type that best describes what the user will want to do with this save.
+- If the content names a specific upcoming date (and maybe time) for something the user could attend, watch, buy or should not miss (launch, release, premiere, livestream, match, concert, sale, deadline-free drop), primaryType is "event" and contentTypes includes event, even if it is also news or a product. Title it like "<Thing> launch" (e.g. "Grand Theft Auto VI launch"), add "date" and "time" facts, and for online or digital releases set location "Online" with a matching location fact.
 - title: short, specific, human (max 80 chars), e.g. the scholarship name, repo name, restaurant name. No clickbait.
 - summary: at most 2 plain sentences on what this is and why it matters. Only claims the source supports.
 - facts: the concrete details a user needs to act. Typical keys: deadline, award_amount, eligibility, requirements, how_to_apply, organization, location, address, hours, price, cuisine, date, time, venue, stars, language, license, install_command, tech_stack, ingredients, servings, cook_time, colors, typography, layout, company, role, salary.
@@ -175,6 +176,8 @@ export async function analyzeContent(input: {
   };
 }
 
+const DATED_OVERRIDABLE = new Set<ContentType>(["general_content", "research", "tutorial", "product"]);
+
 /** Replaces the item's analysis and marks the item ready with its understood fields. */
 export const save = internalMutation({
   args: {
@@ -206,6 +209,9 @@ export const save = internalMutation({
     } else if (item.sourceUrl && GITHUB_REPO_URL.test(item.sourceUrl) && analysis.primaryType !== "github_repository") {
       analysis.primaryType = "github_repository";
       analysis.contentTypes = ["github_repository", ...analysis.contentTypes.filter((t) => t !== "github_repository")];
+    } else if (DATED_OVERRIDABLE.has(analysis.primaryType) && upcomingEventDate([...analysis.facts.map((f) => f.value), item.rawText])) {
+      analysis.primaryType = "event";
+      analysis.contentTypes = ["event", ...analysis.contentTypes.filter((t) => t !== "event")];
     }
     const previous = await ctx.db.query("contentAnalysis").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(20);
     const renamedByUser = Boolean(item.title) && previous.length > 0 && previous.every((row) => row.title !== item.title);

@@ -4,7 +4,7 @@ import type { Doc } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
 import { detectSourcePlatform, LIMITS } from "../src/shared/contracts";
 import { ensureUser, getUser, requireOwnedItem, getOwnedItem } from "./lib/auth";
-import { boxFor, demoSaves, emptyBoxes, isV1DemoSave, primaryAgentAction } from "./lib/demo";
+import { boxFor, demoSaves, emptyBoxes, isV1DemoSave, primaryAgentAction, upcomingEventDate } from "./lib/demo";
 import { scheduleImportSyncs } from "./imports/sync";
 import { pickFormLink } from "./lib/formLinks";
 import { vOwnerId } from "./lib/validators";
@@ -100,8 +100,11 @@ export const primaryAction = query({
     const owned = await getOwnedItem(ctx, ownerId, itemId);
     if (!owned) return null;
     const { item } = owned;
-    const action = primaryAgentAction(item.primaryType) ?? (pickFormLink([item.rawText, item.summary]) ? { kind: "fill_form" as const, label: "Fill it for me" } : null);
-    return { box: action?.kind === "fill_form" ? "forms" : boxFor(item.primaryType), action };
+    const action =
+      primaryAgentAction(item.primaryType) ??
+      (pickFormLink([item.rawText, item.summary]) ? { kind: "fill_form" as const, label: "Fill it for me" } : null) ??
+      (upcomingEventDate([item.deadline, item.rawText, item.summary]) ? { kind: "calendar" as const, label: "Add to my calendar" } : null);
+    return { box: action?.kind === "fill_form" ? "forms" : action?.kind === "calendar" ? "events" : boxFor(item.primaryType), action };
   },
 });
 
