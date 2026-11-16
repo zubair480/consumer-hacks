@@ -19,6 +19,7 @@ import { EmptyState } from "../../../components/EmptyState";
 import { errorMessage, pickImages, uploadImage } from "../../../components/media";
 import { Tap } from "../../../components/Pressable";
 import { RunRepoCard } from "../../../components/RunRepoCard";
+import { PrimaryTaskAction } from "../../../components/agents/PrimaryTaskAction";
 import { ScreenHeader } from "../../../components/ScreenHeader";
 import { BouncingDots, Burst, Shimmer, success } from "../../../components/Signature";
 import { Skeleton } from "../../../components/States";
@@ -241,6 +242,12 @@ function Detail({ itemId }: { itemId: Id<"savedItems"> }) {
         {item.extractionStatus === "failed" ? <Failed item={item} /> : null}
 
         {ready ? (
+          <Boundary fallback={null}>
+            <PrimaryTaskAction item={item} />
+          </Boundary>
+        ) : null}
+
+        {ready ? (
           <Boundary title="Couldn’t load actions">
             <Actions item={item} />
           </Boundary>
@@ -329,7 +336,7 @@ function Actions({ item }: { item: SavedItemView }) {
   const color = pastelFor(item.primaryType);
   return (
     <Block
-      title="Do something"
+      title="More actions"
       index={1}
       right={<Tap testID="open-actions-button" hitSlop={10} onPress={() => router.push({ pathname: "/item/[id]/actions", params: { id: item._id } })}><Text style={styles.link}>Details</Text></Tap>}
     >
