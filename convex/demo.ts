@@ -23,8 +23,14 @@ export const pullEverything = mutation({
       .take(LIMITS.listMax);
     let created = 0;
     for (const save of demoSaves()) {
-      const has = existing.some((i) => (save.sourceUrl ? i.sourceUrl === save.sourceUrl : i.rawText === save.rawText));
-      if (has) continue;
+      const has = existing.find((i) => (save.sourceUrl ? i.sourceUrl === save.sourceUrl : i.rawText === save.rawText));
+      if (has) {
+        if (save.rawText && has.rawText !== save.rawText && (has.extractionStatus === "needs_input" || has.extractionStatus === "failed")) {
+          await ctx.db.patch(has._id, { rawText: save.rawText, extractionStatus: "pending", extractionError: undefined, updatedAt: Date.now() });
+          await ctx.scheduler.runAfter(0, internal.ingest.run, { itemId: has._id });
+        }
+        continue;
+      }
       const now = Date.now();
       const itemId = await ctx.db.insert("savedItems", {
         userId: user._id,

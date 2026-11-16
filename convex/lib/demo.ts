@@ -11,10 +11,19 @@ export const DEMO_SITE_FALLBACK = "https://pleasant-lark-678.convex.site";
 export const demoSiteUrl = () => process.env.CONVEX_SITE_URL || DEMO_SITE_FALLBACK;
 export const demoFormUrl = (site = demoSiteUrl()) => `${site.replace(/\/$/, "")}${DEMO_FORM_PATH}`;
 
+/** Readable description of the demo program. Served on /demo/apply and seeded as the Forms save's text, so analysis classifies it as an application even if the page can't be read. */
+export const DEMO_FORM_TEXT = [
+  "Zapy Demo Program: quick application.",
+  "The Zapy Demo Program is a free, one-evening program for students who want to try AI agents that turn saved posts into finished tasks. Selected applicants get early access to Zapy and a seat at Zapy Demo Night in San Francisco.",
+  "Eligibility: open to any current student, any field of study, any year. No fee and no prior experience needed.",
+  "Deadline: applications close December 15, 2026.",
+  "How to apply: fill in the online application form with 4 fields: Full name, Email, Phone number, and What are you studying? Then tap Submit application.",
+].join("\n");
+
 export type DemoSave = { key: "code" | "forms" | "events"; sourceUrl?: string; rawText?: string };
 export const demoSaves = (site = demoSiteUrl()): DemoSave[] => [
   { key: "code", sourceUrl: DEMO_REPO_URL },
-  { key: "forms", sourceUrl: demoFormUrl(site) },
+  { key: "forms", sourceUrl: demoFormUrl(site), rawText: DEMO_FORM_TEXT },
   { key: "events", rawText: DEMO_EVENT_TEXT },
 ];
 
@@ -117,11 +126,13 @@ export function eventTiming(texts: string[], dateHint: string | undefined, now =
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-const shell = (title: string, body: string) =>
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>
+const shell = (title: string, body: string, description = "") =>
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>${description ? `<meta name="description" content="${esc(description)}">` : ""}<style>
 body{margin:0;background:#fff;color:#111;font-family:-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif}
 main{max-width:480px;margin:0 auto;padding:32px 20px 56px}
 h1{font-size:26px;line-height:1.2;margin:0 0 8px}
+h2{font-size:18px;margin:28px 0 6px}
+ul{color:#5B5B63;font-size:15px;line-height:1.5;padding-left:20px}
 p{color:#5B5B63;font-size:15px;line-height:1.5}
 label{display:block;font-weight:700;font-size:14px;margin:20px 0 8px}
 input{width:100%;box-sizing:border-box;height:50px;border:1px solid #ECECEC;border-radius:14px;background:#F4F4F5;padding:0 16px;font-size:16px;color:#111}
@@ -135,7 +146,17 @@ th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5B5B63}
 export function applyFormHtml(): string {
   return shell(
     "Zapy Demo Program: quick application",
-    `<h1>Zapy Demo Program: quick application</h1><p>Four quick questions and you're in.</p>
+    `<h1>Zapy Demo Program: quick application</h1>
+<section>
+<p>The Zapy Demo Program is a free, one-evening program for students who want to try AI agents that turn saved posts into finished tasks. Selected applicants get early access to Zapy and a seat at Zapy Demo Night in San Francisco.</p>
+<h2>Eligibility</h2>
+<p>Open to any current student, any field of study, any year. No fee and no prior experience needed.</p>
+<h2>Deadline</h2>
+<p>Applications close December 15, 2026.</p>
+<h2>What we ask for</h2>
+<ul><li>Full name</li><li>Email</li><li>Phone number</li><li>What are you studying?</li></ul>
+<p>Fill in the 4 fields below and tap Submit application. It takes under a minute.</p>
+</section>
 <form method="POST" action="${DEMO_FORM_PATH}">
 <label for="name">Full name</label><input id="name" name="name" type="text" autocomplete="name" required>
 <label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required>
@@ -143,6 +164,7 @@ export function applyFormHtml(): string {
 <label for="studying">What are you studying?</label><input id="studying" name="studying" type="text" required>
 <button type="submit">Submit application</button>
 </form>`,
+    "Apply to the Zapy Demo Program: a free one-evening program for students. Open to any current student. Applications close December 15, 2026. The form asks for full name, email, phone number and what you are studying.",
   );
 }
 
