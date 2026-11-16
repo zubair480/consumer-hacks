@@ -1,14 +1,14 @@
-# Phase 1 Revyl test 6: Library persists after restart
+# Phase 1 Revyl test 6: Saves persist after restart (Home All tab)
 id: 06-library-persists
-name: "Library persists after restart"
+name: "Saves persist after restart (Home All tab)"
 device: iPhone 16 (Revyl cloud simulator)
 build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
   - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible."
-  - "Open Library and note the saved items."
+  - "On Home, tap `queue-tab-all` and note the saved items."
   - "Kill the app (home button, then relaunch the app from the springboard) or reinstall-free relaunch."
-  - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible. Open Library again."
+  - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible. On Home, tap `queue-tab-all` again."
 expect:
   - "The same items from tests 3, 4 and 5 are still listed (data comes from Convex via the persisted device ownerId)."
 evidence: one screenshot per step, saved as renders/CONS-9/06-library-persists-<step>.png

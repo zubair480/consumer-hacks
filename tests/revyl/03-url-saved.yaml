@@ -10,5 +10,5 @@ steps:
   - "Tap `save-button`."
 expect:
   - "The app navigates to the item detail (`item-detail-screen`) with the URL as source."
-  - "Back on Home/Library the item card appears."
+  - "Back on Home (`queue-tab-all`) the item card appears."
 evidence: one screenshot per step, saved as renders/CONS-9/03-url-saved-<step>.png

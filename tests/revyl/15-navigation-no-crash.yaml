@@ -5,8 +5,8 @@ device: iPhone 16 (Revyl cloud simulator)
 build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
-  - "Visit every tab (Home, Library, You), open an item, its actions, a result, go back each time, open and close Capture."
-  - "Use Library search and type filters."
+  - "Visit every tab (Home, You) and the Home To review / All / Done tabs, open an item, its actions, a result, go back each time, open and close Capture."
+  - "Use the Home search pill (`home-search-pill`) to filter the list."
 expect:
   - "No crash, red box or blank screen at any step; back navigation returns to the previous screen."
 evidence: one screenshot per step, saved as renders/CONS-9/15-navigation-no-crash-<step>.png
