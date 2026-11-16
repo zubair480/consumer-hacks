@@ -182,9 +182,6 @@ export default function Home() {
           </Enter>
           <Enter index={1}>
             <View style={styles.pills}>
-              <ScalePressable testID="home-save-post-pill" accessibilityRole="button" accessibilityLabel="Save a post" haptic scaleTo={0.97} onPress={() => router.push("/capture")} style={[styles.pillBtn, { backgroundColor: colors.primary }]}>
-                <Text style={[styles.pillBtnText, { color: colors.onPrimary }]}>+ Save a post</Text>
-              </ScalePressable>
               <ScalePressable
                 testID="home-x-pill"
                 accessibilityRole="button"
@@ -199,7 +196,7 @@ export default function Home() {
                   if (added === -1) showToast("Couldn’t sync X. Try again");
                   else if (!added) showToast("X is up to date");
                 }}
-                style={[styles.pillBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.text }]}
+                style={[styles.pillBtn, styles.xPill]}
               >
                 <Ionicons name="logo-x" size={16} color={colors.text} />
                 <Text style={styles.pillBtnText}>{!x.connected ? "Connect X" : syncing ? "Syncing…" : "Sync X"}</Text>
@@ -317,6 +314,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: TAB_BAR_SPACE },
   stack: { gap: 24 },
   pills: { flexDirection: "row", gap: 8 },
+  xPill: { flex: 0, alignSelf: "flex-start", paddingHorizontal: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.text },
   pillBtn: { flex: 1, height: 44, borderRadius: 999, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12 },
   pillBtnText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: colors.text },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
