@@ -12,6 +12,7 @@ export const vFormFillStatus = v.union(
   v.literal("expired"),
   v.literal("failed"),
   v.literal("blocked"),
+  v.literal("submitted"),
 );
 
 export const vFormFillField = v.object({

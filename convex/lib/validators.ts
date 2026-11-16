@@ -48,6 +48,8 @@ export const userProfileFields = {
   gpa: v.optional(v.number()),
   city: v.optional(v.string()),
   interests: v.optional(v.array(v.string())),
+  email: v.optional(v.string()),
+  phone: v.optional(v.string()),
 };
 
 export const vOwnerId = v.string();

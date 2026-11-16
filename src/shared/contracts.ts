@@ -430,6 +430,8 @@ export type UserProfile = {
   gpa?: number;
   city?: string;
   interests?: string[];
+  email?: string;
+  phone?: string;
 };
 
 export const COLLECTION_KINDS = ["custom", "moodboard", "reading_list"] as const;
