@@ -2,7 +2,7 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { useAction } from "convex/react";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { View, type StyleProp, type ViewStyle } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../../identity/OwnerProvider";
@@ -13,7 +13,7 @@ import { Field } from "../Field";
 
 // OWNER: Agent mode 2 (ZUB-36). Both pieces render nothing unless Composio is configured on the server.
 
-export function CalendarConnectRow({ returnPath = "profile" }: { returnPath?: string }) {
+export function CalendarConnectRow({ returnPath = "profile", style }: { returnPath?: string; style?: StyleProp<ViewStyle> }) {
   const ownerId = useOwnerId();
   const configured = useOwnedQuery(api.agents.calendar.configured, {});
   const startConnect = useAction(api.agents.calendar.startConnect);
@@ -48,7 +48,7 @@ export function CalendarConnectRow({ returnPath = "profile" }: { returnPath?: st
   };
 
   return (
-    <Card testID="calendar-connect-card">
+    <Card testID="calendar-connect-card" style={style}>
       <Text variant="label" tone="muted">Google Calendar</Text>
       <Text tone="secondary" style={{ marginTop: spacing.sm }}>
         {connected ? "Connected. Events you approve are added to your primary calendar." : "Connect so Zapy can add saved events to your calendar after you approve them."}

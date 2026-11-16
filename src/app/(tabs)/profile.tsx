@@ -53,30 +53,40 @@ export default function Profile() {
             <ZText style={{ fontFamily: fonts.bold, fontSize: 13, lineHeight: 18, color: colors.text }}>Replay welcome</ZText>
           </ScalePressable>
         </View>
-        <ConnectedAccountsRow />
         <Boundary title="Couldn’t load your profile">
           <Body />
         </Boundary>
-        <Boundary fallback={null}><CalendarConnectRow /></Boundary>
+        <Accounts />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ConnectedAccountsRow() {
+function Accounts() {
   const sources = useOwnedQuery(api.imports.connections.sources, {});
   const github = useOwnedQuery(api.imports.github.status, {});
+  const loading = sources === undefined || github === undefined;
   const xConnected = !!sources?.find((s) => s.platform === "x")?.connected;
-  const status = sources === undefined || github === undefined ? " " : [xConnected ? "X ✓" : "Connect X", github ? "GitHub ✓" : "Add GitHub"].join(" · ");
   return (
-    <ScalePressable testID="profile-connected-accounts" accessibilityRole="button" accessibilityLabel={`Connected accounts. ${status}`} scaleTo={0.97} onPress={() => router.push("/import")} style={{ minHeight: 64, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
-      <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name="link" size={18} color="#FFFFFF" />
+    <View testID="profile-accounts" style={{ gap: 4, padding: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
+      <ZText style={{ fontFamily: fonts.extraBold, fontSize: 18, lineHeight: 24, color: colors.text, marginBottom: 4 }}>Accounts</ZText>
+      <AccountRow testID="profile-accounts-x" icon="logo-x" label="X" status={loading ? " " : xConnected ? "Connected ✓" : "Connect"} />
+      <AccountRow testID="profile-accounts-github" icon="logo-github" label="GitHub" status={loading ? " " : github ? github.username : "Add username"} />
+      <Boundary fallback={null}>
+        <CalendarConnectRow style={{ borderWidth: 0, padding: 0, paddingTop: 12, shadowOpacity: 0, elevation: 0, backgroundColor: "transparent" }} />
+      </Boundary>
+    </View>
+  );
+}
+
+function AccountRow({ testID, icon, label, status }: { testID: string; icon: "logo-x" | "logo-github"; label: string; status: string }) {
+  return (
+    <ScalePressable testID={testID} accessibilityRole="button" accessibilityLabel={`${label}. ${status}`} scaleTo={0.97} onPress={() => router.push("/import")} style={{ minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" }}>
+        <Ionicons name={icon} size={16} color="#FFFFFF" />
       </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <ZText style={{ fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.text }}>Connected accounts</ZText>
-        <ZText testID="profile-connected-accounts-status" style={{ fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: "#5B5B63" }}>{status}</ZText>
-      </View>
+      <ZText style={{ flex: 1, fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.text }}>{label}</ZText>
+      <ZText testID={`${testID}-status`} style={{ fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: "#5B5B63" }}>{status}</ZText>
       <Ionicons name="chevron-forward" size={16} color="#9A9AA3" />
     </ScalePressable>
   );
