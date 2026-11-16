@@ -7,7 +7,7 @@ fixtures: tests/revyl/fixtures/fixtures.json
 steps:
   - "After 9 and 11, relaunch the app."
   - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible."
-  - "Open Home completed outcomes / Activity, and reopen both results."
+  - "Open Home (Done tab) and reopen both results."
 expect:
   - "Both results reopen from Convex with the same content (`result-screen`, `result-timestamp`)."
 evidence: one screenshot per step, saved as renders/CONS-9/13-outcomes-persist-<step>.png

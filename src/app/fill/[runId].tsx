@@ -1,5 +1,6 @@
 import * as WebBrowser from "expo-web-browser";
-import { useLocalSearchParams } from "expo-router";
+import { friendlyError } from "../../components/media";
+import { useLocalSearchParams, router } from "expo-router";
 import { ActivityIndicator, Image, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
@@ -32,7 +33,8 @@ export default function FillApproval() {
                 <Button testID="fill-cancel" title="Cancel" variant="secondary" onPress={() => cancel({ runId: id })} />
               </>
             ) : null}
-            {run.message ? <Text tone="secondary" testID="fill-message">{run.message}</Text> : null}
+            {run.message ? <Text tone="secondary" testID="fill-message">{friendlyError(run.message, "Couldn’t open the form right now. Try again in a minute.")}</Text> : null}
+            {run.status === "failed" ? <Button testID="fill-try-again" title="Try again" variant="secondary" onPress={() => router.back()} /> : null}
             {run.fields.map((f, i) => (
               <Card key={f.label + i} testID={`fill-field-${i}`}>
                 <Text variant="caption" tone="secondary">{f.label}{f.state === "filled" ? "" : ` · ${f.note ?? f.state}`}</Text>

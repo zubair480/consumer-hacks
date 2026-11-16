@@ -9,7 +9,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { EmptyState } from "../../components/EmptyState";
-import { errorMessage } from "../../components/media";
+import { errorMessage, friendlyError } from "../../components/media";
 import { Tap } from "../../components/Pressable";
 import { ResultView } from "../../components/ResultView";
 import { TerminalCard } from "../../components/agents/TerminalCard";
@@ -109,7 +109,7 @@ function Body({ executionId }: { executionId: Id<"actionExecutions"> }) {
           <View style={styles.redDot} />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={type.heading}>{execution.status === "failed" ? "This action failed" : "Cancelled"}</Text>
-            {execution.error ? <Text style={type.caption}>{execution.error}</Text> : null}
+            {execution.status === "failed" ? <Text style={type.caption}>{friendlyError(execution.error, "This didn’t finish. Try again in a minute.")}</Text> : null}
             <Tap testID="result-retry-button" onPress={() => router.replace({ pathname: "/item/[id]/actions", params: { id: execution.itemId } })}>
               <Text style={styles.link}>Back to actions to retry</Text>
             </Tap>

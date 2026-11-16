@@ -6,7 +6,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useOwnedMutation, useOwnedQuery } from "../identity/OwnerProvider";
 import { ACTION_LABELS } from "../shared/contracts";
-import { errorMessage } from "./media";
+import { errorMessage, friendlyError } from "./media";
 import { Tap } from "./Pressable";
 import { SpinRing, success } from "./Signature";
 import { colors, radius, space } from "./tokens";
@@ -78,7 +78,7 @@ export function RunRepoCard({ itemId, color }: { itemId: Id<"savedItems">; color
           <Text style={styles.statusText}>View result</Text>
         </Tap>
       ) : null}
-      {latest?.status === "failed" && latest.error ? <Text style={styles.error}>Last run failed: {latest.error}</Text> : null}
+      {latest?.status === "failed" && latest.error ? <Text style={styles.error}>{friendlyError(latest.error, "The last run didn’t finish. Try again.")}</Text> : null}
     </View>
   );
 }

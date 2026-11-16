@@ -6,7 +6,7 @@ import { View } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../../identity/OwnerProvider";
-import { errorMessage } from "../media";
+import { errorMessage, friendlyError } from "../media";
 import { spacing } from "../../theme";
 import { Button, Card, Text } from "../ui";
 import { Field } from "../Field";
@@ -116,7 +116,7 @@ export function CalendarAgentCard({ itemId, primaryType }: { itemId: Id<"savedIt
         </View>
       ) : (
         <View style={{ marginTop: spacing.md }}>
-          <Text testID="calendar-error" tone="secondary">{active.error ?? "That didn't work."}</Text>
+          <Text testID="calendar-error" tone="secondary">{friendlyError(active.error, "Couldn’t add it to your calendar. Try again.")}</Text>
           <Button testID="calendar-retry" title="Try again" icon="refresh" size="sm" variant="secondary" loading={busy} onPress={() => run(() => retry({ jobId: active._id as Id<"agentJobs"> }))} style={{ marginTop: spacing.sm }} />
         </View>
       )}
