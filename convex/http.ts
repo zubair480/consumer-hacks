@@ -5,6 +5,7 @@ import { X_CALLBACK_PATH } from "./imports/xClient";
 import { GOOGLE_CALLBACK_PATH } from "./imports/youtubeClient";
 import { save } from "./share";
 import { GCAL_CALLBACK_PATH, safeReturnUrl } from "./agents/composio";
+import { DEMO_FORM_PATH, applyFormHtml, parseSubmission, submissionsHtml, thanksHtml } from "./lib/demo";
 
 const http = httpRouter();
 
@@ -88,5 +89,27 @@ http.route({
 
 /** Share to Zapy: the iOS Shortcut posts links, text, and images here with a bearer share token. */
 http.route({ path: "/save", method: "POST", handler: save });
+
+const html = (body: string, status = 200) => new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+
+/** Demo flow: the hosted application form the Browserbase agent fills. */
+http.route({ path: DEMO_FORM_PATH, method: "GET", handler: httpAction(async () => html(applyFormHtml())) });
+
+http.route({
+  path: DEMO_FORM_PATH,
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const submission = parseSubmission(new URLSearchParams(await req.text()));
+    if (!submission) return html(applyFormHtml(), 400);
+    const createdAt = await ctx.runMutation(internal.demo.recordSubmission, submission);
+    return html(thanksHtml(submission.name, createdAt));
+  }),
+});
+
+http.route({
+  path: "/demo/submissions",
+  method: "GET",
+  handler: httpAction(async (ctx) => html(submissionsHtml(await ctx.runQuery(internal.demo.recentSubmissions, {})))),
+});
 
 export default http;

@@ -3,6 +3,7 @@ import { internal } from "../_generated/api";
 import type { Doc } from "../_generated/dataModel";
 import { action, internalAction, internalMutation, internalQuery, mutation, query } from "../_generated/server";
 import { requireOwned, requireOwnedItem, requireUser } from "../lib/auth";
+import { eventTiming } from "../lib/demo";
 import { vOwnerId } from "../lib/validators";
 import { vCalendarProposal } from "./schema";
 import {
@@ -30,8 +31,15 @@ export const prepare = mutation({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems"), timezone: v.optional(v.string()) },
   handler: async (ctx, { ownerId, itemId, timezone }) => {
     const { user, item } = await requireOwnedItem(ctx, ownerId, itemId);
-    const date = item.deadline && /^\d{4}-\d{2}-\d{2}/.test(item.deadline) ? item.deadline.slice(0, 10) : null;
+    const analysis = await ctx.db
+      .query("contentAnalysis")
+      .withIndex("by_itemId", (q) => q.eq("itemId", itemId))
+      .order("desc")
+      .first();
+    const facts = analysis?.facts ?? [];
+    const timeFirst = [...facts].sort((a, b) => Number(/time|date|when|start/i.test(b.key)) - Number(/time|date|when|start/i.test(a.key)));
     const now = Date.now();
+    const timing = eventTiming([...timeFirst.map((f) => `${f.value} ${f.evidence.quote}`), item.rawText ?? "", item.summary ?? "", item.title ?? ""], item.deadline, now);
     return await ctx.db.insert("agentJobs", {
       userId: user._id,
       itemId,
@@ -39,11 +47,11 @@ export const prepare = mutation({
       status: "needs_approval",
       proposal: {
         summary: item.title ?? "Saved item",
-        description: [item.summary, item.sourceUrl].filter(Boolean).join("\n\n"),
+        description: [item.summary, item.location ? `Location: ${item.location}` : "", item.sourceUrl].filter(Boolean).join("\n\n"),
         location: item.location ?? "",
-        startDateTime: date ? `${date}T09:00:00` : "",
+        startDateTime: timing.startDateTime,
         timezone: timezone || "UTC",
-        durationMinutes: 60,
+        durationMinutes: timing.durationMinutes,
       },
       createdAt: now,
       updatedAt: now,

@@ -8,7 +8,7 @@ import { vOwnerId } from "./lib/validators";
 // OWNER: F. Profile (userPreferences) and Profile stats.
 
 const TEXT_MAX = 120;
-const TEXT_FIELDS = ["name", "educationLevel", "fieldOfStudy", "country", "citizenship", "city"] as const;
+const TEXT_FIELDS = ["name", "educationLevel", "fieldOfStudy", "country", "citizenship", "city", "email", "phone"] as const;
 
 function toProfile(row: Doc<"userPreferences"> | null): UserProfile & { updatedAt?: number } {
   if (!row) return {};
@@ -21,6 +21,8 @@ function toProfile(row: Doc<"userPreferences"> | null): UserProfile & { updatedA
     gpa: row.gpa,
     city: row.city ?? row.homeCity,
     interests: row.interests,
+    email: row.email,
+    phone: row.phone,
     updatedAt: row.updatedAt,
   };
 }
@@ -62,6 +64,8 @@ export const upsert = mutation({
     country: vText,
     citizenship: vText,
     city: vText,
+    email: vText,
+    phone: vText,
     gpa: v.optional(v.union(v.number(), v.null())),
     interests: v.optional(v.union(v.array(v.string()), v.null())),
   },

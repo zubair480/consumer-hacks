@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 import { HOLD_MS, assertSafeInstruction, isSensitiveLabel, looksLikeWall } from "./lib/formGuard";
+import { isDemoFormUrl } from "./lib/demo";
 import { callLLMJson, getLLMModel } from "./lib/llm";
 
 type Field = { label: string; kind: string; value?: string; state: "filled" | "skipped" | "failed"; note?: string };
@@ -73,8 +74,8 @@ export const run = internalAction({
       const fillable = found.filter((f) => !["file", "other", "checkbox", "radio"].includes(f.kind) && !isSensitiveLabel(f.label));
       const drafted = await callLLMJson<{ values: Record<string, string | null> }>({
         system:
-          "You fill a scholarship application form for a student. Use ONLY the profile facts for factual fields (name, email, school, GPA, major); return null when a fact is missing, never invent one. For essay or long-answer fields write a short honest draft (max 120 words) grounded in the profile and the scholarship summary. Never output passwords or ID numbers.",
-        user: JSON.stringify({ scholarship: context.title, summary: context.summary, profile: context.profile, fields: fillable.map((f) => ({ label: f.label, kind: f.kind })) }),
+          "You fill a web application form for the user. Use ONLY the profile facts for factual fields (name, email, phone, what they are studying, school, GPA); return null when a fact is missing, never invent one. For essay or long-answer fields write a short honest draft (max 120 words) grounded in the profile and the page summary. Never output passwords or ID numbers.",
+        user: JSON.stringify({ form: context.title, summary: context.summary, profile: context.profile, fields: fillable.map((f) => ({ label: f.label, kind: f.kind })) }),
         schemaHint: '{"values": {"<field label>": "text to enter or null"}}',
       });
 
@@ -105,6 +106,13 @@ export const run = internalAction({
         await sleep(pollMs);
         const status = await ctx.runQuery(internal.formFill.getStatus, { runId });
         if (status === "cancelled") return null;
+        if (status === "approved" && isDemoFormUrl(context.url)) {
+          await stagehand.act("Click the Submit application button");
+          await sleep(2500);
+          await shoot();
+          await set({ status: "submitted", screenshotIds, message: "Submitted", onlyFrom: ["approved"] });
+          return null;
+        }
       }
       await set({ status: "expired", message: "The session timed out", onlyFrom: ["needs_approval"] });
       return null;

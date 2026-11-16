@@ -166,4 +166,13 @@ export default defineSchema({
   ...formFillTables,
   // Agent mode 2 (ZUB-36).
   ...agentTables,
+
+  // Demo flow: the hosted /demo/apply form's submissions.
+  demoFormSubmissions: defineTable({
+    name: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    studying: v.string(),
+    createdAt: v.number(),
+  }).index("by_createdAt", ["createdAt"]),
 });

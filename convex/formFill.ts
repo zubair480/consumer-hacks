@@ -20,7 +20,7 @@ export const start = mutation({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
     const { user, item } = await requireOwnedItem(ctx, ownerId, itemId);
-    if (!item.contentTypes.includes("scholarship")) throw new ConvexError("Fill it for me is for scholarships");
+    if (!item.contentTypes.some((t) => t === "scholarship" || t === "application")) throw new ConvexError("Fill it for me is for applications and scholarships");
     if (!item.sourceUrl || !/^https?:\/\//i.test(item.sourceUrl)) throw new ConvexError("This save has no link to open");
     const existing = await ctx.db
       .query("formFillRuns")
@@ -114,6 +114,9 @@ export const loadContext = internalQuery({
       profile: prefs
         ? {
             name: prefs.name,
+            email: prefs.email,
+            phone: prefs.phone,
+            studying: prefs.fieldOfStudy,
             educationLevel: prefs.educationLevel,
             fieldOfStudy: prefs.fieldOfStudy,
             country: prefs.country,
