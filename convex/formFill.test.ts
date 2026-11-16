@@ -12,10 +12,14 @@ const OWNER_B = "22222222-2222-4222-8222-222222222222";
 
 const acts: string[] = [];
 let wall = false;
+let launchFails = false;
 const closed = { stagehand: 0, browser: 0 };
 vi.mock("@browserbasehq/stagehand", () => ({
   browserbase: {
-    launch: async () => ({ sessionId: "sess", context: { pages: async () => [{ goto: async () => {}, screenshot: async () => new Uint8Array([1, 2, 3]) }] }, close: async () => { closed.browser++; } }),
+    launch: async () => {
+      if (launchFails) throw new Error("Failed to upload the Stagehand extension to Browserbase after 1 attempt(s).");
+      return { sessionId: "sess", context: { pages: async () => [{ goto: async () => {}, screenshot: async () => new Uint8Array([1, 2, 3]) }] }, close: async () => { closed.browser++; } };
+    },
   },
   Stagehand: {
     create: async () => ({
@@ -54,6 +58,7 @@ const status = (t: Awaited<ReturnType<typeof setup>>["t"], runId: never) => t.ru
 beforeEach(() => {
   acts.length = 0;
   wall = false;
+  launchFails = false;
   closed.stagehand = closed.browser = 0;
   process.env.BROWSERBASE_API_KEY = "k";
   process.env.BROWSERBASE_PROJECT_ID = "p";
@@ -118,6 +123,34 @@ describe("fill state machine", () => {
     expect(await t.query(api.formFill.available, { ownerId: OWNER_A })).toBe(true);
     delete process.env.BROWSERBASE_API_KEY;
     expect(await t.query(api.formFill.available, { ownerId: OWNER_A })).toBe(false);
+  });
+});
+
+describe("demo fallback when the browser cannot start", () => {
+  const DEMO = "https://pleasant-lark-678.convex.site/demo/apply";
+
+  it("prepares values, waits for approval, then posts to the demo form only", async () => {
+    launchFails = true;
+    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { t, runId } = await setup();
+    await t.run(async (ctx) => ctx.db.patch(runId as never, { url: DEMO }));
+    const running = t.action(internal.formFillAgent.run, { runId, holdMs: 5000, pollMs: 10 });
+    for (let i = 0; i < 100 && (await status(t, runId as never)) !== "needs_approval"; i++) await new Promise((r) => setTimeout(r, 10));
+    expect(fetchMock).not.toHaveBeenCalled();
+    await t.mutation(api.formFill.approve, { ownerId: OWNER_A, runId });
+    await running;
+    expect(await status(t, runId as never)).toBe("submitted");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0] as unknown[])[0]).toBe(DEMO);
+    vi.unstubAllGlobals();
+  });
+
+  it("does not fall back for other sites", async () => {
+    launchFails = true;
+    const { t, runId } = await setup();
+    await t.action(internal.formFillAgent.run, { runId });
+    expect(await status(t, runId as never)).toBe("failed");
   });
 });
 

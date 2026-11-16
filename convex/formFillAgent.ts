@@ -12,6 +12,12 @@ import { callLLMJson, getLLMModel } from "./lib/llm";
 
 type Field = { label: string; kind: string; value?: string; state: "filled" | "skipped" | "failed"; note?: string };
 
+const DEMO_FIELDS = [
+  { name: "name", label: "Full name" },
+  { name: "email", label: "Email" },
+  { name: "phone", label: "Phone number" },
+  { name: "studying", label: "What are you studying?" },
+];
 const ACTION_BUDGET_MS = 9.5 * 60 * 1000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -35,8 +41,42 @@ export const run = internalAction({
     let stagehand: Stagehand | undefined;
     const screenshotIds: Id<"_storage">[] = [];
     try {
-      browser = await browserbase.launch({ apiKey, projectId, browserSettings: { solveCaptchas: false } });
-      stagehand = await Stagehand.create({ browser, model: { modelName: `openai/${getLLMModel()}`, apiKey: openaiKey } });
+      try {
+        browser = await browserbase.launch({ apiKey, projectId, browserSettings: { solveCaptchas: false } });
+        stagehand = await Stagehand.create({ browser, model: { modelName: `openai/${getLLMModel()}`, apiKey: openaiKey } });
+      } catch (e) {
+        if (!isDemoFormUrl(context.url)) throw e;
+        const names = DEMO_FIELDS.map((f) => f.label);
+        const drafted = await callLLMJson<{ values: Record<string, string | null> }>({
+          system: "You fill a short application form for the user. Use ONLY the profile facts; return null when a fact is missing, never invent one.",
+          user: JSON.stringify({ profile: context.profile, fields: names }),
+          schemaHint: '{"values": {"<field label>": "text or null"}}',
+        });
+        const fields: Field[] = DEMO_FIELDS.map((f) => {
+          const value = drafted.values?.[f.label];
+          return value ? { label: f.label, kind: "text", value, state: "filled" as const } : { label: f.label, kind: "text", state: "skipped" as const, note: "Needs you" };
+        });
+        const deadline = Math.min(Date.now() + holdMs, startedAt + ACTION_BUDGET_MS);
+        await set({
+          status: "needs_approval",
+          fields,
+          expiresAt: deadline,
+          message: "Browser agent unavailable, so these values are prepared without a browser. Approving sends them straight to our demo form.",
+          onlyFrom: ["filling"],
+        });
+        while (Date.now() < deadline) {
+          await sleep(pollMs);
+          const status = await ctx.runQuery(internal.formFill.getStatus, { runId });
+          if (status === "cancelled") return null;
+          if (status !== "approved") continue;
+          const body = new URLSearchParams(Object.fromEntries(DEMO_FIELDS.map((f, i) => [f.name, fields[i].value ?? ""])));
+          const res = await fetch(context.url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+          await set(res.ok ? { status: "submitted", message: "Sent to the demo form (no browser)", onlyFrom: ["approved"] } : { status: "failed", message: `Demo form said ${res.status}`, onlyFrom: ["approved"] });
+          return null;
+        }
+        await set({ status: "expired", message: "The session timed out", onlyFrom: ["needs_approval"] });
+        return null;
+      }
       const [page] = await browser.context.pages();
       let liveViewUrl: string | undefined;
       try {
