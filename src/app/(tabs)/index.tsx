@@ -1,19 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { useEffect, useState, type ReactNode } from "react";
-import { DeviceEventEmitter, Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { useAction } from "convex/react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { AppState, DeviceEventEmitter, Pressable, RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { FadeIn, FadeInDown, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { Boundary } from "../../components/Boundary";
 import { itemTitle } from "../../components/ItemCard";
-import { SpinRing } from "../../components/Signature";
+import { Shimmer, SpinRing } from "../../components/Signature";
 import { Skeleton } from "../../components/States";
 import { HoloBand, ScalePressable, SearchPill, Text } from "../../components/ui";
 import { TAB_BAR_SPACE, useTabBarScroll } from "../../components/ui/InkTabBar";
+import { showToast } from "../../components/ui/Toast";
 import { MarkerTitle } from "../../components/ui/MarkerTitle";
-import { useOwnedQuery } from "../../identity/OwnerProvider";
+import { useOwnedQuery, useOwnerId } from "../../identity/OwnerProvider";
 import { boxFor } from "../../lib/boxes";
 import { interestColor, useProfile } from "../../lib/useProfile";
 import { colors, fonts, gradients, palette } from "../../theme";
@@ -31,6 +33,49 @@ const IN_PROGRESS = new Set(["pending", "extracting", "analyzing"]);
 
 const introPending = () => (globalThis as { __zapyIntroPending?: boolean }).__zapyIntroPending === true;
 let welcomed = false;
+const SYNC_EVERY_MS = 60_000;
+let lastXSync = 0;
+
+/** Pulls new X bookmarks when Home gains focus or the app returns to the foreground (at most once a minute per device); `sync(true)` skips the throttle. */
+function useXAutoSync(itemCount: number | undefined) {
+  const ownerId = useOwnerId();
+  const syncX = useAction(api.imports.connections.syncX);
+  const sources = useOwnedQuery(api.imports.connections.sources, {});
+  const connected = !!sources?.find((s) => s.platform === "x")?.connected;
+  const count = useRef(itemCount);
+  useEffect(() => {
+    count.current = itemCount;
+  }, [itemCount]);
+  const sync = useCallback(
+    async (force = false) => {
+      if (!connected) return;
+      const now = Date.now();
+      if (!force && now - lastXSync < SYNC_EVERY_MS) return;
+      lastXSync = now;
+      const before = count.current ?? 0;
+      try {
+        const { created } = await syncX({ ownerId });
+        const added = created || Math.max(0, (count.current ?? 0) - before);
+        if (added > 0) showToast(`${added} new ${added === 1 ? "save" : "saves"} from X`);
+      } catch {
+        // The Import screen shows sync errors; Home stays quiet.
+      }
+    },
+    [connected, ownerId, syncX],
+  );
+  useFocusEffect(
+    useCallback(() => {
+      void sync();
+    }, [sync]),
+  );
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") void sync();
+    });
+    return () => sub.remove();
+  }, [sync]);
+  return { sync, connected };
+}
 
 /** Holds Home at opacity 0 while the cold-start intro plays; reveals on "zapy:introDone" or after 4s. */
 function useIntroGate() {
@@ -69,6 +114,13 @@ export default function Home() {
   const scroll = useTabBarScroll();
   const revealed = useIntroGate();
   const [tab, setTab] = useState<Tab>("review");
+  const [refreshing, setRefreshing] = useState(false);
+  const x = useXAutoSync(items?.length);
+  const refresh = async () => {
+    setRefreshing(true);
+    await x.sync(true);
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (me && !me.onboarded && !welcomed) {
@@ -79,14 +131,24 @@ export default function Home() {
 
   const doneIds = new Set((outcomes ?? []).map((o) => o.itemId as string));
   const tasks: Task[] = (items ?? []).map((i) => ({ ...i, state: doneIds.has(i._id) ? "done" : IN_PROGRESS.has(i.extractionStatus) ? "running" : "review" }));
-  const counts = { review: tasks.filter((t) => t.state === "review").length, all: tasks.length, done: tasks.filter((t) => t.state === "done").length };
-  const shown = (tab === "all" ? tasks : tasks.filter((t) => t.state === tab)).sort((a, b) => ORDER[a.state] - ORDER[b.state] || b.createdAt - a.createdAt);
+  const inReview = (t: Task) => t.state === "review" || t.state === "running";
+  const counts = { review: tasks.filter(inReview).length, all: tasks.length, done: tasks.filter((t) => t.state === "done").length };
+  const shown =
+    tab === "review"
+      ? tasks.filter(inReview).sort((a, b) => Number(b.state === "running") - Number(a.state === "running") || b.createdAt - a.createdAt)
+      : (tab === "all" ? tasks : tasks.filter((t) => t.state === "done")).sort((a, b) => ORDER[a.state] - ORDER[b.state] || b.createdAt - a.createdAt);
   const first = me?.displayName?.split(/\s+/)[0];
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <HoloBand height={140} />
-      <ScrollView {...scroll} contentContainerStyle={styles.content} testID="home-screen" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        {...scroll}
+        contentContainerStyle={styles.content}
+        testID="home-screen"
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl testID="queue-refresh" refreshing={refreshing} onRefresh={refresh} tintColor={colors.text} colors={[colors.text]} />}
+      >
         <View key={revealed ? "shown" : "held"} testID="queue-screen" style={[styles.stack, !revealed && { opacity: 0 }]}>
           <Enter index={0}>
             <View style={styles.header}>
@@ -176,14 +238,28 @@ function TaskCard({ task }: { task: Task }) {
           {task.summary}
         </Text>
       ) : null}
-      <View style={styles.bar}>
-        <Text style={styles.barText} numberOfLines={1}>
-          {box.action ?? "See what Zapy can do"}
-        </Text>
-        <View style={styles.play}>
-          <Ionicons name="play" size={16} color={colors.onPrimary} style={{ marginLeft: 2 }} />
+      {task.state === "running" ? (
+        <View style={styles.bar} testID={`task-reading-${task._id}`}>
+          <View style={{ flex: 1, gap: 6, overflow: "hidden" }}>
+            <Text style={styles.barText} numberOfLines={1}>
+              Zapy is reading this…
+            </Text>
+            <Shimmer color={box.color} width={160} />
+          </View>
+          <View style={[styles.play, { backgroundColor: palette.grey }]}>
+            <SpinRing size={18} color={palette.ink} />
+          </View>
         </View>
-      </View>
+      ) : (
+        <View style={styles.bar}>
+          <Text style={styles.barText} numberOfLines={1}>
+            {box.action ?? "See what Zapy can do"}
+          </Text>
+          <View style={styles.play}>
+            <Ionicons name="play" size={16} color={colors.onPrimary} style={{ marginLeft: 2 }} />
+          </View>
+        </View>
+      )}
     </ScalePressable>
   );
 }
@@ -193,7 +269,7 @@ function StatusPill({ state }: { state: TaskState }) {
     return (
       <View style={[styles.pill, { backgroundColor: "#FFFFFF" }]}>
         <SpinRing size={12} color={palette.ink} />
-        <Text style={styles.pillText}>Running</Text>
+        <Text style={styles.pillText}>Reading…</Text>
       </View>
     );
   return (
