@@ -1,0 +1,14 @@
+# Revyl test 16: a dated X post lands in Events with "Add to my calendar" first
+id: 16-dated-post-becomes-event
+name: "Dated post becomes an event"
+device: iPhone 16 (Revyl cloud simulator)
+build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
+steps:
+  - "Open Capture and save the text: Grand Theft Auto VI will release midnight local time on November 19, 2026, in all regions for both PlayStation 5 and XBOX Series X|S."
+  - "Wait for the item to finish analyzing, then find it on Home."
+  - "Open the item and tap its first action."
+expect:
+  - "The item sits in the Events box."
+  - "The first action reads \"Add to my calendar\"."
+  - "The calendar sheet shows November 19, 2026 at 12:00 AM, place Online, and does not ask for a location."
+evidence: one screenshot per step, saved as renders/CONS-32/16-dated-post-becomes-event-<step>.png

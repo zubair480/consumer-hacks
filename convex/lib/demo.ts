@@ -176,6 +176,19 @@ function findTime(text: string): { start: number; end?: number } | null {
   if (single) return { start: to24(Number(single[1]), single[3]) * 60 + Number(single[2] ?? 0) };
   const clock = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
   if (clock) return { start: Number(clock[1]) * 60 + Number(clock[2]) };
+  if (/\bmidnight\b/i.test(text)) return { start: 0 };
+  if (/\bnoon\b/i.test(text)) return { start: 12 * 60 };
+  return null;
+}
+
+/** The first date (YYYY-MM-DD) in the texts that is today or later, or null when none is stated. */
+export function upcomingEventDate(texts: (string | undefined)[], now = Date.now()): string | null {
+  const today = new Date(now).toISOString().slice(0, 10);
+  const year = new Date(now).getUTCFullYear();
+  for (const text of texts) {
+    const date = text ? findDate(text, year) : null;
+    if (date && date >= today) return date;
+  }
   return null;
 }
 

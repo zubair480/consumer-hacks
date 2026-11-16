@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import { describe, expect, it } from "vitest";
-import { boxFor, eventTiming, isDemoFormUrl, parseSubmission, primaryAgentAction, DEMO_EVENT_TEXT } from "./demo";
+import { boxFor, eventTiming, isDemoFormUrl, parseSubmission, primaryAgentAction, upcomingEventDate, DEMO_EVENT_TEXT } from "./demo";
 import { buildRunRepoResult, planCommands, runRepoInSandbox, type Runner } from "./runRepo";
 
 const SITE = "https://pleasant-lark-678.convex.site";
@@ -89,5 +89,18 @@ describe("Run it for me on zapy-hello-world", () => {
     expect(result.title).toBe("Passed: Start succeeded");
     const output = result.sections.find((s) => s.kind === "code" && s.heading === "Output");
     expect(output && output.kind === "code" ? output.code : "").toContain("Hello World");
+  });
+});
+
+describe("dated posts", () => {
+  const GTA = "Grand Theft Auto VI will release midnight local time on November 19, 2026, in all regions for both PlayStation 5 and XBOX Series X|S.";
+  it("reads the release date and midnight", () => {
+    expect(upcomingEventDate([GTA], NOW)).toBe("2026-11-19");
+    expect(eventTiming([GTA], undefined, NOW).startDateTime).toBe("2026-11-19T00:00:00");
+    expect(eventTiming(["Livestream at noon on Dec 2, 2026"], undefined, NOW).startDateTime).toBe("2026-12-02T12:00:00");
+  });
+  it("ignores past or missing dates", () => {
+    expect(upcomingEventDate(["Released on March 3, 2020"], NOW)).toBeNull();
+    expect(upcomingEventDate(["no date here", undefined], NOW)).toBeNull();
   });
 });
