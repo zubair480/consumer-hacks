@@ -159,7 +159,7 @@ describe("ownership", () => {
     vi.useFakeTimers();
     const { t, itemId, runId } = await setup();
     await expect(t.mutation(api.formFill.start, { ownerId: OWNER_B, itemId })).rejects.toThrow();
-    await expect(t.query(api.formFill.get, { ownerId: OWNER_B, runId })).rejects.toThrow();
+    expect(await t.query(api.formFill.get, { ownerId: OWNER_B, runId })).toBeNull();
     await expect(t.mutation(api.formFill.approve, { ownerId: OWNER_B, runId })).rejects.toThrow();
     await expect(t.mutation(api.formFill.cancel, { ownerId: OWNER_B, runId })).rejects.toThrow();
     await expect(t.query(api.formFill.latestForItem, { ownerId: OWNER_B, itemId })).rejects.toThrow();

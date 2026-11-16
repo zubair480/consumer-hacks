@@ -69,7 +69,7 @@ describe("agentRuns.startRunRepo", () => {
   it("refuses another owner's item", async () => {
     const { t, itemId } = await setup();
     await expect(t.mutation(api.agentRuns.startRunRepo, { ownerId: OWNER_B, itemId })).rejects.toThrow(/Not found/);
-    await expect(t.query(api.agentRuns.latestRunRepo, { ownerId: OWNER_B, itemId })).rejects.toThrow(/Not found/);
+    expect(await t.query(api.agentRuns.latestRunRepo, { ownerId: OWNER_B, itemId })).toBeNull();
     await expect(t.mutation(api.agentRuns.startRunRepo, { ownerId: "not-a-uuid", itemId })).rejects.toThrow();
   });
 
