@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 import { HOLD_MS, assertSafeInstruction, isSensitiveLabel } from "./lib/formGuard";
+import { extractUrls, isFormLike, isShortLink, isSocialPostUrl, pickFormLink, xStatusId } from "./lib/formLinks";
 import { isDemoFormUrl } from "./lib/demo";
 import { callLLMJson, getLLMModel } from "./lib/llm";
 
@@ -19,6 +20,52 @@ const DEMO_FIELDS = [
   { name: "studying", label: "What are you studying?" },
 ];
 const ACTION_BUDGET_MS = 9.5 * 60 * 1000;
+
+async function expand(url: string): Promise<string> {
+  if (!isShortLink(url)) return url;
+  try {
+    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(8000) });
+    return res.url || url;
+  } catch {
+    return url;
+  }
+}
+
+async function firstFormLink(texts: string[]): Promise<string | null> {
+  const direct = pickFormLink(texts);
+  if (direct) return direct;
+  for (const url of extractUrls(texts).filter(isShortLink).slice(0, 8)) {
+    const full = await expand(url);
+    if (isFormLike(full)) return full;
+  }
+  return null;
+}
+
+/** Public text and expanded links of an X post (no login): the syndication JSON, then oEmbed. */
+async function xPostTexts(id: string): Promise<string[]> {
+  const texts: string[] = [];
+  try {
+    const res = await fetch(`https://cdn.syndication.twimg.com/tweet-result?id=${id}&token=a`, { signal: AbortSignal.timeout(8000) });
+    if (res.ok) {
+      const j = (await res.json()) as { text?: string; entities?: { urls?: { expanded_url?: string }[] }; note_tweet?: { text?: string } };
+      texts.push(j.note_tweet?.text ?? "", j.text ?? "", ...(j.entities?.urls ?? []).map((u) => u.expanded_url ?? ""));
+    }
+  } catch {}
+  try {
+    const res = await fetch(`https://publish.twitter.com/oembed?omit_script=1&url=${encodeURIComponent(`https://twitter.com/i/status/${id}`)}`, { signal: AbortSignal.timeout(8000) });
+    if (res.ok) texts.push(((await res.json()) as { html?: string }).html ?? "");
+  } catch {}
+  return texts.filter(Boolean);
+}
+
+/** The page to fill: the saved link, or for an X post the first form-like link in it (t.co links expanded). */
+async function resolveFormUrl(context: { url: string; rawText: string; summary: string }): Promise<string | null> {
+  if (!isSocialPostUrl(context.url)) return context.url;
+  const fromSave = await firstFormLink([context.rawText, context.summary]);
+  if (fromSave) return fromSave;
+  const id = xStatusId(context.url);
+  return id ? await firstFormLink(await xPostTexts(id)) : null;
+}
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const run = internalAction({
@@ -28,6 +75,15 @@ export const run = internalAction({
     const set = (a: Record<string, unknown>) => ctx.runMutation(internal.formFill.setState, { runId, ...a } as never);
     const context = await ctx.runQuery(internal.formFill.loadContext, { runId });
     if (!context || context.status !== "queued") return null;
+    const target = await resolveFormUrl(context);
+    if (!target) {
+      await set({ status: "blocked", message: "No form link found in this post" });
+      return null;
+    }
+    if (target !== context.url) {
+      context.url = target;
+      await set({ status: "queued", url: target, onlyFrom: ["queued"] });
+    }
     const apiKey = process.env.BROWSERBASE_API_KEY;
     const projectId = process.env.BROWSERBASE_PROJECT_ID;
     const openaiKey = process.env.OPENAI_API_KEY;

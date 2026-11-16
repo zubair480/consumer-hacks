@@ -3,7 +3,15 @@ import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { requireOwned, requireOwnedItem, requireUser } from "./lib/auth";
 import { vFormFillField, vFormFillStatus } from "./formFillSchema";
+import { pickFormLink, xStatusId } from "./lib/formLinks";
 import { vOwnerId } from "./lib/validators";
+
+/** Fill it for me: application/scholarship saves, posts containing a form-like link, and X posts (their form link is resolved by the agent). */
+export function canFill(item: { contentTypes: string[]; sourceUrl?: string; rawText?: string; summary?: string }): boolean {
+  if (item.contentTypes.some((t) => t === "scholarship" || t === "application")) return true;
+  if (pickFormLink([item.rawText, item.summary, item.sourceUrl])) return true;
+  return !!xStatusId(item.sourceUrl);
+}
 
 const ACTIVE = ["queued", "filling", "needs_approval", "approved"];
 
@@ -20,7 +28,7 @@ export const start = mutation({
   args: { ownerId: vOwnerId, itemId: v.id("savedItems") },
   handler: async (ctx, { ownerId, itemId }) => {
     const { user, item } = await requireOwnedItem(ctx, ownerId, itemId);
-    if (!item.contentTypes.some((t) => t === "scholarship" || t === "application")) throw new ConvexError("Fill it for me is for applications and scholarships");
+    if (!canFill(item)) throw new ConvexError("Fill it for me needs an application, or a saved post with a form link");
     if (!item.sourceUrl || !/^https?:\/\//i.test(item.sourceUrl)) throw new ConvexError("This save has no link to open");
     const existing = await ctx.db
       .query("formFillRuns")
@@ -111,6 +119,7 @@ export const loadContext = internalQuery({
       url: run.url,
       title: item?.title ?? "",
       summary: item?.summary ?? "",
+      rawText: item?.rawText ?? "",
       profile: prefs
         ? {
             name: prefs.name,
@@ -144,6 +153,7 @@ export const setState = internalMutation({
     fields: v.optional(v.array(vFormFillField)),
     screenshotIds: v.optional(v.array(v.id("_storage"))),
     liveViewUrl: v.optional(v.string()),
+    url: v.optional(v.string()),
     message: v.optional(v.string()),
     expiresAt: v.optional(v.number()),
     onlyFrom: v.optional(v.array(vFormFillStatus)),
