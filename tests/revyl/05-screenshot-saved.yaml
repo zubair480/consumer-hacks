@@ -5,7 +5,7 @@ device: iPhone 16 (Revyl cloud simulator)
 build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleasant-lark-678.convex.cloud
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
-  - "Open Capture: tap `home-save-button`, then `quick-capture-link`; wait for `capture-mode-url`, then tap `capture-mode-image`."
+  - "Open Capture through the deep link zapy:///capture?mode=url (`xcrun simctl openurl booted`; Capture has no button in the UI any more); wait for `capture-mode-url`, then tap `capture-mode-image`."
   - "Tap `pick-image-button`, allow photo access, pick any photo from the simulator library."
   - "Confirm a preview (`capture-image-preview-0`), tap `save-button`."
 expect:
