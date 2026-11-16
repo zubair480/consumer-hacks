@@ -121,7 +121,6 @@ export default function Home() {
   const revealed = useIntroGate();
   const [tab, setTab] = useState<Tab>("review");
   const [refreshing, setRefreshing] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [query, setQuery] = useState("");
   const x = useXAutoSync(items?.length);
   const refresh = async () => {
@@ -180,29 +179,14 @@ export default function Home() {
               </ScalePressable>
             </View>
           </Enter>
-          <Enter index={1}>
-            <View style={styles.pills}>
-              <ScalePressable
-                testID="home-x-pill"
-                accessibilityRole="button"
-                accessibilityLabel={x.connected ? "Sync X" : "Connect X"}
-                scaleTo={0.97}
-                disabled={syncing}
-                onPress={async () => {
-                  if (!x.connected) return router.push("/import");
-                  setSyncing(true);
-                  const added = await x.sync(true, false);
-                  setSyncing(false);
-                  if (added === -1) showToast("Couldn’t sync X. Try again");
-                  else if (!added) showToast("X is up to date");
-                }}
-                style={[styles.pillBtn, styles.xPill]}
-              >
+          {x.connected ? null : (
+            <Enter index={1}>
+              <ScalePressable testID="home-x-pill" accessibilityRole="button" accessibilityLabel="Connect X" scaleTo={0.97} onPress={() => router.push("/import")} style={[styles.pillBtn, styles.xPill]}>
                 <Ionicons name="logo-x" size={16} color={colors.text} />
-                <Text style={styles.pillBtnText}>{!x.connected ? "Connect X" : syncing ? "Syncing…" : "Sync X"}</Text>
+                <Text style={styles.pillBtnText}>Connect X</Text>
               </ScalePressable>
-            </View>
-          </Enter>
+            </Enter>
+          )}
           <Enter index={1}>
             <MarkerTitle lines={["Your tasks"]} marker="tasks" />
           </Enter>
@@ -313,7 +297,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: TAB_BAR_SPACE },
   stack: { gap: 24 },
-  pills: { flexDirection: "row", gap: 8 },
   xPill: { flex: 0, alignSelf: "flex-start", paddingHorizontal: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.text },
   pillBtn: { flex: 1, height: 44, borderRadius: 999, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12 },
   pillBtnText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: colors.text },
