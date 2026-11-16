@@ -93,7 +93,7 @@ export const run = internalAction({
         "Is this page blocked by a login wall, a CAPTCHA or human check, or a paywall, so that no form can be filled without signing in or paying? Answer blocked=false if a form is visible.",
         z.object({ blocked: z.boolean(), reason: z.string() }),
       )) as unknown as { data: { blocked: boolean; reason: string } };
-      if (wall.data.blocked) {
+      if (wall.data.blocked && !isDemoFormUrl(context.url)) {
         await shoot();
         await set({ status: "blocked", screenshotIds, message: wall.data.reason || "This page needs a login, CAPTCHA or payment" });
         return null;
