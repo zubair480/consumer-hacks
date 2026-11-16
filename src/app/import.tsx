@@ -8,13 +8,11 @@ import { useState, type ComponentProps } from "react";
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
-import { GitHubStarsRow } from "../components/GitHubStarsRow";
 import { GradientButton } from "../components/GradientButton";
 import { errorMessage } from "../components/media";
 import { Tap } from "../components/Pressable";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { Skeleton } from "../components/States";
-import { YouTubeSourceRow } from "../components/YouTubeSourceRow";
 import { colors, radius, space, type } from "../components/tokens";
 import { fonts } from "../theme";
 import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
@@ -139,8 +137,6 @@ export default function ImportScreen() {
             />
           ))
         )}
-        <GitHubStarsRow />
-        <YouTubeSourceRow onNotice={setNotice} />
 
         {x && !x.configured ? (
           <Text style={styles.footnote} testID="import-x-not-configured">

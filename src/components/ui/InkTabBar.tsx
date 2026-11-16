@@ -151,14 +151,6 @@ const TABS: Record<
     a11y: "Library",
     tilt: 3,
   },
-  activity: {
-    icon: "pulse-outline",
-    active: "pulse",
-    color: palette.mint,
-    label: "Activity",
-    a11y: "Activity",
-    tilt: -3,
-  },
   profile: {
     icon: "person-circle-outline",
     active: "person-circle",
@@ -229,11 +221,14 @@ export function dockPath(W: number) {
   ].join(" ");
 }
 
-const slotCenter = (W: number, i: number) => {
-  const slotW = (W - 16 - SPACER) / 4;
-  return i < 2
-    ? 8 + slotW * (i + 0.5)
-    : 8 + 2 * slotW + SPACER + slotW * (i - 2 + 0.5);
+/** Two slots left of the notch; the remaining tabs share the right side, so a single right tab is centered there. */
+const slotWidth = (W: number, i: number, count: number) => {
+  const side = (W - 16 - SPACER) / 2;
+  return i < 2 ? side / 2 : side / Math.max(1, count - 2);
+};
+const slotCenter = (W: number, i: number, count: number) => {
+  const side = (W - 16 - SPACER) / 2;
+  return i < 2 ? 8 + slotWidth(W, i, count) * (i + 0.5) : 8 + side + SPACER + slotWidth(W, i, count) * (i - 2 + 0.5);
 };
 
 type Route = BottomTabBarProps["state"]["routes"][number];
@@ -260,7 +255,7 @@ export function InkTabBar({
   const reduce = useReducedMotion();
   const scroll = useContext(ScrollContext);
   const active = state.routes[state.index];
-  const tabRoutes = state.routes.filter((r) => r.name !== "create");
+  const tabRoutes = state.routes.filter((r) => TABS[r.name]);
   const activeSlot = tabRoutes.findIndex((r) => r.key === active.key);
   const activeMeta = TABS[active.name];
   const [W, setW] = useState(0);
@@ -334,7 +329,7 @@ export function InkTabBar({
 
   useEffect(() => {
     if (W <= 0 || activeSlot < 0) return;
-    const cx = slotCenter(W, activeSlot);
+    const cx = slotCenter(W, activeSlot, tabRoutes.length);
     const meta = TABS[active.name];
     const color = meta?.color ?? palette.butter;
     if (!placed.get()) {
@@ -381,6 +376,7 @@ export function InkTabBar({
     );
   }, [
     W,
+    tabRoutes.length,
     activeSlot,
     active.name,
     reduce,
@@ -621,7 +617,7 @@ export function InkTabBar({
                     onPress={() => press(route)}
                     hitSlop={4}
                     style={{
-                      flex: 1,
+                      width: slotWidth(W, index, tabRoutes.length),
                       height: 52,
                       alignItems: "center",
                       justifyContent: "center",

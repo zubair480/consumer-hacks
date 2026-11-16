@@ -31,7 +31,7 @@ export default function TabsLayout() {
             },
           }}
         />
-        <Tabs.Screen name="activity" options={tab("Activity", "tab-activity")} />
+        <Tabs.Screen name="activity" options={{ ...tab("Activity", "tab-activity"), href: null }} />
         <Tabs.Screen name="profile" options={tab("Profile", "tab-profile")} />
       </Tabs>
     </TabBarScrollProvider>

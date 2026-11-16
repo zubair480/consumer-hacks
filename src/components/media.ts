@@ -36,10 +36,23 @@ export async function uploadImage(image: PickedImage, getUploadUrl: () => Promis
   return storageId;
 }
 
-export function errorMessage(error: unknown): string {
-  if (error instanceof ConvexError) return typeof error.data === "string" ? error.data : "Something went wrong.";
-  if (error instanceof Error) return error.message.replace(/^.*Uncaught (ConvexError: )?/s, "").split("\n")[0];
-  return "Something went wrong.";
+const GENERIC_ERROR = "Couldn’t load this. Pull down to try again.";
+const DEVELOPER_TEXT = /CONVEX|Request ID|Server Error|Uncaught|Stagehand|extension|TypeError|ReferenceError|stack|ECONN|ETIMEDOUT|fetch failed|status code|\bat [\w.]+ \(|undefined|null|https?:\/\/|[{}[\]]/i;
+
+/** One friendly line for users. Developer-looking text (Convex request ids, stack traces, provider internals) is replaced by `fallback` and only logged. */
+export function friendlyError(raw: string | null | undefined, fallback = GENERIC_ERROR): string {
+  if (!raw) return fallback;
+  if (DEVELOPER_TEXT.test(raw) || raw.length > 160) {
+    console.warn(raw);
+    return fallback;
+  }
+  return raw;
+}
+
+export function errorMessage(error: unknown, fallback = GENERIC_ERROR): string {
+  if (error instanceof ConvexError) return typeof error.data === "string" ? friendlyError(error.data, fallback) : fallback;
+  console.warn(error);
+  return fallback;
 }
 
 export function isValidLink(raw: string): boolean {

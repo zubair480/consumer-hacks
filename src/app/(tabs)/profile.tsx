@@ -13,7 +13,6 @@ import { Field } from "../../components/Field";
 import { GradientButton } from "../../components/GradientButton";
 import { errorMessage } from "../../components/media";
 import { Section } from "../../components/Section";
-import { ShareToZapyCard } from "../../components/share/ShareToZapyCard";
 import { Skeleton } from "../../components/States";
 import { colors, radius, space, type } from "../../components/tokens";
 import { HoloBand, InkPill, ScalePressable, Text as ZText } from "../../components/ui";
@@ -21,7 +20,7 @@ import { TAB_BAR_SPACE, useTabBarScroll } from "../../components/ui/InkTabBar";
 import { MarkerTitle } from "../../components/ui/MarkerTitle";
 import { INTERESTS } from "../../lib/useProfile";
 import { fonts, palette } from "../../theme";
-import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../../identity/OwnerProvider";
+import { useOwnedMutation, useOwnedQuery } from "../../identity/OwnerProvider";
 import type { UserProfile } from "../../shared/contracts";
 
 type Key = "name" | "educationLevel" | "fieldOfStudy" | "country" | "citizenship" | "gpa" | "city" | "interests";
@@ -67,8 +66,6 @@ export default function Profile() {
           <ConnectedAccounts />
         </Boundary>
         <Boundary fallback={null}><CalendarConnectRow /></Boundary>
-        <Boundary title="Couldn’t load Share to Zapy"><ShareToZapyCard /></Boundary>
-        <About />
       </ScrollView>
     </SafeAreaView>
   );
@@ -148,27 +145,6 @@ function Body() {
         {status && status !== "Saved" ? <Text style={styles.error} testID="profile-error">{status}</Text> : null}
       </Section>
     </>
-  );
-}
-
-function About() {
-  const ownerId = useOwnerId();
-  return (
-    <Section title="About & limitations">
-      <View style={styles.about} testID="about-section">
-        {[
-          ["bulb-outline", "Zapy reads what you save and suggests three actions. Results come from the source you saved; when a fact isn’t in the source (a deadline, a price, an address) we say so instead of guessing."],
-          ["lock-closed", "Some links are private or block readers (Instagram, logged-in pages). When that happens, add a screenshot or paste the text."],
-          ["share-outline", "Nothing is posted or sent for you. Drafts are copied or shared through your phone’s share sheet."],
-          ["phone-portrait-outline", `No account needed: your saves belong to this device (${ownerId.slice(0, 8)}). Deleting the app removes access to them.`],
-        ].map(([icon, text]) => (
-          <View key={icon} style={styles.aboutRow}>
-            <Ionicons name={icon as "bulb-outline"} size={16} color={colors.textMuted} style={{ marginTop: 2 }} />
-            <Text style={[type.caption, { flex: 1, lineHeight: 18 }]}>{text}</Text>
-          </View>
-        ))}
-      </View>
-    </Section>
   );
 }
 

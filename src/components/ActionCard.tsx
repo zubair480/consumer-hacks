@@ -10,7 +10,7 @@ import { useOwnedMutation } from "../identity/OwnerProvider";
 import { api } from "../../convex/_generated/api";
 import type { SuggestionRow } from "./api";
 import { Field } from "./Field";
-import { errorMessage } from "./media";
+import { errorMessage, friendlyError } from "./media";
 import { Tap } from "./Pressable";
 import { colors, radius, space } from "./tokens";
 import { fonts, palette } from "../theme";
@@ -152,7 +152,7 @@ export function ActionCard({ suggestion, color, profile, item }: { suggestion: S
           <Text style={styles.statusText}>View result</Text>
         </Tap>
       ) : null}
-      {latest?.status === "failed" && latest.error ? <Text style={styles.error}>Last run failed: {latest.error}</Text> : null}
+      {latest?.status === "failed" && latest.error ? <Text style={styles.error}>{friendlyError(latest.error, "The last run didn’t finish. Try again.")}</Text> : null}
       {!suggestion.canExecute ? (
         <View style={styles.status} testID={`action-unavailable-${suggestion.rank}`}>
           <Ionicons name="information-circle-outline" size={18} color={palette.ink} />
