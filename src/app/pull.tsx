@@ -1,5 +1,3 @@
-import { useMutation } from "convex/react";
-import { makeFunctionReference } from "convex/server";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -7,34 +5,28 @@ import Animated, { FadeIn, ZoomIn, useAnimatedStyle, useReducedMotion, useShared
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
 import { HoloBand, ScalePressable, Text } from "../components/ui";
-import { useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
-import { BOXES, boxFor, type BoxKey } from "../lib/boxes";
+import { useOwnedMutation, useOwnedQuery } from "../identity/OwnerProvider";
+import { BOXES } from "../lib/boxes";
 import { colors, fonts, palette } from "../theme";
 
 const BOUNCY = { damping: 12, stiffness: 220 };
-/** Thread B's convex/demo.ts (spec B4). Referenced by name so this screen builds before it lands on main. */
-const pullEverythingRef = makeFunctionReference<"mutation", { ownerId: string }, unknown>("demo:pullEverything");
-const SETTLED = new Set(["ready", "needs_input", "failed"]);
 
-/** Demo flow A2: pulls everything in and shows the saves sorting into boxes. Progress comes from the owner's items. */
+/** Demo flow A2: pulls everything in and shows the saves sorting into boxes (demo.pullEverything + demo.pullStatus). */
 export default function Pull() {
-  const ownerId = useOwnerId();
-  const pullEverything = useMutation(pullEverythingRef);
-  const items = useOwnedQuery(api.items.list, { limit: 50 });
+  const pullEverything = useOwnedMutation(api.demo.pullEverything);
+  const status = useOwnedQuery(api.demo.pullStatus, {});
   const [pullFailed, setPullFailed] = useState(false);
   const fired = useRef(false);
 
   useEffect(() => {
     if (fired.current) return;
     fired.current = true;
-    pullEverything({ ownerId }).catch(() => setPullFailed(true));
-  }, [ownerId, pullEverything]);
+    pullEverything({}).catch(() => setPullFailed(true));
+  }, [pullEverything]);
 
-  const total = items?.length ?? 0;
-  const analyzed = items?.filter((i) => SETTLED.has(i.extractionStatus)).length ?? 0;
-  const done = items !== undefined && (total > 0 ? analyzed === total : pullFailed);
-  const counts: Record<BoxKey, number> = { code: 0, forms: 0, events: 0, jobs: 0, learn: 0, other: 0 };
-  for (const i of items ?? []) if (SETTLED.has(i.extractionStatus)) counts[boxFor(i.primaryType).key] += 1;
+  const total = status?.total ?? 0;
+  const analyzed = status?.analyzed ?? 0;
+  const done = status !== undefined && (status.done || (pullFailed && total === 0));
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="pull-screen">
@@ -47,7 +39,7 @@ export default function Pull() {
         <Progress value={total ? analyzed / total : 0} />
         <View style={styles.grid}>
           {BOXES.map((b, i) => (
-            <Box key={b.key} label={b.label} color={b.color} count={counts[b.key]} index={i} testID={`pull-box-${b.key}`} />
+            <Box key={b.key} label={b.label} color={b.color} count={status?.byBox[b.key] ?? 0} index={i} testID={`pull-box-${b.key}`} />
           ))}
         </View>
       </View>
