@@ -1,19 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useAction } from "convex/react";
-import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type TextInputProps } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, type TextInputProps } from "react-native";
 import Animated, { FadeInRight, useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
-import { useCalendarConnect } from "../components/agents/CalendarAgent";
+import { CalendarConnectRow } from "../components/agents/CalendarAgent";
+import { Field } from "../components/Field";
+import { GitHubStarsRow } from "../components/GitHubStarsRow";
 import { ZapMark } from "../components/brand/ZapMark";
 import { errorMessage } from "../components/media";
-import { HoloBand, ScalePressable, Text } from "../components/ui";
+import { Button, Chip, HoloBand, Text } from "../components/ui";
 import { showToast } from "../components/ui/Toast";
-import { useOwnedMutation, useOwnedQuery, useOwnerId } from "../identity/OwnerProvider";
+import { useOwnedMutation, useOwnedQuery } from "../identity/OwnerProvider";
+import { useXConnect } from "../lib/useXConnect";
 import { colors, fonts, palette } from "../theme";
 
 type Key = "name" | "educationLevel" | "fieldOfStudy" | "country" | "citizenship" | "gpa" | "city";
@@ -71,9 +71,11 @@ export default function Welcome() {
           <Text style={styles.sub}>Your saves, done.</Text>
         </View>
         <View style={styles.bottom}>
-          <InkButton
+          <Button
             testID="onboarding-start"
-            label="Start"
+            title="Start"
+            size="lg"
+            fullWidth
             onPress={() => {
               save({});
               go(1);
@@ -122,17 +124,12 @@ export default function Welcome() {
                 <Text style={styles.title}>{q.title}</Text>
                 {q.chips ? (
                   <View style={styles.chips}>
-                    {q.chips.map((c) => {
-                      const on = value === c;
-                      return (
-                        <ScalePressable key={c} testID={`onboarding-chip-${slug(c)}`} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={c} haptic scaleTo={0.96} onPress={() => setAnswers((a) => ({ ...a, [q.key]: c }))} style={[styles.chip, on && styles.chipOn]}>
-                          <Text style={[styles.chipText, on && { color: colors.onPrimary }]}>{c}</Text>
-                        </ScalePressable>
-                      );
-                    })}
+                    {q.chips.map((c) => (
+                      <Chip key={c} testID={`onboarding-chip-${slug(c)}`} label={c} selected={value === c} onPress={() => setAnswers((a) => ({ ...a, [q.key]: c }))} />
+                    ))}
                   </View>
                 ) : (
-                  <TextInput
+                  <Field
                     key={q.key}
                     testID="onboarding-input"
                     autoFocus
@@ -142,7 +139,6 @@ export default function Welcome() {
                       setAnswers((a) => ({ ...a, [q.key]: t }));
                     }}
                     placeholder={q.placeholder}
-                    placeholderTextColor="#9A9AA3"
                     returnKeyType="next"
                     onSubmitEditing={next}
                     style={styles.input}
@@ -161,7 +157,7 @@ export default function Welcome() {
                 ) : null}
               </View>
               <View style={styles.bottom}>
-                <InkButton testID="onboarding-next" label="Next" disabled={!value.trim()} onPress={next} />
+                <Button testID="onboarding-next" title="Next" size="lg" fullWidth disabled={!value.trim()} onPress={next} />
               </View>
             </>
           ) : step === ACCOUNT ? (
@@ -176,48 +172,23 @@ export default function Welcome() {
 }
 
 function AccountStep({ onDone }: { onDone: () => void }) {
-  const ownerId = useOwnerId();
   const profile = useOwnedQuery(api.preferences.get, {});
-  const github = useOwnedQuery(api.imports.github.status, {});
   const sources = useOwnedQuery(api.imports.connections.sources, {});
   const upsert = useOwnedMutation(api.preferences.upsert);
-  const startXConnect = useAction(api.imports.connections.startXConnect);
-  const syncGitHub = useAction(api.imports.github.sync);
-  const [draft, setDraft] = useState<{ email?: string; phone?: string; github?: string }>({});
+  const connectX = useXConnect("welcome");
+  const [draft, setDraft] = useState<{ email?: string; phone?: string }>({});
   const [busy, setBusy] = useState<"x" | "continue" | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
   const x = sources?.find((s) => s.platform === "x");
   const email = draft.email ?? profile?.email ?? "";
   const phone = draft.phone ?? profile?.phone ?? "";
-  const username = draft.github ?? github?.username ?? "";
 
-  const connectX = async () => {
-    setBusy("x");
+  const run = async (kind: "x" | "continue", fn: () => Promise<void>) => {
+    setBusy(kind);
     setNote(null);
     try {
-      const returnUrl = Linking.createURL("welcome");
-      const { authorizeUrl } = await startXConnect({ ownerId, returnUrl });
-      const result = await WebBrowser.openAuthSessionAsync(authorizeUrl, returnUrl);
-      if (result.type === "success") {
-        const { queryParams } = Linking.parse(result.url);
-        if (queryParams?.x !== "connected") setNote(typeof queryParams?.message === "string" ? queryParams.message : "Couldn't connect X.");
-      }
-    } catch (e) {
-      setNote(errorMessage(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const proceed = async () => {
-    setBusy("continue");
-    setNote(null);
-    try {
-      await upsert({ email, phone });
-      const name = username.trim();
-      if (name && name !== github?.username) await syncGitHub({ ownerId, username: name });
-      onDone();
+      await fn();
     } catch (e) {
       setNote(errorMessage(e));
     } finally {
@@ -229,16 +200,24 @@ function AccountStep({ onDone }: { onDone: () => void }) {
     <>
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Complete your account</Text>
-        <TextInput testID="account-email" value={email} onChangeText={(t) => setDraft((d) => ({ ...d, email: t }))} placeholder="Email" placeholderTextColor="#9A9AA3" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} textContentType="emailAddress" autoComplete="email" style={styles.field} />
-        <TextInput testID="account-phone" value={phone} onChangeText={(t) => setDraft((d) => ({ ...d, phone: t }))} placeholder="Phone number" placeholderTextColor="#9A9AA3" keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" style={styles.field} />
-        <ScalePressable testID="account-connect-x" accessibilityRole="button" accessibilityLabel={x?.connected ? "X connected" : "Connect X"} haptic scaleTo={0.97} disabled={!x?.configured || x.connected || busy !== null} onPress={connectX} style={[styles.outline, x?.connected && styles.outlineDone]}>
-          {busy === "x" ? <ActivityIndicator color={colors.text} /> : <Ionicons name="logo-x" size={18} color={colors.text} />}
-          <Text style={styles.outlineText}>{x?.connected ? "X connected ✓" : x && !x.configured ? "X isn’t available yet" : "Connect X"}</Text>
-        </ScalePressable>
-        <View style={styles.inputRow}>
-          <Ionicons name="logo-github" size={20} color={colors.text} />
-          <TextInput testID="account-github" value={username} onChangeText={(t) => setDraft((d) => ({ ...d, github: t }))} placeholder="GitHub username" placeholderTextColor="#9A9AA3" autoCapitalize="none" autoCorrect={false} style={{ flex: 1, fontFamily: fonts.medium, fontSize: 17, color: colors.text }} />
-        </View>
+        <Field testID="account-email" value={email} onChangeText={(t) => setDraft((d) => ({ ...d, email: t }))} placeholder="Email" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} textContentType="emailAddress" autoComplete="email" />
+        <Field testID="account-phone" value={phone} onChangeText={(t) => setDraft((d) => ({ ...d, phone: t }))} placeholder="Phone number" keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" />
+        <Button
+          testID="account-connect-x"
+          variant="secondary"
+          fullWidth
+          icon="logo-x"
+          title={x?.connected ? "X connected ✓" : "Connect X"}
+          loading={busy === "x"}
+          disabled={!x?.configured || x.connected || busy !== null}
+          onPress={() =>
+            run("x", async () => {
+              const r = await connectX();
+              if (r.error) setNote(r.error);
+            })
+          }
+        />
+        <GitHubStarsRow />
         {note ? (
           <Text testID="account-note" style={styles.error}>
             {note}
@@ -246,47 +225,25 @@ function AccountStep({ onDone }: { onDone: () => void }) {
         ) : null}
       </ScrollView>
       <View style={styles.bottom}>
-        <InkButton testID="account-continue" label="Continue" busy={busy === "continue"} disabled={busy !== null} onPress={proceed} />
+        <Button testID="account-continue" title="Continue" size="lg" fullWidth loading={busy === "continue"} disabled={busy === "x"} onPress={() => run("continue", async () => { await upsert({ email, phone }); onDone(); })} />
       </View>
     </>
   );
 }
 
 function CalendarStep({ onDone }: { onDone: () => void }) {
-  const { configured, connected, busy, note, connect } = useCalendarConnect("welcome");
   return (
     <>
       <View style={styles.body}>
         <Text style={styles.title}>Connect your calendar</Text>
-        <Text style={styles.sub2}>Zapy adds events you save to your Google Calendar, after you approve them.</Text>
-        <ScalePressable testID="calendar-connect" accessibilityRole="button" accessibilityLabel={connected ? "Calendar connected" : "Connect Google Calendar"} haptic scaleTo={0.97} disabled={!configured || !!connected || busy} onPress={connect} style={[styles.outline, connected && styles.outlineDone]}>
-          {busy ? <ActivityIndicator color={colors.text} /> : <Ionicons name="calendar-outline" size={18} color={colors.text} />}
-          <Text style={styles.outlineText}>{connected ? "Calendar connected ✓" : configured === false ? "Calendar isn’t available yet" : "Connect Google Calendar"}</Text>
-        </ScalePressable>
-        {note ? (
-          <Text testID="calendar-note" style={styles.error}>
-            {note}
-          </Text>
-        ) : null}
+        <CalendarConnectRow returnPath="welcome" />
       </View>
       <View style={styles.bottom}>
-        {connected ? (
-          <InkButton testID="calendar-skip" label="Continue" onPress={onDone} />
-        ) : (
-          <Pressable testID="calendar-skip" accessibilityRole="button" accessibilityLabel="Not now" hitSlop={8} onPress={onDone} style={styles.skip}>
-            <Text style={styles.skipText}>Not now</Text>
-          </Pressable>
-        )}
+        <Pressable testID="calendar-skip" accessibilityRole="button" accessibilityLabel="Not now" hitSlop={8} onPress={onDone} style={styles.skip}>
+          <Text style={styles.skipText}>Not now</Text>
+        </Pressable>
       </View>
     </>
-  );
-}
-
-function InkButton({ testID, label, onPress, disabled, busy }: { testID: string; label: string; onPress: () => void; disabled?: boolean; busy?: boolean }) {
-  return (
-    <ScalePressable testID={testID} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, busy }} haptic scaleTo={0.97} disabled={disabled} onPress={onPress} style={[styles.ink, disabled && !busy && { opacity: 0.35 }]}>
-      {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.inkText}>{label}</Text>}
-    </ScalePressable>
   );
 }
 
@@ -295,7 +252,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
   wordmark: { fontFamily: fonts.display, fontSize: 56, lineHeight: 60, letterSpacing: -1, color: colors.text },
   sub: { fontFamily: fonts.medium, fontSize: 18, lineHeight: 24, color: palette.text2, textAlign: "center" },
-  sub2: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 22, color: palette.text2 },
   top: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingTop: 8 },
   back: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   track: { flex: 1, height: 8, borderRadius: 4, backgroundColor: palette.grey, overflow: "hidden" },
@@ -303,20 +259,10 @@ const styles = StyleSheet.create({
   count: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 18, color: palette.text2, fontVariant: ["tabular-nums"], minWidth: 44, textAlign: "right", paddingRight: 8 },
   body: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 32, gap: 20 },
   title: { fontFamily: fonts.display, fontSize: 32, lineHeight: 36, letterSpacing: -0.5, color: colors.text },
-  input: { height: 56, borderRadius: 20, borderWidth: 1.5, borderColor: colors.text, paddingHorizontal: 20, fontFamily: fonts.medium, fontSize: 20, color: colors.text, backgroundColor: colors.surface },
-  field: { height: 56, borderRadius: 20, borderWidth: 1.5, borderColor: colors.text, paddingHorizontal: 20, fontFamily: fonts.medium, fontSize: 17, color: colors.text, backgroundColor: colors.surface },
-  inputRow: { height: 56, borderRadius: 20, borderWidth: 1.5, borderColor: colors.text, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surface },
-  chips: { gap: 10 },
-  chip: { height: 56, borderRadius: 20, borderWidth: 1.5, borderColor: colors.text, paddingHorizontal: 20, justifyContent: "center", backgroundColor: colors.surface },
-  chipOn: { backgroundColor: palette.ink },
-  chipText: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, color: colors.text },
-  outline: { height: 56, borderRadius: 999, borderWidth: 1.5, borderColor: colors.text, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: colors.surface },
-  outlineDone: { backgroundColor: palette.mint, borderColor: palette.mint },
-  outlineText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.text },
+  input: { height: 56, fontSize: 20 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   error: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: colors.danger },
   skip: { height: 44, alignItems: "center", justifyContent: "center" },
   skipText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.text, textDecorationLine: "underline" },
   bottom: { paddingHorizontal: 20, paddingBottom: 8, paddingTop: 8, minHeight: 72, justifyContent: "center" },
-  ink: { height: 56, borderRadius: 999, backgroundColor: palette.ink, alignItems: "center", justifyContent: "center" },
-  inkText: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, color: colors.onPrimary },
 });
