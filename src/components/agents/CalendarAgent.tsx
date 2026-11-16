@@ -13,7 +13,8 @@ import { Field } from "../Field";
 
 // OWNER: Agent mode 2 (ZUB-36). Both pieces render nothing unless Composio is configured on the server.
 
-export function CalendarConnectRow() {
+/** Composio Google Calendar connect: configured is false when the server has no Composio key. */
+export function useCalendarConnect(returnPath: string) {
   const ownerId = useOwnerId();
   const configured = useOwnedQuery(api.agents.calendar.configured, {});
   const startConnect = useAction(api.agents.calendar.startConnect);
@@ -26,13 +27,11 @@ export function CalendarConnectRow() {
     if (configured) status({ ownerId }).then((s) => setConnected(s.connected), () => {});
   }, [configured, ownerId, status]);
 
-  if (!configured) return null;
-
   const connect = async () => {
     setBusy(true);
     setNote(null);
     try {
-      const returnUrl = Linking.createURL("profile");
+      const returnUrl = Linking.createURL(returnPath);
       const { redirectUrl } = await startConnect({ ownerId, returnUrl });
       const result = await WebBrowser.openAuthSessionAsync(redirectUrl, returnUrl);
       if (result.type === "success") {
@@ -46,6 +45,13 @@ export function CalendarConnectRow() {
       setBusy(false);
     }
   };
+
+  return { configured, connected, busy, note, connect };
+}
+
+export function CalendarConnectRow() {
+  const { configured, connected, busy, note, connect } = useCalendarConnect("profile");
+  if (!configured) return null;
 
   return (
     <Card testID="calendar-connect-card">

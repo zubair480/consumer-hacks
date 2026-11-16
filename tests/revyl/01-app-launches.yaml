@@ -6,7 +6,20 @@ build: Release iphonesimulator, JS bundled, EXPO_PUBLIC_CONVEX_URL=https://pleas
 fixtures: tests/revyl/fixtures/fixtures.json
 steps:
   - "Install the Release simulator build on a fresh iPhone 16 and launch it."
-  - "Tap `zap-intro-skip`, then tap `onboarding-skip` if it is visible."
+  - "Tap `zap-intro-skip`. `welcome-screen` shows the Zapy wordmark, \"Your saves, done.\" and one button; tap `onboarding-start`."
+  - "Step 1 of 9: type \"Revyl Tester\" into `onboarding-input` and tap `onboarding-next`."
+  - "Step 2 of 9: tap `onboarding-chip-undergraduate`, then `onboarding-next`."
+  - "Step 3 of 9: type \"Computer Science\" into `onboarding-input` and tap `onboarding-next`."
+  - "Step 4 of 9: type \"United States\" into `onboarding-input` and tap `onboarding-next`."
+  - "Step 5 of 9: type \"United States\" into `onboarding-input` and tap `onboarding-next`."
+  - "Step 6 of 9: type \"3.8\" into `onboarding-input` and tap `onboarding-next`."
+  - "Step 7 of 9: tap `onboarding-skip`."
+  - "Step 8 of 9 (Complete your account): type \"revyl@example.com\" into `account-email`, \"+1 415 555 0100\" into `account-phone`, leave `account-connect-x` and `account-github` alone, and tap `account-continue`."
+  - "Step 9 of 9 (Connect your calendar): `calendar-connect` is visible; tap `calendar-skip` (Not now)."
+  - "`pull-screen` appears; wait for `pull-see-tasks` and tap it."
+  - "Tap the You tab and check `profile-name-input` shows \"Revyl Tester\", `profile-gpa-input` shows 3.8 and `profile-email-input` shows revyl@example.com."
 expect:
-  - "The app opens past the boot spinner and shows `home-screen` within 20s, with no red box or crash."
+  - "The app opens past the boot spinner, walks all 9 onboarding steps with the progress bar advancing, reaches `pull-screen` and then `home-screen`, with no red box or crash."
+  - "Every answer is saved: the You tab shows the values typed during onboarding."
+  - "Relaunching the app goes straight to `home-screen`; onboarding does not show again."
 evidence: one screenshot per step, saved as renders/CONS-9/01-app-launches-<step>.png
