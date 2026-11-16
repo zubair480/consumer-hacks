@@ -59,6 +59,13 @@ export default function Profile() {
           <ZText style={{ flex: 1, fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.text }}>X bookmarks</ZText>
           <Ionicons name="chevron-forward" size={16} color="#9A9AA3" />
         </ScalePressable>
+        <ScalePressable testID="profile-github-stars" accessibilityRole="button" accessibilityLabel="GitHub stars" scaleTo={0.97} onPress={() => router.push("/import")} style={{ minHeight: 64, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
+          <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: colors.text, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="logo-github" size={18} color="#FFFFFF" />
+          </View>
+          <ZText style={{ flex: 1, fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.text }}>GitHub stars</ZText>
+          <Ionicons name="chevron-forward" size={16} color="#9A9AA3" />
+        </ScalePressable>
         <Boundary title="Couldn’t load your profile">
           <Body />
         </Boundary>

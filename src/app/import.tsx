@@ -9,6 +9,7 @@ import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
 import { GradientButton } from "../components/GradientButton";
+import { GitHubStarsRow } from "../components/GitHubStarsRow";
 import { errorMessage } from "../components/media";
 import { Tap } from "../components/Pressable";
 import { ScreenHeader } from "../components/ScreenHeader";
@@ -137,6 +138,7 @@ export default function ImportScreen() {
             />
           ))
         )}
+        <GitHubStarsRow />
 
         {x && !x.configured ? (
           <Text style={styles.footnote} testID="import-x-not-configured">

@@ -36,33 +36,39 @@ let welcomed = false;
 const SYNC_EVERY_MS = 60_000;
 let lastXSync = 0;
 
-/** Pulls new X bookmarks when Home gains focus or the app returns to the foreground (at most once a minute per device); `sync(true)` skips the throttle. */
+/** Pulls new X bookmarks and GitHub stars when Home gains focus or the app returns to the foreground (at most once a minute per device); `sync(true)` skips the throttle, `sync(true, false)` syncs X only. Returns the number of new saves, or -1 when every sync failed. */
 function useXAutoSync(itemCount: number | undefined) {
   const ownerId = useOwnerId();
   const syncX = useAction(api.imports.connections.syncX);
+  const syncGitHub = useAction(api.imports.github.sync);
   const sources = useOwnedQuery(api.imports.connections.sources, {});
+  const github = useOwnedQuery(api.imports.github.status, {});
   const connected = !!sources?.find((s) => s.platform === "x")?.connected;
+  const githubUser = github?.username ?? null;
   const count = useRef(itemCount);
   useEffect(() => {
     count.current = itemCount;
   }, [itemCount]);
   const sync = useCallback(
-    async (force = false) => {
-      if (!connected) return;
+    async (force = false, withGitHub = true) => {
+      const jobs: { from: string; run: () => Promise<{ created: number }> }[] = [];
+      if (connected) jobs.push({ from: "X", run: () => syncX({ ownerId }) });
+      if (withGitHub && githubUser) jobs.push({ from: "GitHub", run: () => syncGitHub({ ownerId }) });
+      if (!jobs.length) return;
       const now = Date.now();
       if (!force && now - lastXSync < SYNC_EVERY_MS) return;
       lastXSync = now;
       const before = count.current ?? 0;
-      try {
-        const { created } = await syncX({ ownerId });
-        const added = created || Math.max(0, (count.current ?? 0) - before);
-        if (added > 0) showToast(`${added} new ${added === 1 ? "save" : "saves"} from X`);
-        return added;
-      } catch {
-        return -1;
-      }
+      const results = await Promise.allSettled(jobs.map((j) => j.run()));
+      if (results.every((r) => r.status === "rejected")) return -1;
+      const created = results.reduce((sum, r) => sum + (r.status === "fulfilled" ? r.value.created : 0), 0);
+      const added = created || Math.max(0, (count.current ?? 0) - before);
+      const sourcesWithNew = jobs.filter((_, i) => { const r = results[i]; return r.status === "fulfilled" && r.value.created > 0; });
+      const from = sourcesWithNew.length === 1 ? ` from ${sourcesWithNew[0].from}` : jobs.length === 1 ? ` from ${jobs[0].from}` : "";
+      if (added > 0) showToast(`${added} new ${added === 1 ? "save" : "saves"}${from}`);
+      return added;
     },
-    [connected, ownerId, syncX],
+    [connected, githubUser, ownerId, syncX, syncGitHub],
   );
   useFocusEffect(
     useCallback(() => {
@@ -185,7 +191,7 @@ export default function Home() {
                 onPress={async () => {
                   if (!x.connected) return router.push("/import");
                   setSyncing(true);
-                  const added = await x.sync(true);
+                  const added = await x.sync(true, false);
                   setSyncing(false);
                   if (added === -1) showToast("Couldn’t sync X. Try again");
                   else if (!added) showToast("X is up to date");

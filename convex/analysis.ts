@@ -9,6 +9,9 @@ import type { SourcePart } from "./lib/sources";
 import { demoTypeFor } from "./lib/demo";
 import { vContentType, vExtractedFact, vOwnerId } from "./lib/validators";
 
+/** A github.com/owner/repo link (starred repos, pasted repo links) is always a repository, so its primary action is Run it for me. */
+const GITHUB_REPO_URL = /^https?:\/\/(?:www\.)?github\.com\/(?!(?:orgs|topics|search|settings|marketplace|explore|features|sponsors|collections|trending|apps|login|about)\/)[A-Za-z0-9-]+\/[A-Za-z0-9._-]+\/?(?:[?#].*)?$/i;
+
 // OWNER: Thread B+C. Classification + fact extraction, and the
 // contentAnalysis table.
 
@@ -200,6 +203,9 @@ export const save = internalMutation({
       analysis.contentTypes = [demoType, ...analysis.contentTypes.filter((t) => t !== demoType)];
       extractionStatus = "ready";
       extractionError = undefined;
+    } else if (item.sourceUrl && GITHUB_REPO_URL.test(item.sourceUrl) && analysis.primaryType !== "github_repository") {
+      analysis.primaryType = "github_repository";
+      analysis.contentTypes = ["github_repository", ...analysis.contentTypes.filter((t) => t !== "github_repository")];
     }
     const previous = await ctx.db.query("contentAnalysis").withIndex("by_itemId", (q) => q.eq("itemId", itemId)).take(20);
     const renamedByUser = Boolean(item.title) && previous.length > 0 && previous.every((row) => row.title !== item.title);

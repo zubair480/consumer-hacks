@@ -74,6 +74,11 @@ export const pullEverything = mutation({
       .withIndex("by_userId_and_platform", (q) => q.eq("userId", user._id).eq("platform", "x"))
       .unique();
     if (x) await ctx.scheduler.runAfter(0, api.imports.connections.syncX, { ownerId });
+    const github = await ctx.db
+      .query("githubImportAccounts")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .unique();
+    if (github?.username) await ctx.scheduler.runAfter(0, api.imports.github.sync, { ownerId });
     return { created, xSync: !!x };
   },
 });
