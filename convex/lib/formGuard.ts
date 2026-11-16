@@ -13,6 +13,3 @@ export function assertSafeInstruction(instruction: string): void {
 
 const SENSITIVE_LABEL = /(password|passcode|\bssn\b|social security|student id|\bid number\b|passport|captcha|card number|cvv)/i;
 export const isSensitiveLabel = (label: string) => SENSITIVE_LABEL.test(label);
-
-const WALL = /(log ?in|sign ?in|captcha|verify you are (a )?human|paywall|subscribe to continue|access denied)/i;
-export const looksLikeWall = (reason: string) => WALL.test(reason);

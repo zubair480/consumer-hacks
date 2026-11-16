@@ -6,7 +6,7 @@ import { z } from "zod/v4";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
-import { HOLD_MS, assertSafeInstruction, isSensitiveLabel, looksLikeWall } from "./lib/formGuard";
+import { HOLD_MS, assertSafeInstruction, isSensitiveLabel } from "./lib/formGuard";
 import { isDemoFormUrl } from "./lib/demo";
 import { callLLMJson, getLLMModel } from "./lib/llm";
 
@@ -93,7 +93,7 @@ export const run = internalAction({
         "Is this page blocked by a login wall, a CAPTCHA or human check, or a paywall, so that no form can be filled without signing in or paying? Answer blocked=false if a form is visible.",
         z.object({ blocked: z.boolean(), reason: z.string() }),
       )) as unknown as { data: { blocked: boolean; reason: string } };
-      if (wall.data.blocked || looksLikeWall(wall.data.reason)) {
+      if (wall.data.blocked) {
         await shoot();
         await set({ status: "blocked", screenshotIds, message: wall.data.reason || "This page needs a login, CAPTCHA or payment" });
         return null;
