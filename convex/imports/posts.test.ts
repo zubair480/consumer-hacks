@@ -3,6 +3,7 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 import schema from "../schema";
 import { modules } from "../test.setup";
 import { BOOKMARKS_PAGE } from "./xClient.test";
@@ -66,6 +67,21 @@ describe("imports.posts.importBatch", () => {
     });
     expect(result).toEqual({ created: 1, duplicates: 3, invalid: 1 });
     expect(await t.query(api.items.list, { ownerId: OWNER_A })).toHaveLength(3);
+  });
+
+  it("re-imports a post whose item was deleted and reuses its ledger row", async () => {
+    const t = await setup();
+    await t.mutation(api.imports.posts.importBatch, { ownerId: OWNER_A, posts: [post("5")] });
+    const [item] = await t.query(api.items.list, { ownerId: OWNER_A });
+    await t.mutation(api.items.remove, { ownerId: OWNER_A, itemId: item._id as Id<"savedItems"> });
+
+    const result = await t.mutation(api.imports.posts.importBatch, { ownerId: OWNER_A, posts: [post("5")] });
+    expect(result).toEqual({ created: 1, duplicates: 0, invalid: 0 });
+    const items = await t.query(api.items.list, { ownerId: OWNER_A });
+    expect(items).toHaveLength(1);
+    const ledger = await t.run((ctx) => ctx.db.query("importedPosts").collect());
+    expect(ledger).toHaveLength(1);
+    expect(ledger[0].itemId).toBe(items[0]._id);
   });
 
   it("dedupes per owner only", async () => {
