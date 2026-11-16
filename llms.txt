@@ -32,7 +32,7 @@
 
 - [src/shared/contracts.ts](src/shared/contracts.ts): shared types: content types, action types, ACTION_ROUTING, statuses, result documents (additive changes only)
 - [src/identity/OwnerProvider.tsx](src/identity/OwnerProvider.tsx): device ownerId and the useOwnedQuery / useOwnedMutation hooks
-- [src/app/(tabs)/index.tsx](src/app/(tabs)/index.tsx): Home, the Your tasks queue
+- [src/app/(tabs)/index.tsx](src/app/%28tabs%29/index.tsx): Home, the Your tasks queue
 - [src/app/welcome.tsx](src/app/welcome.tsx): start flow (questionnaire, account, calendar)
 - [src/app/pull.tsx](src/app/pull.tsx): Pull everything and the six boxes
 - [src/components/agents/PrimaryTaskAction.tsx](src/components/agents/PrimaryTaskAction.tsx): the big agent button per box
