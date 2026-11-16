@@ -1,0 +1,51 @@
+# Zapy
+
+> Zapy ("Turn what you save into what you do") is an Expo SDK 58 / React Native app (runs in Expo Go) with a Convex backend. It pulls in saves (links, text, photos, X bookmarks, GitHub stars), classifies each one server-side with OpenAI into one of 14 content types with evidence-quoted facts, sorts it into a box (Code, Forms, Events, Jobs, Learn, Other), and turns it into a task with three contextual actions. GitHub, form and event saves also get an approval-gated agent action: Run it for me (E2B sandbox), Fill it for me (Browserbase + Stagehand) and Add to my calendar (Composio Google Calendar). Identity is a device ownerId checked on every public Convex function.
+
+## README sections
+
+- [TL;DR for agents](README.md#tldr-for-agents): stack, entry points, commands, deployment URL, env vars and the ownerId rule in one YAML block
+- [Demo walkthrough](README.md#demo-walkthrough): the live flow on main, step by step, with testIDs and fallbacks
+- [Features on main](README.md#features-on-main): capture and import, understanding, task queue, agent actions, the contextual action table, results, Social Studio
+- [Built with Capy, Revyl and Convex](README.md#built-with-capy-revyl-and-convex): crew split and file ownership, git/PR numbers, Revyl scripts and results, every Convex feature and HTTP route
+- [Architecture](README.md#architecture): Mermaid diagrams, data model, Convex API map, external services
+- [Repo map](README.md#repo-map): annotated tree
+- [Getting started](README.md#getting-started): install, Expo Go, Android USB, own Convex deployment, env var table, demo data
+- [Testing and quality](README.md#testing-and-quality): npm test (21 files), tsc, lint, Revyl
+- [Agent guide](README.md#agent-guide): conventions and recipes for a content type, action/executor, table, screen and Revyl test; pitfalls
+- [Security and privacy](README.md#security-and-privacy): server-side keys, ownership, approval gates
+- [Limitations and roadmap](README.md#limitations-and-roadmap): what is hidden, unverified or in progress
+
+## Docs
+
+- [AGENTS.md](AGENTS.md): project rules for coding agents (Expo Go only, Convex deploy rule, OpenAI server-side, ownerId, testIDs)
+- [docs/architecture.md](docs/architecture.md): pipelines, agent actions, imports, Social Studio and publishing in depth
+- [docs/limitations.md](docs/limitations.md): what Zapy does not do today, and why
+- [docs/demo-script.md](docs/demo-script.md): live demo script with fallbacks
+- [docs/design-system.md](docs/design-system.md): UI tokens, components and rules
+- [docs/ios-shortcut.md](docs/ios-shortcut.md): Share to Zapy from iOS via a Shortcut and POST /save
+- [docs/android-share.md](docs/android-share.md): Share to Zapy from Android via HTTP Shortcuts
+- [docs/youtube-import-setup.md](docs/youtube-import-setup.md): Google OAuth setup for YouTube import
+- [tests/revyl/README.md](tests/revyl/README.md): how to build and run the 15 Revyl end-to-end scripts
+
+## Key source files
+
+- [src/shared/contracts.ts](src/shared/contracts.ts): shared types: content types, action types, ACTION_ROUTING, statuses, result documents (additive changes only)
+- [src/identity/OwnerProvider.tsx](src/identity/OwnerProvider.tsx): device ownerId and the useOwnedQuery / useOwnedMutation hooks
+- [src/app/(tabs)/index.tsx](src/app/(tabs)/index.tsx): Home, the Your tasks queue
+- [src/app/welcome.tsx](src/app/welcome.tsx): start flow (questionnaire, account, calendar)
+- [src/app/pull.tsx](src/app/pull.tsx): Pull everything and the six boxes
+- [src/components/agents/PrimaryTaskAction.tsx](src/components/agents/PrimaryTaskAction.tsx): the big agent button per box
+- [convex/schema.ts](convex/schema.ts): all tables and indexes
+- [convex/http.ts](convex/http.ts): HTTP routes (OAuth callbacks, /save, /demo pages)
+- [convex/lib/auth.ts](convex/lib/auth.ts): requireUser, requireOwnedItem, requireOwned
+- [convex/items.ts](convex/items.ts): saves API (create, list, search, retry, upload URLs)
+- [convex/ingest.ts](convex/ingest.ts): ingestion internal action (fetch, classify, extract facts)
+- [convex/lib/actionCatalog.ts](convex/lib/actionCatalog.ts): the three actions per content type
+- [convex/lib/executors/index.ts](convex/lib/executors/index.ts): executor registry
+- [convex/demo.ts](convex/demo.ts): pullEverything, pullStatus, primaryAction
+- [convex/agentMode.ts](convex/agentMode.ts): Run it for me in E2B
+- [convex/formFillAgent.ts](convex/formFillAgent.ts): Fill it for me with Browserbase + Stagehand
+- [convex/agents/calendar.ts](convex/agents/calendar.ts): calendar agent with approval
+- [convex/imports/sync.ts](convex/imports/sync.ts): syncAll for X bookmarks and GitHub stars
+- [convex/lib/llm.ts](convex/lib/llm.ts): the only OpenAI JSON helper (OPENAI_MODEL)
